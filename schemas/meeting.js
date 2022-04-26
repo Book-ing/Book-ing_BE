@@ -3,7 +3,7 @@ const autoIdSetter = require("./auto-id-setter")
 
 const meetingSchema = new mongoose.Schema({
 
-    meetingId: { type: Number, required: true, unique: true },
+
     meetingMasterId: { type: Number, unique: true },
     meetingName: { type: String, required: true },
     meetingCategory: { type: String, required: true },
@@ -15,6 +15,6 @@ const meetingSchema = new mongoose.Schema({
     modDate: { type: String }
 })
 
-autoIdSetter(meetingSchema, mongoose, 'meetings', 'meetingId')
+autoIdSetter(meetingSchema, mongoose, 'Meetings', 'meetingId')
 const Meetings = mongoose.model("Meetings", meetingSchema)
 module.exports = Meetings   
