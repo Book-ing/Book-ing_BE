@@ -5,7 +5,7 @@ const meetingMemberSchema = new mongoose.Schema({
     meetingMemberId: { type: Number, required: true, },
     meetingId: { type: Number, required: true, },
     isMeetingMaster: { type: Boolean, required: true, default: false },
-    redDate: { type: String, required: true },
+    regDate: { type: String, required: true },
     modDate: { type: String }
 })
 
