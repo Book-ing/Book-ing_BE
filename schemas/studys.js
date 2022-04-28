@@ -17,7 +17,7 @@ const studySchema = new mongoose.Schema({
     studyBookTitle: { type: String },
     studyBookInfo: { type: String },
     studyNote: { type: String },
-    redDate: { type: String, required: true },
+    regDate: { type: String, required: true },
     modDate: { type: String }
 })
 

@@ -11,7 +11,7 @@ const meetingSchema = new mongoose.Schema({
     meetingImage: { type: String, },
     meetingIntro: { type: String, required: true },
     meetingLimitCnt: { type: Number, required: true },
-    redDate: { type: String, required: true },
+    regDate: { type: String, required: true },
     modDate: { type: String }
 })
 

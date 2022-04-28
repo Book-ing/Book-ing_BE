@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
     profileImage: { type: String, },
     statusMessage: { type: String },
     refreshToken: { type: String, required: true },
-    regDate: { type: String, requrie: true },
+    regDate: { type: String, required: true },
     modDate: { type: String, }
 })
 
