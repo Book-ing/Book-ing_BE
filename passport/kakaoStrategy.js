@@ -19,7 +19,7 @@ module.exports = () => {
             async (accessToken, refreshToken, profile, done) => {
 
                 try {
-                    console.log("엑세스 토큰", accessToken, "리프레쉬 토큰", refreshToken)
+
                     const existUser = await User.findOne({ kakaoUserId: profile.id });
 
 
