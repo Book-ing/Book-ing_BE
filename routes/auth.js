@@ -41,8 +41,7 @@ router.get('/kakao/callback', passport.authenticate('kakao', {
         const kakaoUserId = req.user.kakaoUserId
 
         await User.updateOne({ kakaoUserId }, { $set: { refreshToken } })
-        // 
-        // 
+
 
         res.cookie('accessToken', accessToken, { sameSite: 'None', secure: true, httpOnly: true })
         res.cookie('refreshToken', refreshToken, { sameSite: 'None', secure: true, httpOnly: true })

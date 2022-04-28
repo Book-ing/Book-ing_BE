@@ -29,8 +29,15 @@ module.exports = {
 
                 //refreshToken으로 찾은 유저
                 if (refreshTokeninDB === req.cookies.refreshToken) {
-                    const kakaoUserId = validrefreshToken
-                    const newAccessToken = jwt.sign({ kakaoUserId }, process.env.ACCESS_TOKEN, { expiresIn: process.env.VALID_ACCESS_TOKEN_TIME });
+                    const kakaoUser = validrefreshToken
+
+                    const kakaoUserId = kakaoUser.kakaoUserId;
+                    const userId = kakaoUser.userId;
+                    const username = kakaoUser.username
+
+                    const newAccessToken = jwt.sign({ kakaoUserId, userId, username }, process.env.ACCESS_TOKEN, { expiresIn: process.env.VALID_ACCESS_TOKEN_TIME });
+                    const accessToken = verifyToken(newAccessToken);
+                    console.log("새로 발급받은  엑세스 토큰 부검", accessToken)
                     res.cookie('accessToken', newAccessToken, { sameSite: 'None', secure: true, httpOnly: true });
                     res.cookie('refreshToken', req.cookies.refreshToken, { sameSite: 'None', secure: true, httpOnly: true });
                     req.cookies.accessToken = newAccessToken;
@@ -48,7 +55,7 @@ module.exports = {
             if (refreshToken === null) {
                 res.clearCookie('accessToken',);
                 res.clearCookie("refreshToken",);
-                res.status(403).send({ result: 'false', message: "로그인 후 이용바랍니다!" });
+                res.status(403).send({ result: 'false', message: "로그인 유효시간이 만료됐습니다 다시 로그인해주세요!" });
 
             } else {
                 //case 4 둘 다 유효한 경우
