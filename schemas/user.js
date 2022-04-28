@@ -4,12 +4,12 @@ const autoIdSetter = require("./auto-id-setter")
 const userSchema = new mongoose.Schema({
 
     kakaoUserId: { type: String, required: true, unique: true },
-    username: { type: String, required: true, unique: true },
+    username: { type: String, required: true },
     profileImage: { type: String, required: true },
     statusMessage: { type: String },
     refreshToken: { type: String, required: true },
-    redDate: { type: String, required: true },
-    modDate: { type: String }
+    regDate: { type: String, requrie: true },
+    modDate: { type: String, }
 })
 
 autoIdSetter(userSchema, mongoose, 'users', 'userId')
