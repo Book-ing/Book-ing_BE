@@ -6,7 +6,7 @@ const codesSchema = new mongoose.Schema({
     groupId: { type: Number, required: true, },
     codeName: { type: String, required: true, },
     codeValue: { type: String, required: true, },
-    redDate: { type: String, required: true },
+    regDate: { type: String, required: true },
     modDate: { type: String }
 })
 

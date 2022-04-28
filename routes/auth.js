@@ -3,10 +3,12 @@ const passport = require('passport');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../schemas/user');
+const { checkTokens } = require("../middlewares/auth-middlewares")
 
 //카카오 로그인 페이지 이동
 ///api/auth/kakao
 router.get('/kakao', passport.authenticate('kakao'))
+router.get('/check', checkTokens)
 
 ///api/auth/kakao/callback
 //여기가 이제 로그인을 하는 url 
@@ -29,14 +31,18 @@ router.get('/kakao/callback', passport.authenticate('kakao', {
             kakaoUserId: user.kakaoUserId
         }
 
-        const accesstoken = jwt.sign(payload, process.env.ACCESS_TOKEN, {
+        const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN, {
             expiresIn: process.env.VALID_ACCESS_TOKEN_TIME
         })
         const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN, {
             expiresIn: process.env.VALID_REFRESH_TOKEN_TIME
         })
 
-        res.cookie('accesstoken', accesstoken, { sameSite: 'None', secure: true, httpOnly: true })
+        const kakaoUserId = req.user.kakaoUserId
+
+        await User.updateOne({ kakaoUserId }, { $set: { refreshToken } })
+
+        res.cookie('accessToken', accessToken, { sameSite: 'None', secure: true, httpOnly: true })
         res.cookie('refreshToken', refreshToken, { sameSite: 'None', secure: true, httpOnly: true })
 
         res.redirect('/');
