@@ -45,8 +45,6 @@ module.exports = {
                 } else {
                     return res.status(400).json({ result: 'false', message: '유효하지 않은 유저입니다!' });
                 }
-
-
             }
         } else {
             //case 3 access token은 유효하지만 refreshToken은 만료
