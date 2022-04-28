@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
 
     kakaoUserId: { type: String, required: true, unique: true },
     username: { type: String, required: true },
-    profileImage: { type: String, required: true },
+    profileImage: { type: String, },
     statusMessage: { type: String },
     refreshToken: { type: String, required: true },
     regDate: { type: String, requrie: true },
