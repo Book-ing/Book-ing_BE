@@ -36,8 +36,7 @@ module.exports = {
                     const username = kakaoUser.username
 
                     const newAccessToken = jwt.sign({ kakaoUserId, userId, username }, process.env.ACCESS_TOKEN, { expiresIn: process.env.VALID_ACCESS_TOKEN_TIME });
-                    const accessToken = verifyToken(newAccessToken);
-                    console.log("새로 발급받은  엑세스 토큰 부검", accessToken)
+
                     res.cookie('accessToken', newAccessToken, { sameSite: 'None', secure: true, httpOnly: true });
                     res.cookie('refreshToken', req.cookies.refreshToken, { sameSite: 'None', secure: true, httpOnly: true });
                     req.cookies.accessToken = newAccessToken;
