@@ -1,6 +1,6 @@
-const Meeting = require('../schemas/meeting');
-const MeetingMember = require('../schemas/meetingMember');
-const User = require('../schemas/user');
+const MEETING = require('../schemas/meeting');
+const MEETINGMEMBER = require('../schemas/meetingMember');
+const USER = require('../schemas/user');
 const lib = require('../lib/util');
 
 /*
@@ -18,7 +18,7 @@ async function createMeeting(req, res) {
         meetingImage = "https://img.lovepik.com/element/40135/2302.png_300.png";
     }
 
-    await Meeting.create({
+    await MEETING.create({
         meetingMasterId: 10,
         meetingName,
         meetingCategory,
@@ -27,7 +27,7 @@ async function createMeeting(req, res) {
         meetingIntro,
         meetingLimitCnt,
         regDate: lib.getDate()
-    }).then(async result => await MeetingMember.create({
+    }).then(async result => await MEETINGMEMBER.create({
         meetingMemberId: 10,
         meetingId: result.meetingId,
         isMeetingMaster: true,
@@ -41,16 +41,16 @@ async function getMeetingInfo(req, res) {
     const { meetingId } = req.params;
 
     // 모임 정보
-    const meetingInfo = await Meeting.findOne({ meetingId });
+    const meetingInfo = await MEETING.findOne({ meetingId });
     // 모임 마스터의 프로필 정보
-    const meetingMasterProfile = await User.findOne({ userId: meetingInfo.meetingMasterId });
+    const meetingMasterProfile = await USER.findOne({ userId: meetingInfo.meetingMasterId });
     // 모임에 가입된 유저들
-    const meetingUsers = await MeetingMember.find({ meetingId });
+    const meetingUsers = await MEETINGMEMBER.find({ meetingId });
     // 모임에 가입된 유저들 고유 id
     const meetingUsersId = meetingUsers.map(result => result.meetingMemberId);
     // 모임에 가입된 유저들 정보
     // TODO 현재는 모임 마스터 정보가 제일 위에 올라와서 skip(1)로 마스터 정보를 제외하고 limit(3)으로 3명만 정보가 나오게 되어있지만 기획에 따라 수정 필요
-    const meetingUsersProfile = await User.find(
+    const meetingUsersProfile = await USER.find(
         { userId: meetingUsersId },
         { userId: true, username: true, profileImage: true, statusMessage: true, _id: false }
     ).skip(1).limit(3);
