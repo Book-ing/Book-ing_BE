@@ -16,23 +16,7 @@ async function postStudy(req, res) {
         studyBookInfo
     } = req.body;
 
-    // if (
-    //     studyTitle === ""
-    //     || studyTitle === null
-    //     || studyDateTime === ""
-    //     || studyDateTime === null
-    //     || studyAddr === ""
-    //     || studyAddr === null
-    //     || studyAddrDetail === ""
-    //     || studyAddrDetail === null
-    //     || studyLimitCnt === ""
-    //     || studyLimitCnt === null
-    // ) {
-    //     return res.status(400).json({
-    //         result: 'false',
-    //         message: ""
-    //     })
-    // }
+
 
     try {
 

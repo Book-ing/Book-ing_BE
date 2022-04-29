@@ -39,6 +39,7 @@
     "multer-s3": "^2.10.0",
     "passport": "^0.5.2",
     "passport-kakao": "^1.0.1",
+    "request": "^2.88.2",
     "socket.io": "^4.5.0"
   },
   "devDependencies": {
