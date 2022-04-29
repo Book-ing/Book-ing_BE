@@ -3,7 +3,7 @@ const { getDate } = require('../lib/util')
 
 
 async function postStudy(req, res) {
-    const {
+    let {
         meetingId,
         studyMasterId,
         studyTitle,
@@ -19,7 +19,9 @@ async function postStudy(req, res) {
         studyNote
     } = req.body;
 
-
+    if (studyBookImg === "" || studyBookImg === null) {
+        studyBookImg = "https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png"
+    }
 
     try {
 
@@ -40,6 +42,8 @@ async function postStudy(req, res) {
             regDate: getDate(),
 
         })
+
+
 
         return res.status(201).json({
             result: true,
