@@ -16,6 +16,7 @@ module.exports = () => {
                 callbackURL: '/api/auth/kakao/callback'
             },
 
+            //카카오서버에서 보낸 카카오 계정정보
             async (accessToken, refreshToken, profile, done) => {
 
                 try {
@@ -52,7 +53,7 @@ module.exports = () => {
         )
     )
     passport.serializeUser((user, done) => {
-        done(null, user.username);
+        done(null, user);
     });
     passport.deserializeUser((user, done) => {
         done(null, user);

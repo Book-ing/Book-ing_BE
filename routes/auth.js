@@ -10,6 +10,7 @@ const { checkTokens } = require("../middlewares/auth-middlewares")
 router.get('/kakao', passport.authenticate('kakao'))
 router.get('/check', checkTokens)
 
+
 ///api/auth/kakao/callback
 //여기가 이제 로그인을 하는 url 
 //열로 들어오면 kakao 전략으로 가서 로그인을 실행한다.
@@ -25,6 +26,7 @@ router.get('/kakao/callback', passport.authenticate('kakao', {
             username: req.user.username,
             userId: req.user.userId
         })
+
         const payload = {
             userId: user.userId,
             username: user.username,
@@ -34,6 +36,7 @@ router.get('/kakao/callback', passport.authenticate('kakao', {
         const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN, {
             expiresIn: process.env.VALID_ACCESS_TOKEN_TIME
         })
+
         const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN, {
             expiresIn: process.env.VALID_REFRESH_TOKEN_TIME
         })
@@ -45,6 +48,7 @@ router.get('/kakao/callback', passport.authenticate('kakao', {
 
         res.cookie('accessToken', accessToken, { sameSite: 'None', secure: true, httpOnly: true })
         res.cookie('refreshToken', refreshToken, { sameSite: 'None', secure: true, httpOnly: true })
+
 
         res.redirect('/');
     });

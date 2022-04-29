@@ -1,6 +1,6 @@
 const express = require('express');
 const studyController = require('../controllers/studyController')
-const createStudyValidation = require('../middlewares/validator')
+const createStudyValidation = require('../middlewares/studyValidator')
 const router = express.Router();
 
 

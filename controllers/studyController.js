@@ -1,9 +1,11 @@
 const Study = require('../schemas/studys')
-const { body, validationResult } = require('express-validator');
+const { getDate } = require('../lib/util')
+
 
 async function postStudy(req, res) {
     const {
         meetingId,
+        studyMasterId,
         studyTitle,
         studyDateTime,
         studyAddr,
@@ -13,7 +15,8 @@ async function postStudy(req, res) {
         studyNotice,
         studyBookTitle,
         studyBookImg,
-        studyBookInfo
+        studyBookInfo,
+        studyNote
     } = req.body;
 
 
@@ -22,6 +25,7 @@ async function postStudy(req, res) {
 
         await Study.create({
             meetingId,
+            studyMasterId,
             studyTitle,
             studyDateTime,
             studyAddr,
@@ -29,10 +33,18 @@ async function postStudy(req, res) {
             studyLimitCnt,
             studyPrice,
             studyNotice,
+            studyBookImg,
             studyBookTitle,
-            studyBookImg: '/image/' + req.file.filename,
-            studyBookInfo
+            studyBookInfo,
+            studyNote,
+            regDate: getDate(),
+
         })
+
+        return res.status(201).json({
+            result: true,
+            message: '스터디 등록 성공'
+        });
 
     } catch (err) {
         console.log(err)
@@ -41,9 +53,6 @@ async function postStudy(req, res) {
             message: '스터디 등록 실패!'
         })
     }
-
-
-
 }
 
 module.exports = { postStudy }
