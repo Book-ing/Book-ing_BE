@@ -1,9 +1,7 @@
 const Meeting = require('../schemas/meeting');
 const MeetingMember = require('../schemas/meetingMember');
 const User = require('../schemas/user');
-const moment = require('moment')
-require('moment-timezone');
-moment.tz.setDefault("Asia/Seoul");
+const lib = require('../lib/util');
 
 /*
     TODO 1. cookie에 유저 정보가 담기면 db에서 유저 검사 후 meetingMasterId 값으로 지정
@@ -21,15 +19,20 @@ async function createMeeting(req, res) {
     }
 
     await Meeting.create({
-        meetingMasterId: 1,
+        meetingMasterId: 10,
         meetingName,
         meetingCategory,
         meetingLocation,
         meetingImage,
         meetingIntro,
         meetingLimitCnt,
-        regDate: moment().format('YYYY-MM-DD HH:mm:ss')
-    });
+        regDate: lib.getDate()
+    }).then(async result => await MeetingMember.create({
+        meetingMemberId: 10,
+        meetingId: result.meetingId,
+        isMeetingMaster: true,
+        regDate: lib.getDate()
+    }));
 
     res.status(201).json({ result: true, message: '모임 생성 성공' });
 }
