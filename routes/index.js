@@ -1,10 +1,13 @@
 const router = require("express").Router();
 
 const kakao = require('./auth')
-const study = require('./study')
+const mainRouter = require('./main');
+const studyRouter = require('./study')
+const meetingRouter = require('./meeting');
 
-router.use('/auth', kakao)
-router.use('/study', study)
-
+router.use('/study', studyRouter)
+router.use('/auth', kakao);
+router.use('/main', mainRouter);
+router.use('/meeting', meetingRouter);
 
 module.exports = router;
