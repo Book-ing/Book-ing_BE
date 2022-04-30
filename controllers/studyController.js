@@ -15,10 +15,10 @@ async function getStudyLists(req, res) {
         const data = await STUDY.find({ meetingId });
 
         const studyList = [];
-        const together = [];
+
 
         //해당 모임에 존재하는 전체 스터디들의 데이터를 가지고 온다.
-
+        //한 번 돌 때 하나의 스터디 이다.
         for (let i = 0; i < data.length; i++) {
             const studyId = data[i].studyId;
             const studyTitle = data[i].studyTitle;
@@ -35,25 +35,35 @@ async function getStudyLists(req, res) {
             const studyMasterProfile = data[i].studyMasterProfile;
             const regDate = data[i].regDate;
 
+
+            console.log('모임 2에 있는 스터디들', data)
+            console.log('스터디 아이디', studyId)
+
             //모임에 있는 각!! 스터디 아이디에 참여한 멤버들을 가지고 온다.
             people = await STUDYMEMBERS.find({ studyId });
 
-            //현재 1번 스터디에 참가한 사람들
+            console.log('모임 2에 있는 스터디 멤버들', people)
             let studyUserCnt = 0;
             let isStudyJoined = false;
 
             //지금 로그인한 유저가 이 스터디에 참가 했는지 안했는지 판단
+            //첨 돌땐 people.length===2
+
             for (let k = 0; k < people.length; k++) {
                 if (people[k].studyMemberId === Number(userId)) {
                     isStudyJoined = true;
                 }
             }
 
+            const together = [];
             //각 스터디에 참여한 멤버들을 유저에서 찾아 유저 아이디와 프로필을 가져오기 위한 것
+            console.log('모임2 참석인원', people.length)
             for (let j = 0; j < people.length; j++) {
                 let joinedUser = await User.find({
                     userId: people[j].studyMemberId,
                 });
+                console.log('people[j].studyMemberId', people[j].studyMemberId)
+                console.log('참여한 멤버들', joinedUser)
                 const userId = joinedUser[0].userId;
                 const profileImage = joinedUser[0].profileImage;
                 studyUserCnt = people.length;
@@ -81,10 +91,11 @@ async function getStudyLists(req, res) {
                 studyNote,
                 studyMasterProfile,
                 regDate,
+                together
             });
         }
 
-        return res.status(200).json({ result: 'true', studyList, together });
+        return res.status(200).json({ result: 'true', studyList, });
     } catch (err) {
         console.log(err);
         return res.status(400).json({
