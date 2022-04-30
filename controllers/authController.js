@@ -48,13 +48,11 @@ async function getKakaoLoginCallback(req, res) {
     } catch (error) {
         // 어떠한 사유로 인해 accessToken을 받지 못했다면, 서버에 로그를 남기고, 해당 메시지를 클라이언트에 내려준다.
         console.log(error);
-        return res
-            .status(400)
-            .json({
-                result: false,
-                message:
-                    '카카오 accessToken 취득실패 (사유: ' + error.message + ')',
-            });
+        return res.status(400).json({
+            result: false,
+            message:
+                '카카오 accessToken 취득실패 (사유: ' + error.message + ')',
+        });
     }
 
     try {
@@ -70,13 +68,10 @@ async function getKakaoLoginCallback(req, res) {
         // 어떠한 사유로 인해 사용자정보를 받지 못했다면, 서버에 로그를 남기고, 해당 메시지를 클라이언트에 내려준다.
         console.log(error);
         console.log(getKakaoAccessToken.data.access_token);
-        return res
-            .status(400)
-            .json({
-                result: false,
-                message:
-                    '카카오 사용자정보 취득실패 (사유: ' + error.message + ')',
-            });
+        return res.status(400).json({
+            result: false,
+            message: '카카오 사용자정보 취득실패 (사유: ' + error.message + ')',
+        });
     }
 
     // 카카오 서버에서 받아온 카카오 사용자 정보 내 kakaoUserId로 DB 내 가입이력이 있는지 검사한다.

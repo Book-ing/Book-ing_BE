@@ -249,12 +249,10 @@ async function joinStudy(req, res) {
         try {
             let study = await STUDY.findOne({ studyId });
             if (study.masterId === userId) {
-                return res
-                    .status(400)
-                    .json({
-                        result: 'false',
-                        message: '스터디장은 나갈 수 없습니다.',
-                    });
+                return res.status(400).json({
+                    result: 'false',
+                    message: '스터디장은 나갈 수 없습니다.',
+                });
             }
             await STUDYMEMBERS.deleteOne({ studyMemberId: userId });
             return res.status(200).json({

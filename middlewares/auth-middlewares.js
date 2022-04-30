@@ -7,12 +7,9 @@ require('dotenv').config();
 module.exports = {
     async checkTokens(req, res, next) {
         if (req.cookies.accessToken === undefined) {
-            return res
-                .status(403)
-                .json({
-                    message:
-                        '로그인 유효시간이 만료됐습니다 다시 로그인해주세요!',
-                });
+            return res.status(403).json({
+                message: '로그인 유효시간이 만료됐습니다 다시 로그인해주세요!',
+            });
         }
         const accessToken = verifyToken(req.cookies.accessToken);
         const refreshToken = verifyRefreshToken(req.cookies.refreshToken);
@@ -21,12 +18,10 @@ module.exports = {
         if (accessToken === null) {
             if (refreshToken === null) {
                 //case 1access token과 refresh token이 모두 만료
-                return res
-                    .status(403)
-                    .json({
-                        message:
-                            '로그인 유효시간이 만료됐습니다 다시 로그인해주세요!',
-                    });
+                return res.status(403).json({
+                    message:
+                        '로그인 유효시간이 만료됐습니다 다시 로그인해주세요!',
+                });
             } else {
                 //case 2 access token만료, refresh token 유효
                 const validrefreshToken = verifyRefreshToken(
@@ -65,12 +60,10 @@ module.exports = {
                     req.cookies.accessToken = newAccessToken;
                     next();
                 } else {
-                    return res
-                        .status(400)
-                        .json({
-                            result: 'false',
-                            message: '유효하지 않은 유저입니다!',
-                        });
+                    return res.status(400).json({
+                        result: 'false',
+                        message: '유효하지 않은 유저입니다!',
+                    });
                 }
             }
         } else {
