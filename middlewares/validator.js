@@ -37,7 +37,4 @@ const createMeetingValidation = [
     error,
 ];
 
-
-
-
 module.exports = createMeetingValidation;
