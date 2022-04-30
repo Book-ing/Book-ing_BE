@@ -143,4 +143,4 @@ async function getKakaoLoginCallback(req, res) {
     res.redirect('/');
 }
 
-module.exports = { getKakaoLoginCallback };
+module.exports = { getKakaoLoginCallback }; 
