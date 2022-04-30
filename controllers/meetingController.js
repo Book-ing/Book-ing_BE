@@ -55,6 +55,7 @@ async function getMeetingInfo(req, res) {
         { userId: true, username: true, profileImage: true, statusMessage: true, _id: false }
     ).skip(1).limit(3);
 
+    // TODO  isMeetingMaster, isMeetingJoined 추가
     res.status(200).json({
         result: true,
         message: '모임 페이지 모임정보 조회 성공',
@@ -78,7 +79,28 @@ async function getMeetingInfo(req, res) {
     });
 }
 
+async function getMeetingUsers(req, res) {
+    const { meetingId } = req.params;
+
+
+    const meetingUsers = await MEETINGMEMBER.find({meetingId});
+    const meetingUsersId = meetingUsers.map(result => result.meetingMemberId);
+    const meetingUsersProfile = await USER.find(
+        { userId: meetingUsersId },
+        { userId: true, username: true, profileImage: true, statusMessage: true, _id: false });
+    // console.log(meetingUsersProfile);
+
+    res.status(200).json({
+        result: true,
+        message: '모임 가입 유저 조회 성공',
+        data: {
+            meetingUsers: meetingUsersProfile
+        }
+    });
+}
+
 module.exports = {
     createMeeting,
-    getMeetingInfo
+    getMeetingInfo,
+    getMeetingUsers
 };
