@@ -5,5 +5,6 @@ const createMeetingValidation = require('../middlewares/validator')
 
 router.post('/', upload.single('meetingImage'), createMeetingValidation, meetingController.createMeeting);
 router.get('/:meetingId', meetingController.getMeetingInfo);
+router.get('/:meetingId/users', meetingController.getMeetingUsers);
 
 module.exports = router;
