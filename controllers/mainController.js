@@ -4,8 +4,6 @@ const MEETING = require('../schemas/meeting');
 const MEETINGMEMBER = require('../schemas/meetingMember');
 const STUDY = require('../schemas/studys');
 
-
-
 /**
  * 2022. 04. 28. HSYOO.
  * TODO:
@@ -20,7 +18,7 @@ const STUDY = require('../schemas/studys');
  *  3. 오늘 진행하는 모임 조회
  *  4. 인기 모임 조회
  *      4-1. 인기 모임 기준
- *          ㄴ 
+ *          ㄴ
  *  5. 신규 모임 조회
  *      5-1. 로그인 여부와 상관없이 무조건 데이터를 내려준다.
  *      5-2. 모임이 생성된 시간을 내림차순 정렬하여 데이터를 내려준다.
@@ -29,7 +27,7 @@ const STUDY = require('../schemas/studys');
  *  2. 클라이언트 쿠키 내 ID정보를 취득하여 해당 아이디정보를 검사하도록 바꾼다.
  *      ㄴ 현재는 클라이언트에서 보내준 userId 값 여부로 로그인여부를 검사한다.
  *  3. 스웨거 작업
- * 
+ *
  */
 async function getSelectMainView(req, res) {
     let response = {};
@@ -38,18 +36,24 @@ async function getSelectMainView(req, res) {
      * 내 모임 조회
      ===================================================================*/
     // 사용자가 로그인하지 않은 경우, 빈 오브젝트를 내려준다.
-    if (req.query.userId) { response.myMeeting = {}; }
-    else {
+    if (req.query.userId) {
+        response.myMeeting = {};
+    } else {
         // 로그인 한 경우, 해당 사용자가 가입한 모임이 있는지 검사한다.
         const userId = req.query.userId;
         const meetings = await MEETINGMEMBER.find({ MeetingMemberId: userId });
 
         // 가입한 모임이 없는 경우, 빈 오브젝트를 내려준다.
-        if (!meetings) { response.myMeeting = {}; }
-        else {
+        if (!meetings) {
+            response.myMeeting = {};
+        } else {
             //가입한 모임이 있는 경우, 가입한 모임의 meetingId list로 Meetings Collection을 조회한 오브젝트를 내려준다.
-            const myMeetingIdList = meetings.map((val, i) => { return val.meetingId; });
-            const myMettingList = await MEETING.find({ meetingId: { $in: myMeetingIdList } })
+            const myMeetingIdList = meetings.map((val, i) => {
+                return val.meetingId;
+            });
+            const myMettingList = await MEETING.find({
+                meetingId: { $in: myMeetingIdList },
+            });
             response.myMeeting = myMettingList;
         }
     }
@@ -57,9 +61,15 @@ async function getSelectMainView(req, res) {
     /**===================================================================
      * 오늘 진행하는 모임 조회
      ===================================================================*/
-    const todayStudyList = await STUDY.find({ RegDt: { $gt: lib.getDate() } }).sort({ regDate: 1 });
-    const todayMeetingIdList = todayStudyList.map((val, i) => { return val.meetingId; });
-    const todayMeetingList = await MEETING.find({ meetingId: todayMeetingIdList });
+    const todayStudyList = await STUDY.find({
+        RegDt: { $gt: lib.getDate() },
+    }).sort({ regDate: 1 });
+    const todayMeetingIdList = todayStudyList.map((val, i) => {
+        return val.meetingId;
+    });
+    const todayMeetingList = await MEETING.find({
+        meetingId: todayMeetingIdList,
+    });
     response.todayMeeting = todayMeetingList;
 
     /**===================================================================
@@ -71,13 +81,14 @@ async function getSelectMainView(req, res) {
     * 신규 모임 조회
     ===================================================================*/
     // 모든 모임 중 모임이 생성된 시간을 기준으로 내림차순 정렬하여 데이터를 내려준다.
-    const newMettingList = await MEETING.find().sort({ 'regDate': -1 });
+    const newMettingList = await MEETING.find().sort({ regDate: -1 });
     response.newMeeting = newMettingList;
 
-
-
-    res.status(200).json({ result: true, message: '메인 페이지 조회 성공', data: response });
-
+    res.status(200).json({
+        result: true,
+        message: '메인 페이지 조회 성공',
+        data: response,
+    });
 }
 
 module.exports = { getSelectMainView };
