@@ -5,7 +5,7 @@ const bannedUserSchema = new mongoose.Schema({
 
 
     meetingId: { type: Number, required: true, },
-    userId: { type: Number, required: true, },
+    userId: { type: Number, required: true },
     regDate: { type: String, required: true },
     modDate: { type: String }
 })

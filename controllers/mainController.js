@@ -31,22 +31,22 @@ const STUDY = require('../schemas/studys');
  *  3. 스웨거 작업
  * 
  */
-async function getSelectMainView(req, res){
+async function getSelectMainView(req, res) {
     let response = {};
 
     /**===================================================================
      * 내 모임 조회
      ===================================================================*/
     // 사용자가 로그인하지 않은 경우, 빈 오브젝트를 내려준다.
-    if(req.query.userId){ response.myMeeting = {}; }
+    if (req.query.userId) { response.myMeeting = {}; }
     else {
         // 로그인 한 경우, 해당 사용자가 가입한 모임이 있는지 검사한다.
         const userId = req.query.userId;
         const meetings = await MEETINGMEMBER.find({ MeetingMemberId: userId });
 
         // 가입한 모임이 없는 경우, 빈 오브젝트를 내려준다.
-        if(!meetings){ response.myMeeting = {}; }
-        else{
+        if (!meetings) { response.myMeeting = {}; }
+        else {
             //가입한 모임이 있는 경우, 가입한 모임의 meetingId list로 Meetings Collection을 조회한 오브젝트를 내려준다.
             const myMeetingIdList = meetings.map((val, i) => { return val.meetingId; });
             const myMettingList = await MEETING.find({ meetingId: { $in: myMeetingIdList } })
@@ -57,27 +57,27 @@ async function getSelectMainView(req, res){
     /**===================================================================
      * 오늘 진행하는 모임 조회
      ===================================================================*/
-    const todayStudyList = await STUDY.find({ RegDt: { $gt: lib.getDate() }}).sort({ regDate: 1 });
+    const todayStudyList = await STUDY.find({ RegDt: { $gt: lib.getDate() } }).sort({ regDate: 1 });
     const todayMeetingIdList = todayStudyList.map((val, i) => { return val.meetingId; });
     const todayMeetingList = await MEETING.find({ meetingId: todayMeetingIdList });
     response.todayMeeting = todayMeetingList;
 
-     /**===================================================================
-     * 인기 모임 조회
-     ===================================================================*/
-     response.recommendMeeting = {};
+    /**===================================================================
+    * 인기 모임 조회
+    ===================================================================*/
+    response.recommendMeeting = {};
 
-     /**===================================================================
-     * 신규 모임 조회
-     ===================================================================*/
-     // 모든 모임 중 모임이 생성된 시간을 기준으로 내림차순 정렬하여 데이터를 내려준다.
-     const newMettingList = await MEETING.find().sort({ 'regDate': -1 });
-     response.newMeeting = newMettingList;
+    /**===================================================================
+    * 신규 모임 조회
+    ===================================================================*/
+    // 모든 모임 중 모임이 생성된 시간을 기준으로 내림차순 정렬하여 데이터를 내려준다.
+    const newMettingList = await MEETING.find().sort({ 'regDate': -1 });
+    response.newMeeting = newMettingList;
 
-    
+
 
     res.status(200).json({ result: true, message: '메인 페이지 조회 성공', data: response });
-    
+
 }
 
 module.exports = { getSelectMainView };
