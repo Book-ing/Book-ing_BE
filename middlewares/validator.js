@@ -24,14 +24,13 @@ const createMeetingValidation = [
         .withMessage('모임 소개를 입력해 주세요.')
         .isLength({ max: 200 })
         .withMessage('모임 소개는 200자 이상 입력할 수 없습니다.'),
-    body('meetingLocation')
-        .notEmpty()
-        .withMessage('모임 지역을 선택해주세요.'),
+    body('meetingLocation').notEmpty().withMessage('모임 지역을 선택해주세요.'),
     body('meetingLimitCnt')
         .notEmpty()
         .withMessage('모임 인원 수 제한을 입력해 주세요.')
-        .custom(value => {
-            if (value > 300) throw new Error('모임 최대 인원수 제한은 300명입니다.');
+        .custom((value) => {
+            if (value > 300)
+                throw new Error('모임 최대 인원수 제한은 300명입니다.');
             return true;
         }),
     error,

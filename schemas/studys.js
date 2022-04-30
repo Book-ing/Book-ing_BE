@@ -1,11 +1,9 @@
-const mongoose = require("mongoose")
-const autoIdSetter = require("./auto-id-setter")
+const mongoose = require('mongoose');
+const autoIdSetter = require('./auto-id-setter');
 
 const studySchema = new mongoose.Schema({
-
-
-    meetingId: { type: Number, required: true, },
-    studyMasterId: { type: Number, required: true, },
+    meetingId: { type: Number, required: true },
+    studyMasterId: { type: Number, required: true },
     studyTitle: { type: String, required: true },
     studyDateTime: { type: String, required: true },
     studyAddr: { type: String, required: true },
@@ -18,9 +16,9 @@ const studySchema = new mongoose.Schema({
     studyBookInfo: { type: String },
     studyNote: { type: String },
     regDate: { type: String, required: true },
-    modDate: { type: String }
-})
+    modDate: { type: String },
+});
 
-autoIdSetter(studySchema, mongoose, 'Studys', 'studyId')
-const Studys = mongoose.model("Studys", studySchema)
-module.exports = Studys      
+autoIdSetter(studySchema, mongoose, 'Studys', 'studyId');
+const Studys = mongoose.model('Studys', studySchema);
+module.exports = Studys;

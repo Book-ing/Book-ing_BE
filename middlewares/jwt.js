@@ -1,29 +1,25 @@
 const jwt = require('jsonwebtoken');
 
-
 function verifyToken(token) {
     try {
         const result = jwt.verify(token, process.env.ACCESS_TOKEN);
-        return result
+        return result;
     } catch (e) {
         if (e.name === 'TokenExpiredError') {
-            return null
+            return null;
         }
     }
 }
-
-
 
 function verifyRefreshToken(refreshToken) {
     try {
         const resultr = jwt.verify(refreshToken, process.env.REFRESH_TOKEN);
-        return resultr
+        return resultr;
     } catch (e) {
         if (e.name === 'TokenExpiredError') {
-            return null
+            return null;
         }
     }
 }
 
-
-module.exports = { verifyToken, verifyRefreshToken }
+module.exports = { verifyToken, verifyRefreshToken };
