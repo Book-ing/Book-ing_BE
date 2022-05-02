@@ -4,11 +4,24 @@ const USER = require('../schemas/user');
 const { getDate } = require('../lib/util');
 const User = require('../schemas/user');
 
+/**
+/* 
+    2022-05-02 HOJIN
+    TODO 1. 
+ */
+
+
+
+
 //여기는 모임 안에 들어온 상태다
 //스터디 목록 조회
 async function getStudyLists(req, res) {
     const { meetingId } = req.params;
     const { userId } = req.query; //임시로 로그인한 유저라 판단
+
+    /**===================================================================
+  * 각 모임id별로 있는 스터디 존재 
+  ===================================================================*/
 
     try {
         //해당 모임id 에 있는 전체 스터디 목록 찾기
@@ -38,8 +51,6 @@ async function getStudyLists(req, res) {
 
             //모임에 있는 각!! 스터디 아이디에 참여한 멤버들을 가지고 온다.
             people = await STUDYMEMBERS.find({ studyId });
-
-
             let studyUserCnt = 0;
             let isStudyJoined = false;
 
@@ -54,6 +65,10 @@ async function getStudyLists(req, res) {
 
             const together = [];
             let isStudyMaster;
+
+            /**===================================================================
+          * 해당 스터디에 참가하고 있는 멤버들 조회 
+          ===================================================================*/
             //각 스터디에 참여한 멤버들을 유저에서 찾아 유저 아이디와 프로필을 가져오기 위한 것
             //각 스터디에 참여한 멤버들이 마스터인지 아닌지 판단 여부 넣어줌 
             for (let j = 0; j < people.length; j++) {
@@ -106,6 +121,11 @@ async function getStudyLists(req, res) {
 
 //스터디 등록
 async function postStudy(req, res) {
+
+
+    /**===================================================================
+  * 어떤 모임안에 있는 스터디 등록하기
+  ===================================================================*/
     // const studyMasterId = res.locals.user.userId
 
     let {
@@ -129,8 +149,10 @@ async function postStudy(req, res) {
             'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
     }
 
+    /**===================================================================
+  * 스터디를 만드는 사람이 방장이 된다.
+  ===================================================================*/
     try {
-        //스터디를 만드는 사람이 방장이 된다.
         await STUDY.create({
             meetingId,
             studyMasterId,
@@ -170,7 +192,12 @@ async function postStudy(req, res) {
 }
 
 //스터디 정보 수정
+/**===================================================================
+* 스터디 정보 수정 
+===================================================================*/
 async function updateStudy(req, res) {
+    const { userId } = req.query; //임시로 로그인한 유저 표시
+
     const {
         studyId,
         studyTitle,
@@ -188,43 +215,52 @@ async function updateStudy(req, res) {
     // 맞는 지 비교하는 로직 필요
     //meetingId도 받아와야 하나?
     // const userId = res.locals.userId
-    // const studyMaster = await Study.findOne({ studyMasterId: userId })
-    // if (studyMaster) {
-    try {
-        await STUDY.updateOne(
-            { studyId },
-            {
-                $set: {
-                    studyTitle,
-                    studyDateTime,
-                    studyAddr,
-                    studyAddrDetail,
-                    studyPrice,
-                    studyNotice,
-                    studyBookTitle,
-                    studyBookImg,
-                    studyBookInfo,
-                },
-            }
-        );
-        return res
-            .status(201)
-            .json({ result: 'true', message: '스터디 정보 수정 완료!' });
-    } catch (err) {
-        console.log(err);
-        res.status(400).json({
-            result: 'false',
-            message: '스터디를 수정할 수 없습니다!',
-        });
-    }
+    const updateStudy = await STUDY.findOne({ studyId })
 
-    // } else {
-    //     return res.status(400).json({ result: 'false', message: '스터디 정보 수정은 스터디 장 또는 모임장만 가능합니다.' })
-    // }
+
+    /**===================================================================
+  * 스터디 정보를 수정할 수 있는 사람은 스터디 장과 모임장 뿐이다.
+  ===================================================================*/
+    if (updateStudy.studyMasterId === Number(userId)) {
+        try {
+            await STUDY.updateOne(
+                { studyId },
+                {
+                    $set: {
+                        studyTitle,
+                        studyDateTime,
+                        studyAddr,
+                        studyAddrDetail,
+                        studyPrice,
+                        studyNotice,
+                        studyBookTitle,
+                        studyBookImg,
+                        studyBookInfo,
+                    },
+                }
+            );
+            return res
+                .status(201)
+                .json({ result: 'true', message: '스터디 정보 수정 완료!' });
+        } catch (err) {
+            console.log(err);
+            res.status(400).json({
+                result: 'false',
+                message: '스터디를 수정할 수 없습니다!',
+            });
+        }
+
+    } else {
+        return res.status(400).json({ result: 'false', message: '스터디 정보 수정은 스터디 장 또는 모임장만 가능합니다.' })
+    }
 }
 
 //스터디 참가 및 취소
 //우선은 type으로 받는 로직
+
+/**===================================================================
+* 스터디 참가하기
+===================================================================*/
 async function joinStudy(req, res) {
     const { userId, studyId, studyType } = req.body;
 
@@ -233,8 +269,6 @@ async function joinStudy(req, res) {
             let master = false;
             let study = await STUDY.findOne({ studyId });
             people = await STUDYMEMBERS.find({ studyId });
-            console.log("스터디", study)
-            console.log('스터디에 참여한 사람들', people)
             for (let i = 0; i < people.length; i++) {
                 if (people[i].studyMemberId === Number(userId)) {
                     return res.status(400).json({
@@ -272,15 +306,19 @@ async function joinStudy(req, res) {
             });
         }
     } else if (studyType === 'quit') {
+
+        /**===================================================================
+      * 스터디 취소하기, 다만 다른 멤버들이 있을 때 스터디장은 나갈 수 없고 스터디 장이 나다면
+      * 해당 스터디는 삭제된다.
+      ===================================================================*/
         try {
-            //9번 스터디들만 가져옴
+            //해당 스터디들만 가져옴
             let study = await STUDY.findOne({ studyId });
-            //9번 스터디에 참가한 멤버들 
+            //해당 스터디에 참가한 멤버들 
             people = await STUDYMEMBERS.find({ studyId });
-            console.log(`${studyId}번 스터디에 참가한 멤버들 `, people)
+            // console.log(`${studyId}번 스터디에 참가한 멤버들 `, people)
 
             //스터디 멤버가 2명 이상일 때 스터디 장은 나갈 수가 없다. 
-            //스터디는 4번 
 
             if (people.length > 1) {
                 if (study.studyMasterId === userId) {
@@ -290,8 +328,6 @@ async function joinStudy(req, res) {
                     });
                 }
                 //취소할 스터디의 멤버 중에서 로그인한 유저랑 일치하는 멤버를 삭제
-
-
                 await STUDYMEMBERS.findOneAndDelete({ studyId: studyId, studyMemberId: userId },)
 
                 return res.status(200).json({
@@ -301,7 +337,6 @@ async function joinStudy(req, res) {
 
                 //하지만 스터디에 스터디 장만 남아있을 때 스터디 장이 나가면 스터디는 삭제가 가능하다.
             } else if (people.length === 1) {
-                // await STUDY.deleteOne({ studyId }).then(async (study) => await STUDYMEMBERS.deleteOne({ studyId: study.studyId }))
                 await STUDYMEMBERS.deleteOne({ studyMemberId: userId })
                 await STUDY.deleteOne({ studyId })
                 return res.status(200).json({
