@@ -13,7 +13,6 @@ async function getStudyLists(req, res) {
     try {
         //해당 모임id 에 있는 전체 스터디 목록 찾기
         const data = await STUDY.find({ meetingId });
-
         const studyList = [];
 
 
@@ -29,47 +28,47 @@ async function getStudyLists(req, res) {
             const studyNotice = data[i].studyNotice;
             const studyLimitCnt = data[i].studyLimitCnt;
             const studyBookTitle = data[i].studyBookTitle;
-            const studyBookImage = data[i].studyBookImage;
+            const studyBookImg = data[i].studyBookImg;
             const studyBookInfo = data[i].studyBookInfo;
             const studyNote = data[i].studyNote;
             const studyMasterProfile = data[i].studyMasterProfile;
             const regDate = data[i].regDate;
 
 
-            console.log('모임 2에 있는 스터디들', data)
-            console.log('스터디 아이디', studyId)
 
             //모임에 있는 각!! 스터디 아이디에 참여한 멤버들을 가지고 온다.
             people = await STUDYMEMBERS.find({ studyId });
 
-            console.log('모임 2에 있는 스터디 멤버들', people)
+
             let studyUserCnt = 0;
             let isStudyJoined = false;
 
-            //지금 로그인한 유저가 이 스터디에 참가 했는지 안했는지 판단
-            //첨 돌땐 people.length===2
 
+            //지금 로그인한 유저가 이 스터디에 참가 했는지 안했는지 판단
             for (let k = 0; k < people.length; k++) {
                 if (people[k].studyMemberId === Number(userId)) {
                     isStudyJoined = true;
                 }
+
             }
 
             const together = [];
+            let isStudyMaster;
             //각 스터디에 참여한 멤버들을 유저에서 찾아 유저 아이디와 프로필을 가져오기 위한 것
-            console.log('모임2 참석인원', people.length)
+            //각 스터디에 참여한 멤버들이 마스터인지 아닌지 판단 여부 넣어줌 
             for (let j = 0; j < people.length; j++) {
                 let joinedUser = await User.find({
                     userId: people[j].studyMemberId,
                 });
-                console.log('people[j].studyMemberId', people[j].studyMemberId)
-                console.log('참여한 멤버들', joinedUser)
+
                 const userId = joinedUser[0].userId;
                 const profileImage = joinedUser[0].profileImage;
                 studyUserCnt = people.length;
+                isStudyMaster = people[j].isStudyMaster
 
                 together.push({
                     userId,
+                    isStudyMaster,
                     profileImage,
                 });
             }
@@ -86,7 +85,7 @@ async function getStudyLists(req, res) {
                 studyLimitCnt,
                 studyUserCnt,
                 studyBookTitle,
-                studyBookImage,
+                studyBookImg,
                 studyBookInfo,
                 studyNote,
                 studyMasterProfile,
@@ -233,11 +232,27 @@ async function joinStudy(req, res) {
         try {
             let master = false;
             let study = await STUDY.findOne({ studyId });
+            people = await STUDYMEMBERS.find({ studyId });
+            console.log("스터디", study)
+            console.log('스터디에 참여한 사람들', people)
+            for (let i = 0; i < people.length; i++) {
+                if (people[i].studyMemberId === Number(userId)) {
+                    return res.status(400).json({
+                        result: 'false',
+                        message: '이미 해당 스터디에 참가하셨습니다!'
+                    })
+                }
+            }
+            if (study.studyLimitCnt === people.length || study.studyLimitCnt < people.length) {
+                return res.status(400).json({
+                    resutl: 'false',
+                    message: '정원 초과라 해당 스터디에 참가할 수 없습니다!'
+                })
+            }
 
             if (study.masterId === userId) {
                 master = true;
             }
-
             await STUDYMEMBERS.create({
                 studyMemberId: userId,
                 studyId,
@@ -252,27 +267,51 @@ async function joinStudy(req, res) {
         } catch (err) {
             console.log(err);
             return res.status(400).json({
-                result: 'fail',
+                result: 'false',
                 message: '스터디 참가 실패!',
             });
         }
-    } else {
+    } else if (studyType === 'quit') {
         try {
+            //9번 스터디들만 가져옴
             let study = await STUDY.findOne({ studyId });
-            if (study.masterId === userId) {
-                return res.status(400).json({
-                    result: 'false',
-                    message: '스터디장은 나갈 수 없습니다.',
+            //9번 스터디에 참가한 멤버들 
+            people = await STUDYMEMBERS.find({ studyId });
+            console.log(`${studyId}번 스터디에 참가한 멤버들 `, people)
+
+            //스터디 멤버가 2명 이상일 때 스터디 장은 나갈 수가 없다. 
+            //스터디는 4번 
+
+            if (people.length > 1) {
+                if (study.studyMasterId === userId) {
+                    return res.status(400).json({
+                        result: 'false',
+                        message: '스터디장은 나갈 수 없습니다.',
+                    });
+                }
+                //취소할 스터디의 멤버 중에서 로그인한 유저랑 일치하는 멤버를 삭제
+
+
+                await STUDYMEMBERS.findOneAndDelete({ studyId: studyId, studyMemberId: userId },)
+
+                return res.status(200).json({
+                    result: 'true',
+                    message: '스터디 취소 성공!',
                 });
+
+                //하지만 스터디에 스터디 장만 남아있을 때 스터디 장이 나가면 스터디는 삭제가 가능하다.
+            } else if (people.length === 1) {
+                // await STUDY.deleteOne({ studyId }).then(async (study) => await STUDYMEMBERS.deleteOne({ studyId: study.studyId }))
+                await STUDYMEMBERS.deleteOne({ studyMemberId: userId })
+                await STUDY.deleteOne({ studyId })
+                return res.status(200).json({
+                    result: 'true',
+                    message: '스터디 삭제 성공!'
+                })
             }
-            await STUDYMEMBERS.deleteOne({ studyMemberId: userId });
-            return res.status(200).json({
-                result: 'true',
-                message: '스터디 취소 성공!',
-            });
         } catch (err) {
             return res.status(400).json({
-                result: 'fail',
+                result: 'false',
                 message: '스터디 취소 실패!',
             });
         }
