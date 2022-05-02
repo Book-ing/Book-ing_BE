@@ -100,6 +100,22 @@ async function getMeetingInfo(req, res) {
 
 async function getMeetingUsers(req, res) {
     const { meetingId } = req.params;
+    // FIXME res.locals가 작업되면 바꾼다.
+    const { userId } = req.query;
+
+    const myProfile = await USER.findOne(
+        { userId },
+        {
+            userId: true,
+            username: true,
+            profileImage: true,
+            statusMessage: true,
+            _id: false,
+        }
+    );
+    const meetingMasterProfile = await MEETING.findOne({ meetingId }).then(
+        async (result) => await USER.findOne({ userId: result.meetingMasterId })
+    );
 
     const meetingUsers = await MEETINGMEMBER.find({ meetingId });
     const meetingUsersId = meetingUsers.map((result) => result.meetingMemberId);
@@ -113,12 +129,17 @@ async function getMeetingUsers(req, res) {
             _id: false,
         }
     );
-    // console.log(meetingUsersProfile);
 
     res.status(200).json({
         result: true,
         message: '모임 가입 유저 조회 성공',
         data: {
+            myProfile,
+            meetingMasterProfile: {
+                userId: meetingMasterProfile.userId,
+                username: meetingMasterProfile.username,
+                profileImage: meetingMasterProfile.profileImage,
+            },
             meetingUsers: meetingUsersProfile,
         },
     });
