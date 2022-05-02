@@ -8,22 +8,22 @@ const cookieParser = require('cookie-parser');
 const passport = require('passport');
 const passportConfig = require('./passport/kakaoStrategy');
 
-const whitelist = ['http://localhost:3000', 'http://twitter-clone-coding.s3-website.ap-northeast-2.amazonaws.com'];
-const corsOptions = {
-	origin: function (origin, callback) {
-		if(whitelist.indexOf(origin) !== -1){
-			callback(null, true);
-		}else{
-			callback(new Error('Not Allowed Origin!'));
-		}
-	},
-	methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-	preflightContinue: false,
-	optionsSuccessStatus: 204,
-	credentials: true,
-};
+// const whitelist = ['http://localhost:3000', 'http://twitter-clone-coding.s3-website.ap-northeast-2.amazonaws.com'];
+// const corsOptions = {
+// 	origin: function (origin, callback) {
+// 		if(whitelist.indexOf(origin) !== -1){
+// 			callback(null, true);
+// 		}else{
+// 			callback(new Error('Not Allowed Origin!'));
+// 		}
+// 	},
+// 	methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+// 	preflightContinue: false,
+// 	optionsSuccessStatus: 204,
+// 	credentials: true,
+// };
 
-app.use(cors(corsOptions));
+app.use(cors({origin : '*'}));
 app.use(morgan('dev'));
 connect();
 
