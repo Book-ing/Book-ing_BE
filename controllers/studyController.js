@@ -397,10 +397,17 @@ async function getStudyMembers(req, res) {
                 myProfile = await USER.findOne({ userId: studyMyId }, ['userId', 'profileImage', 'username'])
             }
             studyMemberId = data[i].studyMemberId
+
             findUser = await USER.findOne({ userId: studyMemberId }, ['userId', 'profileImage', 'username'])
 
-            studyUsers.push(findUser)
+            //스터디 마스터의 아이디랑 스터디 멤버가 같다면 굳이
+            //스터디 멤버들에 넣어주지 않는다.
+            if (findUser.userId !== studyMasterProfile.userId) {
+                studyUsers.push(findUser)
+            }
+
         }
+
         return res.status(200).json({
             result: "true",
             myProfile,
