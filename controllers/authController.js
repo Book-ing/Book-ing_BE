@@ -129,18 +129,28 @@ async function getKakaoLoginCallback(req, res) {
         });
     }
 
-    res.cookie('accessToken', bookingAccessToken, {
-        sameSite: 'None',
-        secure: true,
-        httpOnly: true,
-    });
-    res.cookie('refreshToken', bookingRefreshToken, {
-        sameSite: 'None',
-        secure: true,
-        httpOnly: true,
-    });
+    // res.cookie('accessToken', bookingAccessToken, {
+    //     sameSite: 'None',
+    //     secure: true,
+    //     httpOnly: true,
+    // });
+    // res.cookie('refreshToken', bookingRefreshToken, {
+    //     sameSite: 'None',
+    //     secure: true,
+    //     httpOnly: true,
+    // });
 
-    res.redirect('/');
+    res.json({ 
+        result: true,
+        message: '성공',
+        data: { 
+            access_token: bookingAccessToken,
+            refreshToken: bookingRefreshToken 
+        }
+    });
+    // res.redirect('http://localhost:3000');
+    // 실제 운영서버에 올라갈 때는 URL을 변경해야한다. *URL 미정
+    // res.redirect('/');
 }
 
 module.exports = { getKakaoLoginCallback }; 
