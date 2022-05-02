@@ -2,7 +2,7 @@ const STUDY = require('../schemas/studys');
 const STUDYMEMBERS = require('../schemas/studyMembers');
 const USER = require('../schemas/user');
 const { getDate } = require('../lib/util');
-const User = require('../schemas/user');
+const MEETING = require('../schemas/meeting')
 
 /**
 /* 
@@ -72,7 +72,7 @@ async function getStudyLists(req, res) {
             //각 스터디에 참여한 멤버들을 유저에서 찾아 유저 아이디와 프로필을 가져오기 위한 것
             //각 스터디에 참여한 멤버들이 마스터인지 아닌지 판단 여부 넣어줌 
             for (let j = 0; j < people.length; j++) {
-                let joinedUser = await User.find({
+                let joinedUser = await USER.find({
                     userId: people[j].studyMemberId,
                 });
 
@@ -261,7 +261,7 @@ async function updateStudy(req, res) {
 /**===================================================================
 * 스터디 참가하기
 ===================================================================*/
-async function joinStudy(req, res) {
+async function inoutStudy(req, res) {
     const { userId, studyId, studyType } = req.body;
 
     if (studyType === 'join') {
@@ -385,7 +385,7 @@ async function getStudyMembers(req, res) {
             //방장이라면
             if (data[i].isStudyMaster) {
                 studyMasterId = data[i].studyMemberId;
-                studyMasterProfile = await USER.findOne({ userId: studyMasterId }, ['userId', 'profileImage', 'username'])
+                studyMasterProfile = await USER.findOne({ userId: studyMasterId }, { 'userId': true, 'profileImage': true, 'username': true, '_id': false })
             }
 
             //로그인한 유저가 본인이 참가하고 있는 스터디의 멤버 조회를 한다면
@@ -394,11 +394,11 @@ async function getStudyMembers(req, res) {
             //myprofile이 있다는 것은 로그인한 유저가 해당 스터디에 참가하고 있다는 뜻
             if (data[i].studyMemberId === Number(userId)) {
                 studyMyId = data[i].studyMemberId;
-                myProfile = await USER.findOne({ userId: studyMyId }, ['userId', 'profileImage', 'username'])
+                myProfile = await USER.findOne({ userId: studyMyId }, { 'userId': true, 'profileImage': true, 'username': true, '_id': false })
             }
             studyMemberId = data[i].studyMemberId
 
-            findUser = await USER.findOne({ userId: studyMemberId }, ['userId', 'profileImage', 'username'])
+            findUser = await USER.findOne({ userId: studyMemberId }, { 'userId': true, 'profileImage': true, 'username': true, '_id': false })
 
             //스터디 마스터의 아이디랑 스터디 멤버가 같다면 굳이
             //스터디 멤버들에 넣어주지 않는다.
@@ -425,4 +425,88 @@ async function getStudyMembers(req, res) {
 
 }
 
-module.exports = { postStudy, updateStudy, getStudyLists, joinStudy, getStudyMembers };
+
+
+
+
+//스터디 참여인원 내보내기(강퇴)
+async function kickUser(req, res) {
+    //userId는 내보낼 유저아이디이다.
+
+    const { meetingMasterId, studyMasterId, studyId, userId } = req.body;
+    //임시 유저
+    // studyMasterId = req.query.userId;
+    try {
+
+        const targetMeeting = await MEETING.findOne({ meetingMasterId })
+        //강퇴할 유저가 있는 모임의 마스터
+        let targetMeetingId = targetMeeting.meetingId
+
+        //그 모임장의 모임의 스터디
+        const targetStudy = await STUDY.findOne({ meetingId: targetMeetingId })
+        if (targetStudy.studyMasterId === Number(studyMasterId) && targetMeeting.meetingMasterId === Number(meetingMasterId)) {
+            await STUDYMEMBERS.findOneAndDelete({ studyId: targetStudy.studyId, studyMemberId: userId })
+        } else {
+            return res.status(400).json({
+                result: 'false',
+                message: '유저 강퇴는 스터디 장 또는 모임 장만 가능합니다.'
+            })
+        }
+
+
+        return res.status(200).json({
+            result: 'true',
+            message: '유저 강퇴'
+        })
+
+
+    } catch (err) {
+        console.log(err)
+        return res.status(400).json({
+            result: 'false',
+            message: '유저 강퇴 실패!'
+        })
+    }
+
+}
+
+
+//스터디 삭제
+async function deleteStudy(req, res) {
+    const { studyId } = req.params;
+    //임시 유저
+    const { userId } = req.query;
+
+    try {
+        const targetStudy = await STUDY.findOne({ studyId });
+        const targetStudyMember = await STUDYMEMBERS.find({ studyId })
+        if (targetStudy.studyMasterId === Number(userId)) {
+
+            console.log("삭제할 스터디의 멤버들", targetStudyMember)
+            await STUDY.deleteOne({ studyId })
+            for (let i = 0; i < targetStudyMember.length; i++) {
+                await STUDYMEMBERS.findOneAndDelete({ studyId })
+            }
+            return res.status(200).json({
+                result: 'true',
+                message: '스터디 삭제 성공!'
+            })
+        } else {
+            return res.status(400).json({
+                result: 'fasle',
+                message: '스터디 장만 삭제 가능합니다!'
+            })
+        }
+
+
+    } catch (err) {
+        console.log(err);
+        return res.status(400).json({
+            result: 'false',
+            message: '스터디 삭제 실패!'
+        })
+    }
+}
+
+
+module.exports = { postStudy, updateStudy, getStudyLists, inoutStudy, getStudyMembers, kickUser, deleteStudy };
