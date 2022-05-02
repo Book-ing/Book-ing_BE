@@ -129,6 +129,9 @@ async function getKakaoLoginCallback(req, res) {
         });
     }
 
+    res.setHeader('Access-Control-Allow-Origin', 'localhost:3000');
+    res.setHeader('Access-Control-Allow-Credentials', 'true'); 
+
     res.cookie('accessToken', bookingAccessToken, {
         sameSite: 'None',
         secure: true,
