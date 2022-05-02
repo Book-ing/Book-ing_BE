@@ -9,5 +9,6 @@ router.post('/', createStudyValidation, studyController.postStudy);
 router.put('/', studyController.updateStudy);
 router.get('/:meetingId/study', studyController.getStudyLists);
 router.post('/joinedstudy', studyController.joinStudy);
+router.get('/:studyId/user', studyController.getStudyMembers)
 
 module.exports = router;

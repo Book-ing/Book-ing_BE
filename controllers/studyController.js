@@ -353,4 +353,69 @@ async function joinStudy(req, res) {
     }
 }
 
-module.exports = { postStudy, updateStudy, getStudyLists, joinStudy };
+//스터디 멤버 팝업 조회
+/**===================================================================
+ * 스터디 멤버 팝업 조회 
+ * 조회를 눌러 팝업이 뜨면, 스터디장과 로그인한 유저가 가장 위로 오게 된다. 
+ * 하지만 만약 로그인한 유저가 참가하지 않은 스터디의 멤버를 조회한다면
+ * 나는 포함되지 않고 스터디장만 맨 위로 나오게 된다. 
+ ===================================================================*/
+
+async function getStudyMembers(req, res) {
+    const { studyId } = req.params;
+    const { userId } = req.query;//임시로 로그인한 유저로 친다.
+
+    try {
+
+        //내 프로필
+        let studyMasterId;
+        let studyMyId;
+        let studyMasterProfile;
+        const studyUsers = [];
+        let studyMemberId;
+        let findUser
+
+        let myProfile;
+        //현재 조회한 스터디id에 참여한 유저들
+        const data = await STUDYMEMBERS.find({ studyId },);
+        console.log(`스터디 ${studyId}에 있는 스터디 멤버들`, data)
+
+        //현재 스터디의 멤버 수만큼 반복 중 
+        for (let i = 0; i < data.length; i++) {
+            //방장이라면
+            if (data[i].isStudyMaster) {
+                studyMasterId = data[i].studyMemberId;
+                studyMasterProfile = await USER.findOne({ userId: studyMasterId }, ['userId', 'profileImage', 'username'])
+            }
+
+            //로그인한 유저가 본인이 참가하고 있는 스터디의 멤버 조회를 한다면
+            //만약 로그인한 유저가 있다면 마이 프로필이 나오고
+            //만약 참가하지 않은 스터디라면 본인 프로필은 나오지 않는다. 
+            //myprofile이 있다는 것은 로그인한 유저가 해당 스터디에 참가하고 있다는 뜻
+            if (data[i].studyMemberId === Number(userId)) {
+                studyMyId = data[i].studyMemberId;
+                myProfile = await USER.findOne({ userId: studyMyId }, ['userId', 'profileImage', 'username'])
+            }
+            studyMemberId = data[i].studyMemberId
+            findUser = await USER.findOne({ userId: studyMemberId }, ['userId', 'profileImage', 'username'])
+
+            studyUsers.push(findUser)
+        }
+        return res.status(200).json({
+            result: "true",
+            myProfile,
+            studyMasterProfile,
+            studyUsers
+
+        })
+    } catch (err) {
+        console.log(err)
+        return res.status(400).json({
+            result: 'false',
+            message: '스터디 멤버들 조회 실패!'
+        })
+    }
+
+}
+
+module.exports = { postStudy, updateStudy, getStudyLists, joinStudy, getStudyMembers };
