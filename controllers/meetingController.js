@@ -10,6 +10,8 @@ const lib = require('../lib/util');
          4. 카테고리, 지역 올바른 값인지 확인
  */
 async function createMeeting(req, res) {
+    // FIXME res.locals가 작업되면 바꾼다.
+    const { userId } = req.query;
     const {
         meetingName,
         meetingCategory,
@@ -17,6 +19,12 @@ async function createMeeting(req, res) {
         meetingIntro,
         meetingLimitCnt,
     } = req.body;
+
+    const existMaster = await MEETING.find({ meetingMasterId: userId });
+    if (existMaster.length) {
+        return res.status(400).json({ result: false, message: '이미 생성한 모임이 있습니다.' });
+    }
+
     let meetingImage = '';
     if (req.file) {
         meetingImage = req.file.location;
@@ -25,7 +33,7 @@ async function createMeeting(req, res) {
     }
 
     await MEETING.create({
-        meetingMasterId: 10,
+        meetingMasterId: userId,
         meetingName,
         meetingCategory,
         meetingLocation,
@@ -36,7 +44,7 @@ async function createMeeting(req, res) {
     }).then(
         async (result) =>
             await MEETINGMEMBER.create({
-                meetingMemberId: 10,
+                meetingMemberId: userId,
                 meetingId: result.meetingId,
                 isMeetingMaster: true,
                 regDate: lib.getDate(),
