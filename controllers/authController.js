@@ -140,7 +140,9 @@ async function getKakaoLoginCallback(req, res) {
         httpOnly: true,
     });
 
-    res.redirect('/');
+    res.redirect('http://localhost:3000');
+    // 실제 운영서버에 올라갈 때는 URL을 변경해야한다. *URL 미정
+    // res.redirect('/');
 }
 
 module.exports = { getKakaoLoginCallback };
