@@ -8,7 +8,7 @@ const STUDY = require('../schemas/studys');
 /**
  * 2022. 04. 28. HSYOO.
  * TODO:
- *  1. response { {내 모임}, {오늘 진행하는 모임}, {인기 모임}, {신규 모임} } 형식으로 데이터를 내려준다.
+ *  1. response { {내 모임}, {오늘 진행하는 모임}, {추천 모임}, {신규 모임} } 형식으로 데이터를 내려준다.
  *  2. 내 모임 조회
  *      2-1. 로그인하지 않은 경우
  *         2-1-1. 사용자가 로그인하지 않은 경우에는 내 모임을 볼 수 없기 때문에 빈 오브젝트를 내려준다.
@@ -54,22 +54,45 @@ async function getSelectMainView(req, res) {
         if (!meetings) {
             response.myMeeting = {};
         } else {
-            //가입한 모임이 있는 경우, 가입한 모임의 meetingId list로 Meetings Collection을 조회한 오브젝트를 내려준다.
+            // 가입한 모임이 있는 경우, 가입한 모임의 meetingId list로 Meetings Collection을 조회한 오브젝트를 내려준다.
             const myMeetingIdList = meetings.map((val, i) => {
                 return val.meetingId;
             });
-            const myMettingList = await MEETING.find(
-                { meetingId: { $in: myMeetingIdList } },
-                {
-                    _id: false,
-                    meetingId: true,
-                    meetingName: true,
-                    meetingCategory: true,
-                    meetingLocation: true,
-                    meetingIntro: true
-                }
-            );
-            response.myMeeting = myMettingList;
+
+            if(isMeetingMaster){
+                // 내 모임을 가지고 있는 경우라면,
+                const myMetting = await MEETING.findOne({ meetingMemberId: userId });
+                response.myMeeting = myMetting;
+
+                const myMettingList = await MEETING.find(
+                    { meetingId: { $in: myMeetingIdList } },
+                    {
+                        _id: false,
+                        meetingId: true,
+                        meetingName: true,
+                        meetingImage: true,
+                        meetingCategory: true,
+                        meetingLocation: true,
+                        meetingIntro: true
+                    }
+                ).limit(4);
+                response.myMeeting = myMettingList;
+            }else{
+                // 내 모임을 가지고 있지 않은 경우라면,
+                const myMettingList = await MEETING.find(
+                    { meetingId: { $in: myMeetingIdList } },
+                    {
+                        _id: false,
+                        meetingId: true,
+                        meetingName: true,
+                        meetingImage: true,
+                        meetingCategory: true,
+                        meetingLocation: true,
+                        meetingIntro: true
+                    }
+                ).limit(5);
+                response.myMeeting = myMettingList;
+            }
         }
     }
 
@@ -79,35 +102,38 @@ async function getSelectMainView(req, res) {
     const todayStudyList = await STUDY.find({
         studyDateTime: { $gt: lib.getDate() },
     }).sort({ studyDateTime: 1 });
-
+    
     const todayMeetingIdList = todayStudyList.map((val, i) => { return val.meetingId; });
 
     // 배열 내 중복 meetingId를 제거한다.
     const arrTodayMeetingList = Array.from(new Set(todayMeetingIdList));
-
+    
     let arrTodayRandomMeetingId = [];
-    for(let i = 0; i < 5; i++){ // 메인페이지에 보여주는 모임 개수는 5개다.
+    for(let i = 0; i < 5; i++){ // 메인페이지에 보여주는 모임 개수는 최대 5개다.
         let randomNumber = Math.floor(Math.random() * arrTodayMeetingList.length);
 
-        if (arrTodayRandomMeetingId.indexOf(arrTodayMeetingList[randomNumber]) === -1)
+        if (arrTodayRandomMeetingId.indexOf(arrTodayMeetingList[randomNumber]) === -1){
             arrTodayRandomMeetingId.push(arrTodayMeetingList[randomNumber]);
+            if(arrTodayMeetingList.length === arrTodayRandomMeetingId.length) break;
+        }
         else
             i--;
     };
-
+    console.log('여긴왔어1?');
     const todayMeetingList = await MEETING.find(
         { meetingId: arrTodayRandomMeetingId, },
         {
             _id: false,
             meetingId: true,
             meetingName: true,
+            meetingImage: true,
             meetingCategory: true,
             meetingLocation: true,
             meetingIntro: true
         }
     );
     response.todayMeeting = todayMeetingList;
-
+    
     /**===================================================================
     * 추천 모임 조회
     ===================================================================*/
@@ -130,6 +156,7 @@ async function getSelectMainView(req, res) {
 
         if (arrRecommendRandomMeetingId.indexOf(arrMeetingList[randomNumber]) === -1){
             arrRecommendRandomMeetingId.push(arrMeetingList[randomNumber]);
+            if(arrMeetingList.length === arrRecommendRandomMeetingId.length) break;
         }
         else
             i--;
@@ -141,6 +168,7 @@ async function getSelectMainView(req, res) {
             _id: false,
             meetingId: true,
             meetingName: true,
+            meetingImage: true,
             meetingCategory: true,
             meetingLocation: true,
             meetingIntro: true
@@ -158,6 +186,7 @@ async function getSelectMainView(req, res) {
             _id: false,
             meetingId: true,
             meetingName: true,
+            meetingImage: true,
             meetingCategory: true,
             meetingLocation: true,
             meetingIntro: true
@@ -168,13 +197,14 @@ async function getSelectMainView(req, res) {
         }
     ).limit(5);
     response.newMeeting = newMettingList;
-
+    
+    console.log(response);
     res.status(200).json({
         result: true,
         message: '메인 페이지 조회 성공',
         data: {
             isMeetingMaster,
-            response,
+            response
         }
     });
 }
