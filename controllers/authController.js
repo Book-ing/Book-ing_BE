@@ -18,7 +18,7 @@ const USER = require('../schemas/user');
  *      3-2. DB 내 가입이력이 없는 경우
  *          - 카카오사용자정보로 book-ing DB에 사용자정보 생성
  *          - 생성된 사용자정보로 JWT 토큰 발행 (accessToken, refreshToken)
- *  4. 발급된 JWT 토큰을 res 내 쿠키정보에 추가 후 클라이언트 페이지로 리다이렉트
+ *  4. 발급된 JWT 토큰을 결과 값과 함께 JSON으로 내려준다.
  * FIXME:
  *  1. USER 스키마 내 refreshToken 도큐먼트 required 해지처리 (호진님께 2022. 04. 30. 요청 완)
  */
@@ -100,7 +100,7 @@ async function getKakaoLoginCallback(req, res) {
             getKakaoUserInfo.data.kakao_account.profile.profile_image_url;
         await USER.updateOne(
             { kakaoUserId: getKakaoUserInfo.data.id },
-            { $set: { username, profileImage, bookingRefreshToken } }
+            { $set: { username, profileImage, refreshToken: bookingRefreshToken } }
         );
     } else {
         //가입이력이 없는 경우
@@ -129,28 +129,14 @@ async function getKakaoLoginCallback(req, res) {
         });
     }
 
-    // res.cookie('accessToken', bookingAccessToken, {
-    //     sameSite: 'None',
-    //     secure: true,
-    //     httpOnly: true,
-    // });
-    // res.cookie('refreshToken', bookingRefreshToken, {
-    //     sameSite: 'None',
-    //     secure: true,
-    //     httpOnly: true,
-    // });
-
     res.json({ 
         result: true,
-        message: '성공',
+        message: '카카오 로그인 성공',
         data: { 
             access_token: bookingAccessToken,
-            refreshToken: bookingRefreshToken 
+            refreshToken: bookingRefreshToken
         }
     });
-    // res.redirect('http://localhost:3000');
-    // 실제 운영서버에 올라갈 때는 URL을 변경해야한다. *URL 미정
-    // res.redirect('/');
 }
 
 module.exports = { getKakaoLoginCallback }; 
