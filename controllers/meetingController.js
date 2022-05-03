@@ -199,9 +199,53 @@ async function inoutMeeting(req, res) {
     }
 }
 
+// TODO 스터디 장을 내보내면 현재 진행 중인 스터디나 진행됐던 스터디는 어떻게 할지?
+async function kickMeetingMember(req, res) {
+    const { targetId, meetingId } = req.body; // targetId: 강퇴를 당하는 사람의 Id (밴 당하는 유저)
+    // FIXME res.locals가 작업되면 바꾼다.
+    const { userId } = req.query; // 강퇴를 하는 사람의 Id (모임 마스터)
+
+    const meeting = await MEETING.findOne({ meetingId });
+    // FIXME res.locals가 작업되면 넘어오는 값이 int인지 아닌지 확인 후 수정
+    // 모임 마스터만 내보내기가 가능하다.
+    if (parseInt(userId) !== meeting.meetingMasterId) {
+        return res.status(400).json({
+            result: false,
+            message: '모임 마스터만 내보내기가 가능합니다.',
+        });
+    }
+
+    // 내보내려는 유저가 모임 마스터면 내보내기가 불가능하다.
+    if (targetId === meeting.meetingMasterId) {
+        return res.status(400).json({
+            result: false,
+            message: '모임 마스터는 내보내기가 불가능합니다.',
+        });
+    }
+
+    const kickMeetingMember = await MEETINGMEMBER.deleteOne({
+        meetingId,
+        meetingMemberId: targetId,
+        isMeetingMaster: false,
+    });
+    if (kickMeetingMember.deletedCount) {
+        await BANNEDUSER.create({
+            meetingId,
+            userId: targetId,
+            regDate: lib.getDate(),
+        });
+    }
+
+    res.status(201).json({
+        result: true,
+        message: '모임 유저 내보내기 성공',
+    });
+}
+
 module.exports = {
     createMeeting,
     getMeetingInfo,
     getMeetingUsers,
     inoutMeeting,
+    kickMeetingMember,
 };
