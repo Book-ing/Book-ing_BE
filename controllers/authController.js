@@ -133,7 +133,7 @@ async function getKakaoLoginCallback(req, res) {
         result: true,
         message: '카카오 로그인 성공',
         data: { 
-            access_token: bookingAccessToken,
+            accessToken: bookingAccessToken,
             refreshToken: bookingRefreshToken
         }
     });
