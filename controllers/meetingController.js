@@ -167,8 +167,10 @@ async function inoutMeeting(req, res) {
         meetingMemberId: userId,
         meetingId,
     });
-    // FIXME!!!  null 값일시 오류!!! 무조건 수정 필요!!!
-    if (existMeetingMember.isMeetingMaster) {
+
+    const meeting = await MEETING.findOne({ meetingId });
+    // FIXME res.locals가 작업되면 넘어오는 값이 int인지 아닌지 확인 후 수정
+    if (parseInt(userId) === meeting.meetingMasterId) {
         return res.status(400).json({
             result: false,
             message: '모임 마스터는 모임 참여, 탈퇴가 불가능합니다.',
@@ -194,6 +196,26 @@ async function inoutMeeting(req, res) {
             message: '모임 가입 성공',
         });
     } else {
+        const memberStudys = await STUDYMEMBER.find({ studyMemberId: userId });
+        const joinedStudyId = memberStudys.map((result) => result.studyId);
+        const joinedStudys = await STUDY.find({ studyId: joinedStudyId });
+        for (let i = 0; i < joinedStudys.length; i++) {
+            if ( // 스터디가 완료되지 않고 강퇴당하는 유저가 스터디 마스터면 스터디와 스터디원 전부를 스터디에서 삭제시킨다.
+                lib.getDate() < joinedStudys[i].studyDateTime &&
+                userId === joinedStudys[i].studyMasterId
+            ) {
+                await STUDY.deleteOne({ studyId: joinedStudys[i].studyId });
+                await STUDYMEMBER.deleteMany({ studyId: joinedStudys[i].studyId });
+            } else if ( // 스터디가 완료되지 않고 강퇴당하는 유저가 스터디 마스터가 아니면 해당 스터디에서 강퇴유저를 제외시킨다.
+                lib.getDate() < joinedStudys[i].studyDateTime &&
+                userId !== joinedStudys[i].studyMasterId
+            ) {
+                await STUDYMEMBER.deleteOne({
+                    studyId: joinedStudys[i].studyId,
+                    studyMemberId: userId,
+                });
+            }
+        }
         await MEETINGMEMBER.deleteOne({ meetingMemberId: userId, meetingId });
         res.status(201).json({
             result: true,
