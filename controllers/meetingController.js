@@ -1,6 +1,8 @@
+const USER = require('../schemas/user');
 const MEETING = require('../schemas/meeting');
 const MEETINGMEMBER = require('../schemas/meetingMember');
-const USER = require('../schemas/user');
+const STUDY = require('../schemas/studys');
+const STUDYMEMBER = require('../schemas/studyMembers');
 const BANNEDUSER = require('../schemas/bannedUsers');
 const lib = require('../lib/util');
 
@@ -165,6 +167,7 @@ async function inoutMeeting(req, res) {
         meetingMemberId: userId,
         meetingId,
     });
+    // FIXME!!!  null 값일시 오류!!! 무조건 수정 필요!!!
     if (existMeetingMember.isMeetingMaster) {
         return res.status(400).json({
             result: false,
@@ -199,7 +202,9 @@ async function inoutMeeting(req, res) {
     }
 }
 
-// TODO 스터디 장을 내보내면 현재 진행 중인 스터디나 진행됐던 스터디는 어떻게 할지?
+/** TODO 1. 스터디 장을 내보내면 현재 진행 중인 스터디만 삭제하고 진행됐던 스터디는 그대로 둔다.
+ *       2. 일반 유저를 내보내면 현재 진행 중인 스터디의 참가된 것만 내보내고 진행됐던 스터디에서는 그대로 둔다.
+ */
 async function kickMeetingMember(req, res) {
     const { targetId, meetingId } = req.body; // targetId: 강퇴를 당하는 사람의 Id (밴 당하는 유저)
     // FIXME res.locals가 작업되면 바꾼다.
@@ -228,7 +233,28 @@ async function kickMeetingMember(req, res) {
         meetingMemberId: targetId,
         isMeetingMaster: false,
     });
+
     if (kickMeetingMember.deletedCount) {
+        const memberStudys = await STUDYMEMBER.find({ studyMemberId: targetId });
+        const joinedStudyId = memberStudys.map((result) => result.studyId);
+        const joinedStudys = await STUDY.find({ studyId: joinedStudyId });
+        for (let i = 0; i < joinedStudys.length; i++) {
+            if ( // 스터디가 완료되지 않고 강퇴당하는 유저가 스터디 마스터면 스터디와 스터디원 전부를 스터디에서 삭제시킨다.
+                lib.getDate() < joinedStudys[i].studyDateTime &&
+                targetId === joinedStudys[i].studyMasterId
+            ) {
+                await STUDY.deleteOne({ studyId: joinedStudys[i].studyId });
+                await STUDYMEMBER.deleteMany({ studyId: joinedStudys[i].studyId });
+            } else if ( // 스터디가 완료되지 않고 강퇴당하는 유저가 스터디 마스터가 아니면 해당 스터디에서 강퇴유저를 제외시킨다.
+                lib.getDate() < joinedStudys[i].studyDateTime &&
+                targetId !== joinedStudys[i].studyMasterId
+            ) {
+                await STUDYMEMBER.deleteOne({
+                    studyId: joinedStudys[i].studyId,
+                    studyMemberId: targetId,
+                });
+            }
+        }
         await BANNEDUSER.create({
             meetingId,
             userId: targetId,
