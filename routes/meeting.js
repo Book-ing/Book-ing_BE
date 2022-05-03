@@ -13,5 +13,6 @@ router.post(
 router.get('/:meetingId/study', studyController.getStudyLists);
 router.get('/:meetingId', meetingController.getMeetingInfo);
 router.get('/:meetingId/users', meetingController.getMeetingUsers);
+router.post('/inout', meetingController.inoutMeeting);
 
 module.exports = router;

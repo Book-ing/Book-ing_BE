@@ -1,6 +1,7 @@
 const MEETING = require('../schemas/meeting');
 const MEETINGMEMBER = require('../schemas/meetingMember');
 const USER = require('../schemas/user');
+const BANNEDUSER = require('../schemas/bannedUsers');
 const lib = require('../lib/util');
 
 /*
@@ -22,7 +23,9 @@ async function createMeeting(req, res) {
 
     const existMaster = await MEETING.find({ meetingMasterId: userId });
     if (existMaster.length) {
-        return res.status(400).json({ result: false, message: '이미 생성한 모임이 있습니다.' });
+        return res
+            .status(400)
+            .json({ result: false, message: '이미 생성한 모임이 있습니다.' });
     }
 
     let meetingImage = '';
@@ -153,8 +156,52 @@ async function getMeetingUsers(req, res) {
     });
 }
 
+async function inoutMeeting(req, res) {
+    const { meetingId } = req.body;
+    // FIXME res.locals가 작업되면 바꾼다.
+    const { userId } = req.query;
+
+    const existMeetingMember = await MEETINGMEMBER.findOne({
+        meetingMemberId: userId,
+        meetingId,
+    });
+    if (existMeetingMember.isMeetingMaster) {
+        return res.status(400).json({
+            result: false,
+            message: '모임 마스터는 모임 참여, 탈퇴가 불가능합니다.',
+        });
+    }
+
+    const bannedMeetingUser = await BANNEDUSER.findOne({ meetingId, userId });
+    if (bannedMeetingUser) {
+        return res.status(400).json({
+            result: false,
+            message: '강퇴당한 유저는 모임 참여가 불가능합니다.',
+        });
+    }
+
+    if (!existMeetingMember) {
+        await MEETINGMEMBER.create({
+            meetingMemberId: userId,
+            meetingId,
+            regDate: lib.getDate(),
+        });
+        res.status(201).json({
+            result: true,
+            message: '모임 가입 성공',
+        });
+    } else {
+        await MEETINGMEMBER.deleteOne({ meetingMemberId: userId, meetingId });
+        res.status(201).json({
+            result: true,
+            message: '모임 탈퇴 성공',
+        });
+    }
+}
+
 module.exports = {
     createMeeting,
     getMeetingInfo,
     getMeetingUsers,
+    inoutMeeting,
 };
