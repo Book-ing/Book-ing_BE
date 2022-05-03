@@ -19,6 +19,7 @@ const BANNEDUSERS = require('../schemas/bannedUsers');
 async function getStudyLists(req, res) {
     const { meetingId } = req.params;
     const { userId } = req.query; //임시로 로그인한 유저라 판단
+    // const { userId } = res.locals
 
     /**===================================================================
   * 각 모임id별로 있는 스터디 존재 
@@ -122,7 +123,7 @@ async function getStudyLists(req, res) {
 //스터디 등록
 async function postStudy(req, res) {
 
-
+    // const { userId } = res.locals
     /**===================================================================
   * 어떤 모임안에 있는 스터디 등록하기
   ===================================================================*/
@@ -166,7 +167,6 @@ async function postStudy(req, res) {
             studyBookImg,
             studyBookTitle,
             studyBookInfo,
-            studyNote,
             regDate: getDate(),
         }).then(
             async (study) =>
@@ -179,7 +179,7 @@ async function postStudy(req, res) {
         );
 
         return res.status(201).json({
-            result: true,
+            result: 'true',
             message: '스터디 등록 성공',
         });
     } catch (err) {
@@ -266,6 +266,7 @@ async function updateStudy(req, res) {
 async function inoutStudy(req, res) {
     const { userId } = req.query;//임시 로그인 유저
     const { studyId, meetingId } = req.body;
+    // const { userId } = res.locals
 
 
     try {
@@ -355,6 +356,7 @@ async function inoutStudy(req, res) {
 async function getStudyMembers(req, res) {
     const { studyId } = req.params;
     const { userId } = req.query;//임시로 로그인한 유저로 친다.
+    // const { userId } = res.locals
 
     try {
         let studyUsers = [];
@@ -366,6 +368,7 @@ async function getStudyMembers(req, res) {
         let studyMyId;
         let studyMasterId;
         let studyMemberId;
+        let isStudyMaster;
         //현재 조회한 스터디id에 참여한 유저들
         const data = await STUDYMEMBERS.find({ studyId },);
         // console.log(`스터디 ${studyId}에 있는 스터디 멤버들`, data)
@@ -450,6 +453,7 @@ async function getStudyMembers(req, res) {
  ===================================================================*/
 async function kickUser(req, res) {
     const { userId } = req.query;//로그인한 임시유저
+    // const { userId } = res.locals
     //targetId ==강퇴시킬 유저
     const { studyId, targetId, meetingId } = req.body;
     try {
@@ -505,6 +509,7 @@ async function deleteStudy(req, res) {
     const { studyId } = req.params;
     //임시 유저
     const { userId } = req.query;
+    // const { userId } = res.locals
 
     try {
         const targetStudy = await STUDY.findOne({ studyId });
