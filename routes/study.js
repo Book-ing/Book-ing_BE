@@ -9,7 +9,7 @@ const router = express.Router();
 //api/study
 
 //스터디 
-router.post('/', authMiddleware, testauth, createStudyValidation, studyController.postStudy);
+router.post('/', authMiddleware, createStudyValidation, studyController.postStudy);
 router.put('/', authMiddleware, updateStudyValidation, studyController.updateStudy);
 router.post('/inout', authMiddleware, studyController.inoutStudy);
 router.get('/:studyId/user', studyController.getStudyMembers);
