@@ -6,19 +6,27 @@ const {
     createMeetingValidation,
     modifyMeetingValidation,
 } = require('../middlewares/validator');
+const authMiddleware = require('../middlewares/auth-middlewares');
 
 router.post(
     '/',
+    authMiddleware,
     upload.single('meetingImage'),
     createMeetingValidation,
     meetingController.createMeeting
 );
-router.get('/:meetingId/study', studyController.getStudyLists);
-router.get('/:meetingId', meetingController.getMeetingInfo);
-router.get('/:meetingId/users', meetingController.getMeetingUsers);
-router.post('/inout', meetingController.inoutMeeting);
-router.post('/kickuser', meetingController.kickMeetingMember);
-router.put('/', upload.single('meetingImage'), modifyMeetingValidation, meetingController.modifyMeeting);
-router.delete('/:meetingId', meetingController.deleteMeeting);
+router.get('/:meetingId/study', authMiddleware, studyController.getStudyLists);
+router.get('/:meetingId', authMiddleware, meetingController.getMeetingInfo);
+router.get('/:meetingId/users', authMiddleware, meetingController.getMeetingUsers);
+router.post('/inout', authMiddleware, meetingController.inoutMeeting);
+router.post('/kickuser', authMiddleware, meetingController.kickMeetingMember);
+router.put(
+    '/',
+    authMiddleware,
+    upload.single('meetingImage'),
+    modifyMeetingValidation,
+    meetingController.modifyMeeting
+);
+router.delete('/:meetingId', authMiddleware, meetingController.deleteMeeting);
 
 module.exports = router;
