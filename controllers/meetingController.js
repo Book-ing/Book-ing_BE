@@ -313,7 +313,6 @@ async function modifyMeeting(req, res) {
     const { userId } = req.query;
 
     const meeting = await MEETING.findOne({ meetingId });
-    console.log(meeting);
     // FIXME res.locals가 작업되면 넘어오는 값이 int인지 아닌지 확인 후 수정
     if (parseInt(userId) !== meeting.meetingMasterId) {
         return res.status(400).json({
@@ -356,6 +355,35 @@ async function modifyMeeting(req, res) {
     });
 }
 
+async function deleteMeeting(req, res) {
+    const { meetingId } = req.params;
+    // FIXME res.locals가 작업되면 바꾼다.
+    const { userId } = req.query;
+
+    const meeting = await MEETING.findOne({ meetingId });
+    // FIXME res.locals가 작업되면 넘어오는 값이 int인지 아닌지 확인 후 수정
+    if (parseInt(userId) !== meeting.meetingMasterId) {
+        return res.status(400).json({
+            result: false,
+            message: '모임 마스터만 모임 삭제가 가능합니다.',
+        });
+    }
+
+    await MEETING.deleteOne({ meetingId, meetingMasterId: userId });
+    await MEETINGMEMBER.deleteMany({ meetingId });
+    const studyId = await STUDY.find({ meetingId }).then((value) =>
+        value.map((result) => result.studyId)
+    );
+    await STUDYMEMBER.deleteMany({ studyId });
+    await STUDY.deleteMany({ meetingId });
+    await BANNEDUSER.deleteMany({ meetingId });
+
+    res.status(201).json({
+        result: true,
+        message: '모임 삭제 성공',
+    });
+}
+
 module.exports = {
     createMeeting,
     getMeetingInfo,
@@ -363,4 +391,5 @@ module.exports = {
     inoutMeeting,
     kickMeetingMember,
     modifyMeeting,
+    deleteMeeting,
 };
