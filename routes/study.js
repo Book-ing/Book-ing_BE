@@ -2,13 +2,14 @@ const express = require('express');
 const studyController = require('../controllers/studyController');
 const studyNoteController = require('../controllers/studyNoteController');
 const createStudyValidation = require('../middlewares/studyValidator');
+const updateStudyValidation = require('../middlewares/updateStudyValidator');
 const router = express.Router();
 
 //api/study
 
 //스터디 
 router.post('/', createStudyValidation, studyController.postStudy);
-router.put('/', studyController.updateStudy);
+router.put('/', updateStudyValidation, studyController.updateStudy);
 router.get('/:meetingId/study', studyController.getStudyLists);
 router.post('/inout', studyController.inoutStudy);
 router.get('/:studyId/user', studyController.getStudyMembers);

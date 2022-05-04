@@ -87,6 +87,21 @@ async function updateNote(req, res) {
     const { userId } = req.query;//임시 로그인 유저
     const { studyId, studyNote } = req.body;
 
+    const validStudy = await STUDY.findOne({ studyId })
+    if (!validStudy) {
+        return res.status(403).json({
+            result: 'false',
+            message: '유효하지 않은 스터디 입니다.'
+        })
+    }
+    const validUser = await USER.findOne({ userId })
+    if (!validUser) {
+        return res.status(403).json({
+            result: 'false',
+            message: '유효하지 않은 유저입니다! '
+        })
+    }
+
 
     try {
         //스터디노트를 편집할 수 있는 자
