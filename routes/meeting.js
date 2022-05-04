@@ -15,5 +15,6 @@ router.get('/:meetingId', meetingController.getMeetingInfo);
 router.get('/:meetingId/users', meetingController.getMeetingUsers);
 router.post('/inout', meetingController.inoutMeeting);
 router.post('/kickuser', meetingController.kickMeetingMember);
+router.put('/', upload.single('meetingImage'), meetingController.modifyMeeting);
 
 module.exports = router;
