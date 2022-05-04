@@ -139,4 +139,4 @@ async function getKakaoLoginCallback(req, res) {
     });
 }
 
-module.exports = { getKakaoLoginCallback };
+module.exports = { getKakaoLoginCallback }; 
