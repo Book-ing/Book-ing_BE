@@ -77,7 +77,7 @@ async function getStudyLists(req, res) {
         const validUser = await USER.findOne({ userId })
         if (!validUser) {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '유효하지 않은 유저입니다.'
             })
         }
@@ -94,7 +94,7 @@ async function getStudyLists(req, res) {
         //조회하고자 하는 모임이 존재하는 지 체크 
         if (!validMeeting) {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '존재하지 않는 모임입니다.'
             })
         }
@@ -149,7 +149,7 @@ async function getStudyLists(req, res) {
                 });
                 if (!joinedUser[0] || joinedUser[0] === null || joinedUser[0] === undefined) {
                     return res.status(400).json({
-                        result: 'false',
+                        result: false,
                         message: '존재하지 않은 유저때문에 오류가 발생했습니다. 관리자에게 문의하세요'
                     })
                 }
@@ -186,11 +186,11 @@ async function getStudyLists(req, res) {
             });
         }
 
-        return res.status(200).json({ result: 'true', studyList, });
+        return res.status(200).json({ result: true, studyList, });
     } catch (err) {
         console.log(err);
         return res.status(400).json({
-            result: 'false',
+            result: false,
             message: '스터디 목록 조회 실패!',
         });
     }
@@ -213,7 +213,7 @@ async function postStudy(req, res) {
     const validUser = await USER.findOne({ userId })
     if (!validUser) {
         return res.status(403).json({
-            result: 'false',
+            result: false,
             message: '유효하지 않은 유저입니다.'
         })
     }
@@ -285,26 +285,26 @@ async function postStudy(req, res) {
                 );
 
                 return res.status(201).json({
-                    result: 'true',
+                    result: true,
                     message: '스터디 등록 성공',
                 });
 
             } catch (err) {
                 console.log(err);
                 return res.status(400).json({
-                    result: 'false',
+                    result: false,
                     message: '스터디 등록 실패!',
                 });
             }
         } else {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '모임에 가입하지 않으셨습니다 먼저 모임에 가입해주세요!'
             })
         }
     } else {
         return res.status(403).json({
-            result: 'fasle',
+            result: fasle,
             message: '유효하지 않은 모임입니다. 다시 입력해주세요'
         })
     }
@@ -328,7 +328,7 @@ async function updateStudy(req, res) {
     const validUser = await USER.findOne({ userId })
     if (!validUser) {
         return res.status(403).json({
-            result: 'false',
+            result: false,
             message: '유효하지 않은 유저입니다.'
         })
     }
@@ -348,7 +348,7 @@ async function updateStudy(req, res) {
     const targetStudy = await STUDY.findOne({ studyId });
     if (!targetStudy) {
         return res.status(400).json({
-            result: 'false',
+            result: false,
             message: '해당 스터디가 존재하지 않습니다! 새로고침해주세요!'
         })
     }
@@ -359,7 +359,7 @@ async function updateStudy(req, res) {
     //해당 모임에 가입되어 있는 사람들 찾음 
     if (!validMeeting) {
         return res.status(403).json({
-            result: 'false',
+            result: false,
             message: '모임이 존재하지 않습니다.'
         })
     }
@@ -375,7 +375,7 @@ async function updateStudy(req, res) {
     console.log("미팅 아이디 안에 종속되어 있는 스터디 아이디들", checkStudyId)
     if (!checkStudyId.includes(Number(studyId))) {
         return res.status(403).json({
-            result: 'false',
+            result: false,
             message: '해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다!'
         })
     }
@@ -408,27 +408,27 @@ async function updateStudy(req, res) {
                     );
                     return res
                         .status(201)
-                        .json({ result: 'true', message: '스터디 정보 수정 완료!' });
+                        .json({ result: true, message: '스터디 정보 수정 완료!' });
                 } catch (err) {
                     console.log(err);
                     res.status(400).json({
-                        result: 'false',
+                        result: false,
                         message: '스터디를 수정할 수 없습니다!',
                     });
                 }
 
             } else {
-                return res.status(403).json({ result: 'false', message: '스터디 정보 수정은 스터디장 또는 모임장만 가능합니다.' })
+                return res.status(403).json({ result: false, message: '스터디 정보 수정은 스터디장 또는 모임장만 가능합니다.' })
             }
         } else {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '존재하지 않은 스터디에 접근하려고 합니다.'
             })
         }
     } else {
         res.status(403).json({
-            result: 'fasle',
+            result: false,
             message: '해당 모임에 가입되어 있지 않습니다! 모임에 먼저 가입하세요!'
         })
     }
@@ -454,7 +454,7 @@ async function inoutStudy(req, res) {
         const validMeeting = await MEETING.findOne({ meetingId })
         if (!validMeeting) {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '존재하지 않은 모임입니다. 다시 접근해주세요'
             })
         }
@@ -476,7 +476,7 @@ async function inoutStudy(req, res) {
             const validUser = await USER.findOne({ userId })
             if (!validUser) {
                 return res.status(403).json({
-                    result: 'false',
+                    result: false,
                     message: '존재하지 않은 유저입니다.'
                 })
             }
@@ -484,7 +484,7 @@ async function inoutStudy(req, res) {
             if (bannedUser) {
                 if (bannedUser.userId === Number(userId)) {
                     return res.status(403).json({
-                        result: 'false',
+                        result: false,
                         message: '강퇴 당하셨기 때문에 해당 스터디에 참가하실 수 없습니다.'
                     })
                 }
@@ -493,7 +493,7 @@ async function inoutStudy(req, res) {
             let study = await STUDY.findOne({ studyId });
             if (!study) {
                 return res.status(403).json({
-                    result: 'false',
+                    result: false,
                     message: '존재하지 않은 스터디 입니다! '
                 })
             }
@@ -507,21 +507,21 @@ async function inoutStudy(req, res) {
                 if (people[i].studyMemberId === Number(userId)) {
                     if (study.studyMasterId === Number(userId)) {
                         return res.status(403).json({
-                            result: 'false',
+                            result: false,
                             message: '스터디장은 나갈 수 없습니다.',
                         });
                     }
 
                     await STUDYMEMBERS.findOneAndDelete({ studyId: studyId, studyMemberId: userId },)
                     return res.status(201).json({
-                        result: 'true',
+                        result: true,
                         message: '스터디 취소 성공!',
                     });
                 }
             }
             if (study.studyLimitCnt === people.length || study.studyLimitCnt < people.length) {
                 return res.status(403).json({
-                    resutl: 'false',
+                    resutl: false,
                     message: '정원 초과라 해당 스터디에 참가할 수 없습니다!'
                 })
             }
@@ -538,19 +538,19 @@ async function inoutStudy(req, res) {
             });
 
             return res.status(201).json({
-                result: 'true',
+                result: true,
                 message: '스터디 참가 성공!',
             });
         } else {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '해당 모임에 먼저 가입하시고 스터디에 참가하세요!'
             })
         }
     } catch (err) {
         console.log(err);
         return res.status(403).json({
-            result: 'false',
+            result: true,
             message: '스터디 참가 실패!',
         });
     }
@@ -573,14 +573,14 @@ async function getStudyMembers(req, res) {
     const validStudy = await STUDY.findOne({ studyId })
     if (!validStudy) {
         return res.status(403).json({
-            result: 'false',
+            result: false,
             message: '유효하지 않은 스터디 입니다.'
         })
     }
     const validUser = await USER.findOne({ userId })
     if (!validUser) {
         return res.status(403).json({
-            result: 'false',
+            result: false,
             message: '유효하지 않은 유저입니다! '
         })
     }
@@ -658,7 +658,7 @@ async function getStudyMembers(req, res) {
         }
 
         return res.status(200).json({
-            result: "true",
+            result: true,
             myProfile,
             studyMasterProfile,
             studyUsers
@@ -667,7 +667,7 @@ async function getStudyMembers(req, res) {
     } catch (err) {
         console.log(err)
         return res.status(400).json({
-            result: 'false',
+            result: false,
             message: '스터디 멤버들 조회 실패!'
         })
     }
@@ -693,21 +693,21 @@ async function kickUser(req, res) {
         const validStudy = await STUDY.findOne({ studyId })
         if (!validStudy) {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '유효하지 않은 스터디 입니다.'
             })
         }
         const validUser = await USER.findOne({ userId })
         if (!validUser) {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '유효하지 않은 유저입니다! '
             })
         }
         let validMeeting = await MEETING.findOne({ meetingId })
         if (!validMeeting) {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '유효하지 않은 모임입니다.'
             })
         }
@@ -737,32 +737,32 @@ async function kickUser(req, res) {
                     // 강퇴할 스터디 아이디에서 강퇴할 유저를 지워버린다.
                     await STUDYMEMBERS.findOneAndDelete({ studyId: targetStudy.studyId, studyMemberId: targetId })
                     return res.status(201).json({
-                        result: 'true',
+                        result: true,
                         message: '유저 강퇴'
                     })
                 }
                 else {
                     return res.status(403).json({
-                        result: 'false',
+                        result: false,
                         message: '유저 강퇴는 스터디 장 또는 모임장만 가능합니다.'
                     })
                 }
 
             }
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '입력하신 스터디가 존재하지 않습니다.'
             })
         } else {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '모임에 가입되지 않았습니다. 먼저 모임에 가입하세요!'
             })
         }
     } catch (err) {
         console.log(err)
         return res.status(400).json({
-            result: 'false',
+            result: false,
             message: '유저 강퇴 실패!'
         })
     }
@@ -787,21 +787,21 @@ async function deleteStudy(req, res) {
         const targetStudy = await STUDY.findOne({ studyId });
         if (!targetStudy) {
             return res.status(400).json({
-                result: 'false',
+                result: false,
                 message: '해당 스터디가 존재하지 않습니다! 새로고침해주세요!'
             })
         }
         const validMeeting = await MEETING.findOne({ meetingId });
         if (!validMeeting) {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '해당 모임이 존재하지 않습니다.'
             })
         }
         const validUser = await USER.findOne({ userId })
         if (!validUser) {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '유효하지 않은 유저입니다! '
             })
         }
@@ -814,7 +814,7 @@ async function deleteStudy(req, res) {
         console.log('삭제하려고 하는 스터디들의 아이디', deleteStudyId)
         if (!deleteStudyId.includes(Number(studyId))) {
             return res.status(403).json({
-                result: 'fasle',
+                result: fasle,
                 message: '삭제하고자 하는 스터디는 현재 모임에 없습니다! '
             })
         }
@@ -840,25 +840,25 @@ async function deleteStudy(req, res) {
                     await STUDYMEMBERS.findOneAndDelete({ studyId })
                 }
                 return res.status(200).json({
-                    result: 'true',
+                    result: true,
                     message: '스터디 삭제 성공!'
                 })
             } else {
                 return res.status(400).json({
-                    result: 'fasle',
+                    result: false,
                     message: '스터디장 또는 모임장만 삭제 가능합니다!'
                 })
             }
         } else {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '해당 모임에 먼저 가입하세요!'
             })
         }
     } catch (err) {
         console.log(err);
         return res.status(400).json({
-            result: 'false',
+            result: false,
             message: '스터디 삭제 실패!'
         })
     }

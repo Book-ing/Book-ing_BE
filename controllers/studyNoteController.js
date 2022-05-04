@@ -20,7 +20,7 @@ async function postNote(req, res) {
         let validStudy = await STUDY.findOne({ studyId });
         if (!validStudy) {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '해당 스터디가 존재하지 않습니다! '
             })
         }
@@ -28,7 +28,7 @@ async function postNote(req, res) {
         const validUser = await USER.findOne({ userId })
         if (!validUser) {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '유효하지 않은 유저입니다! '
             })
         }
@@ -63,17 +63,17 @@ async function postNote(req, res) {
                 { studyId },
                 { $set: { studyNote } }
             )
-            return res.status(201).json({ result: 'true', message: '스터디 노트 작성 완료!' })
+            return res.status(201).json({ result: true, message: '스터디 노트 작성 완료!' })
         } else {
             return res.status(400).json({
-                result: 'false',
+                result: false,
                 message: '스터디 노트 작성은 발제자와 모임장만 가능합니다.'
             })
         }
     } catch (err) {
         console.log(err)
         return res.status(400).json({
-            result: 'true',
+            result: true,
             message: '스터디 노트 작성 실패!!'
         })
     }
@@ -95,7 +95,7 @@ async function deleteNote(req, res) {
         const validStudy = await STUDY.findOne({ studyId });
         if (!validStudy) {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '해당 스터디가 존재하지 않습니다! '
             })
         }
@@ -103,7 +103,7 @@ async function deleteNote(req, res) {
         const validUser = await USER.findOne({ userId })
         if (!validUser) {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '유효하지 않은 유저입니다! '
             })
         }
@@ -129,17 +129,17 @@ async function deleteNote(req, res) {
                 { studyId },
                 { $set: { studyNote: "" } }
             )
-            return res.status(201).json({ result: 'true', message: '스터디 삭제 작성 완료!' })
+            return res.status(201).json({ result: true, message: '스터디 삭제 작성 완료!' })
         } else {
             return res.status(400).json({
-                result: 'false',
+                result: false,
                 message: '스터디 노트 삭제는 발제자와 모임장만 가능합니다.'
             })
         }
     } catch (err) {
         console.log(err)
         return res.status(400).json({
-            result: 'true',
+            result: true,
             message: '스터디 노트 삭제 실패!!'
         })
     }
@@ -161,14 +161,14 @@ async function updateNote(req, res) {
         const validStudy = await STUDY.findOne({ studyId })
         if (!validStudy) {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '유효하지 않은 스터디 입니다.'
             })
         }
         const validUser = await USER.findOne({ userId })
         if (!validUser) {
             return res.status(403).json({
-                result: 'false',
+                result: false,
                 message: '유효하지 않은 유저입니다! '
             })
         }
@@ -194,17 +194,17 @@ async function updateNote(req, res) {
                 { studyId },
                 { $set: { studyNote } }
             )
-            return res.status(201).json({ result: 'true', message: '스터디 수정 작성 완료!' })
+            return res.status(201).json({ result: true, message: '스터디 수정 작성 완료!' })
         } else {
             return res.status(400).json({
-                result: 'false',
+                result: false,
                 message: '스터디 노트 수정은 발제자와 모임장만 가능합니다.'
             })
         }
     } catch (err) {
         console.log(err)
         return res.status(400).json({
-            result: 'true',
+            result: true,
             message: '스터디 노트 수정 실패!!'
         })
     }
