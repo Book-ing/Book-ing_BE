@@ -144,9 +144,12 @@ async function getMeetingUsers(req, res) {
             _id: false,
         }
     );
-    const meetingMasterProfile = await MEETING.findOne({ meetingId }).then(
-        async (result) => await USER.findOne({ userId: result.meetingMasterId })
-    );
+    // 모임 정보
+    const meetingInfo = await MEETING.findOne({ meetingId });
+    // 모임 마스터의 프로필 정보
+    const meetingMasterProfile = await USER.findOne({
+        userId: meetingInfo.meetingMasterId,
+    });
 
     const meetingUsers = await MEETINGMEMBER.find({ meetingId });
     const meetingUsersId = meetingUsers.map((result) => result.meetingMemberId);
@@ -161,17 +164,58 @@ async function getMeetingUsers(req, res) {
         }
     );
 
+    let isMeetingMaster = false;
+    let isMeetingJoined = false;
+    const existMeetingMember = await MEETINGMEMBER.findOne({
+        meetingMemberId: userId,
+    });
+    if (existMeetingMember) isMeetingJoined = true;
+    if (userId === meetingInfo.meetingMasterId) {
+        isMeetingMaster = true;
+    }
+
+    const meetingUsersProfileArr = [];
+    for (let i = 0; i < meetingUsersProfile.length; i++) {
+        const userId = meetingUsersProfile[i].userId;
+        const username = meetingUsersProfile[i].username;
+        const profileImage = meetingUsersProfile[i].profileImage;
+        const statusMessage = meetingUsersProfile[i].statusMessage;
+
+        isMeetingMaster = false;
+        if (userId === meetingInfo.meetingMasterId) {
+            isMeetingMaster = true;
+        }
+        meetingUsersProfileArr.push({
+            userId,
+            username,
+            profileImage,
+            statusMessage,
+            isMeetingJoined: true,
+            isMeetingMaster,
+        });
+    }
+
     res.status(200).json({
         result: true,
         message: '모임 가입 유저 조회 성공',
         data: {
-            myProfile,
+            myProfile: {
+                userId: myProfile.userId,
+                username: myProfile.username,
+                profileImage: myProfile.profileImage,
+                statusMessage: myProfile.statusMessage,
+                isMeetingJoined,
+                isMeetingMaster,
+            },
             meetingMasterProfile: {
                 userId: meetingMasterProfile.userId,
                 username: meetingMasterProfile.username,
                 profileImage: meetingMasterProfile.profileImage,
+                statusMessage: meetingMasterProfile.statusMessage,
+                isMeetingJoined: true,
+                isMeetingMaster: true,
             },
-            meetingUsers: meetingUsersProfile,
+            meetingUsers: meetingUsersProfileArr,
         },
     });
 }
