@@ -100,7 +100,13 @@ async function getKakaoLoginCallback(req, res) {
             getKakaoUserInfo.data.kakao_account.profile.profile_image_url;
         await USER.updateOne(
             { kakaoUserId: getKakaoUserInfo.data.id },
-            { $set: { username, profileImage, refreshToken: bookingRefreshToken } }
+            {
+                $set: {
+                    username,
+                    profileImage,
+                    refreshToken: bookingRefreshToken,
+                },
+            }
         );
     } else {
         //가입이력이 없는 경우
@@ -130,14 +136,14 @@ async function getKakaoLoginCallback(req, res) {
         });
     }
 
-    res.json({ 
+    res.json({
         result: true,
         message: '카카오 로그인 성공',
-        data: { 
+        data: {
             accessToken: bookingAccessToken,
-            refreshToken: bookingRefreshToken
-        }
+            refreshToken: bookingRefreshToken,
+        },
     });
 }
 
-module.exports = { getKakaoLoginCallback }; 
+module.exports = { getKakaoLoginCallback };

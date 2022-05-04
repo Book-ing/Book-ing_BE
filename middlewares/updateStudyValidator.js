@@ -19,7 +19,9 @@ const updateStudyValidation = [
         .withMessage('수정할 때도 스터디 제목은 필수 입력값입니다')
         .isLength({ max: 80 })
         .withMessage('스터디 이름은 80자 이상 입력할 수 없습니다.'),
-    body('studyDateTime').notEmpty().withMessage('스터디 일시도 필수 입력값입니다'),
+    body('studyDateTime')
+        .notEmpty()
+        .withMessage('스터디 일시도 필수 입력값입니다'),
     body('studyAddr').notEmpty().withMessage('주소도 필수 입력값입니다'),
     body('studyNotice')
         .isLength({ max: 600 })

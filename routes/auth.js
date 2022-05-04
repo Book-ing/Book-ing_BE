@@ -6,7 +6,9 @@ const authController = require('../controllers/authController');
 
 router.get('/kakao', passport.authenticate('kakao'));
 router.get('/kakao/callback', authController.getKakaoLoginCallback);
-router.get('/logincheck', authMiddleware, (req, res) => { res.json({ result: true, message: '로그인 정상' }) });
+router.get('/logincheck', authMiddleware, (req, res) => {
+    res.json({ result: true, message: '로그인 정상' });
+});
 // router.get('/check', checkTokens);
 
 module.exports = router;

@@ -23,7 +23,7 @@ const passportConfig = require('./passport/kakaoStrategy');
 // 	credentials: true,
 // };
 
-app.use(cors({origin : '*'}));
+app.use(cors({ origin: '*' }));
 app.use(morgan('dev'));
 connect();
 
