@@ -69,11 +69,13 @@ async function getMeetingInfo(req, res) {
         userId: meetingInfo.meetingMasterId,
     });
     // 모임에 가입된 유저들
-    const meetingUsers = await MEETINGMEMBER.find({ meetingId });
+    const meetingUserList = await MEETINGMEMBER.find({ meetingId });
     // 모임에 가입된 유저들 고유 id
-    const meetingUsersId = meetingUsers.map((result) => result.meetingMemberId);
+    const meetingUsersId = meetingUserList.map(
+        (result) => result.meetingMemberId
+    );
     // 모임에 가입된 유저들 정보
-    let meetingUsersProfile = await USER.find(
+    const meetingUsersProfile = await USER.find(
         { userId: meetingUsersId },
         {
             userId: true,
@@ -83,12 +85,26 @@ async function getMeetingInfo(req, res) {
             _id: false,
         }
     ).limit(4);
-    for (let i = 0; i < meetingUsersProfile.length; i++) {
-        meetingUsersProfile[i].isMaster = true;
-        console.log(meetingUsersProfile[i]);
-    }
 
-    // TODO  isMeetingMaster, isMeetingJoined 추가
+    const meetingUsersProfileArr = [];
+    for (let i = 0; i < meetingUsersProfile.length; i++) {
+        const userId = meetingUsersProfile[i].userId;
+        const username = meetingUsersProfile[i].username;
+        const profileImage = meetingUsersProfile[i].profileImage;
+        const statusMessage = meetingUsersProfile[i].statusMessage;
+
+        let isMeetingMaster = false;
+        if (userId === meetingInfo.meetingMasterId) {
+            isMeetingMaster = true;
+        }
+        meetingUsersProfileArr.push({
+            userId,
+            username,
+            profileImage,
+            statusMessage,
+            isMeetingMaster,
+        });
+    }
     res.status(200).json({
         result: true,
         message: '모임 페이지 모임정보 조회 성공',
@@ -99,15 +115,16 @@ async function getMeetingInfo(req, res) {
             meetingLocation: meetingInfo.meetingLocation,
             meetingImage: meetingInfo.meetingImage,
             meetingIntro: meetingInfo.meetingIntro,
-            meetingUserCnt: meetingUsers.length,
+            meetingUserCnt: meetingUserList.length,
             meetingLimitCnt: meetingInfo.meetingLimitCnt,
             meetingMasterProfile: {
                 userId: meetingMasterProfile.userId,
                 nickname: meetingMasterProfile.username,
                 profileImage: meetingMasterProfile.profileImage,
                 statusMessage: meetingMasterProfile.statusMessage,
+                isMeetingMaster: true,
             },
-            together: meetingUsersProfile,
+            together: meetingUsersProfileArr,
         },
     });
 }
@@ -236,9 +253,6 @@ async function inoutMeeting(req, res) {
     }
 }
 
-/** TODO 1. 스터디 장을 내보내면 현재 진행 중인 스터디만 삭제하고 진행됐던 스터디는 그대로 둔다.
- *       2. 일반 유저를 내보내면 현재 진행 중인 스터디의 참가된 것만 내보내고 진행됐던 스터디에서는 그대로 둔다.
- */
 async function kickMeetingMember(req, res) {
     const { targetId, meetingId } = req.body; // targetId: 강퇴를 당하는 사람의 Id (밴 당하는 유저)
     // FIXME res.locals가 작업되면 바꾼다.
