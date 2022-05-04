@@ -66,7 +66,8 @@ async function getMeetingInfo(req, res) {
 
     let isMeetingJoined = false;
     const existMeetingMember = await MEETINGMEMBER.findOne({
-        meetingMemberId: userId, meetingId
+        meetingMemberId: userId,
+        meetingId,
     });
     if (existMeetingMember) isMeetingJoined = true;
 
@@ -177,6 +178,7 @@ async function getMeetingUsers(req, res) {
     let isMeetingJoined = false;
     const existMeetingMember = await MEETINGMEMBER.findOne({
         meetingMemberId: userId,
+        meetingId,
     });
     if (existMeetingMember) isMeetingJoined = true;
     if (userId === meetingInfo.meetingMasterId) {
