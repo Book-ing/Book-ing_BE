@@ -187,6 +187,13 @@ async function inoutMeeting(req, res) {
     }
 
     if (!existMeetingMember) {
+        const meetingMember = await MEETINGMEMBER.find({ meetingId });
+        if (meetingMember.length >= meeting.meetingLimitCnt) {
+            return res.status(400).json({
+                result: false,
+                message: '모임 제한 인원 수가 찼습니다.',
+            });
+        }
         await MEETINGMEMBER.create({
             meetingMemberId: userId,
             meetingId,
@@ -301,6 +308,7 @@ async function kickMeetingMember(req, res) {
     });
 }
 
+// TODO 이미지 업데이트 시 기존 사진 삭제하는 로직 추가해야 함
 async function modifyMeeting(req, res) {
     const {
         meetingId,
