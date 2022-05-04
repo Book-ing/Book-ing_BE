@@ -17,7 +17,11 @@ router.post(
 );
 router.get('/:meetingId/study', authMiddleware, studyController.getStudyLists);
 router.get('/:meetingId', authMiddleware, meetingController.getMeetingInfo);
-router.get('/:meetingId/users', authMiddleware, meetingController.getMeetingUsers);
+router.get(
+    '/:meetingId/users',
+    authMiddleware,
+    meetingController.getMeetingUsers
+);
 router.post('/inout', authMiddleware, meetingController.inoutMeeting);
 router.post('/kickuser', authMiddleware, meetingController.kickMeetingMember);
 router.put(

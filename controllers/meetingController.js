@@ -62,14 +62,16 @@ async function createMeeting(req, res) {
 
 async function getMeetingInfo(req, res) {
     const { meetingId } = req.params;
-    const { userId } = res.locals.user;
-
     let isMeetingJoined = false;
-    const existMeetingMember = await MEETINGMEMBER.findOne({
-        meetingMemberId: userId,
-        meetingId,
-    });
-    if (existMeetingMember) isMeetingJoined = true;
+
+    if (res.locals.user) {
+        const { userId } = res.locals.user;
+        const existMeetingMember = await MEETINGMEMBER.findOne({
+            meetingMemberId: userId,
+            meetingId,
+        });
+        if (existMeetingMember) isMeetingJoined = true;
+    }
 
     // 모임 정보
     const meetingInfo = await MEETING.findOne({ meetingId });
