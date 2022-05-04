@@ -111,6 +111,7 @@ async function getKakaoLoginCallback(req, res) {
             username: getKakaoUserInfo.data.kakao_account.profile.nickname,
             profileImage:
                 getKakaoUserInfo.data.kakao_account.profile.profile_image_url,
+            statusMessage: '', // 상태메시지는 빈 값으로 입력시킨다.
             refreshToken: 'temp', // FIXME: 사용자가 생성될 당시에는 refresh token이 존재하지 않기 때문에 null 값을 허용해야한다. (호진님께 요청함)
             regDate: lib.getDate(),
         });
