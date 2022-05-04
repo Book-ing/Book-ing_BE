@@ -7,7 +7,7 @@ const error = (req, res, next) => {
         return next();
     }
     console.log(errors.array()[0].msg);
-    return res.json({ result: 'fail', errorMessage: errors.array()[0].msg });
+    return res.json({ result: false, message: errors.array()[0].msg });
 };
 
 const createMeetingValidation = [
