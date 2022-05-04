@@ -61,8 +61,8 @@ const MEETINGMEMBERS = require('../schemas/meetingMember');
  */
 async function getStudyLists(req, res) {
     const { meetingId } = req.params;
-    // const { userId } = res.locals.user
-    const { userId } = req.query; //임시로 로그인한 유저라 판단
+    const { userId } = req.query;
+
 
 
     /**===================================================================
@@ -72,8 +72,7 @@ async function getStudyLists(req, res) {
     try {
         //해당 모임id 에 있는 전체 스터디 목록 찾기
 
-        //유저가 유효한 유저인지 체크
-
+        //유저가 유효한 유저인지 체크               
         const validUser = await USER.findOne({ userId })
         if (!validUser) {
             return res.status(403).json({
@@ -96,7 +95,7 @@ async function getStudyLists(req, res) {
         const data = await STUDY.find({ meetingId });
         // data.sort((a, b) => b.regDate - a.regDate);
         let studyList = [];
-        let studyLists = [];
+
 
         //해당 모임에 존재하는 전체 스터디들의 데이터를 가지고 온다.
         //한 번 돌 때 하나의 스터디 이다.
