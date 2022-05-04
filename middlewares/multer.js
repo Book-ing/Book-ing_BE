@@ -57,4 +57,17 @@ const upload = multer({
     fileFilter: fileFilter,
 });
 
-module.exports = upload;
+const deleteProfile = (url) => {
+    if (url === 'https://img.lovepik.com/element/40135/2302.png_300.png')
+        return;
+    const filename = url.split('/')[3];
+    s3.deleteObject(
+        {
+            Bucket: process.env.AWS_S3_BUCKET,
+            Key: filename,
+        },
+        function (err, data) {}
+    );
+};
+
+module.exports = { upload, deleteProfile };
