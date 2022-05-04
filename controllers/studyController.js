@@ -5,7 +5,6 @@ const { getDate } = require('../lib/util');
 const MEETING = require('../schemas/meeting');
 const BANNEDUSERS = require('../schemas/bannedUsers');
 const MEETINGMEMBERS = require('../schemas/meetingMember');
-const checkService = require('../lib/studyValidation')
 
 /**
  * 2022. 05. 03. HOJIN
