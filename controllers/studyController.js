@@ -94,7 +94,9 @@ async function getStudyLists(req, res) {
 
 
         const data = await STUDY.find({ meetingId });
-        const studyList = [];
+        // data.sort((a, b) => b.regDate - a.regDate);
+        let studyList = [];
+        let studyLists = [];
 
         //해당 모임에 존재하는 전체 스터디들의 데이터를 가지고 온다.
         //한 번 돌 때 하나의 스터디 이다.
@@ -178,6 +180,14 @@ async function getStudyLists(req, res) {
                 together
             });
         }
+
+
+        studyList.sort(function (a, b) {
+            a = a.regDate;
+            b = b.regDate;
+            return a > b ? -1 : a < b ? 1 : 0;
+        });
+
 
         return res.status(200).json({ result: true, studyList, });
     } catch (err) {
