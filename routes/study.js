@@ -3,23 +3,24 @@ const studyController = require('../controllers/studyController');
 const studyNoteController = require('../controllers/studyNoteController');
 const createStudyValidation = require('../middlewares/studyValidator');
 const updateStudyValidation = require('../middlewares/updateStudyValidator');
+const authMiddleware = require('../middlewares/auth-middlewares')
 const router = express.Router();
 
 //api/study
 
 //스터디 
-router.post('/', createStudyValidation, studyController.postStudy);
-router.put('/', updateStudyValidation, studyController.updateStudy);
-router.get('/:meetingId/study', studyController.getStudyLists);
-router.post('/inout', studyController.inoutStudy);
-router.get('/:studyId/user', studyController.getStudyMembers);
-router.post('/kickuser', studyController.kickUser);
-router.delete('/:studyId/:meetingId', studyController.deleteStudy);
+router.post('/', authMiddleware, createStudyValidation, studyController.postStudy);
+router.put('/', authMiddleware, updateStudyValidation, studyController.updateStudy);
+router.get('/:meetingId/study', authMiddleware, studyController.getStudyLists);
+router.post('/inout', authMiddleware, studyController.inoutStudy);
+router.get('/:studyId/user', authMiddleware, studyController.getStudyMembers);
+router.post('/kickuser', authMiddleware, studyController.kickUser);
+router.delete('/:studyId/:meetingId', authMiddleware, studyController.deleteStudy);
 
 //스터디 노트
-router.post('/note', studyNoteController.postNote);
-router.put('/note/delete', studyNoteController.deleteNote);
-router.put('/note', studyNoteController.updateNote);
+router.post('/note', authMiddleware, studyNoteController.postNote);
+router.put('/note/delete', authMiddleware, studyNoteController.deleteNote);
+router.put('/note', authMiddleware, studyNoteController.updateNote);
 
 
 

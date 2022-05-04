@@ -12,8 +12,8 @@ const USER = require('../schemas/user');
  * 3. 스터디 발제자(장)과 모임장만 노트 작성가능한지 체크
  ===================================================================*/
 async function postNote(req, res) {
-    // const { userId } = res.locals
-    const { userId } = req.query;//임시 로그인 유저
+    // const { userId } = req.query;//임시 로그인 유저
+    const { userId } = res.locals.user
     const { studyId, studyNote } = req.body;
 
     try {
@@ -88,7 +88,8 @@ async function postNote(req, res) {
  ===================================================================*/
 async function deleteNote(req, res) {
     //임시 로그인유저
-    const { userId } = req.query;
+    // const { userId } = req.query;
+    const { userId } = res.locals.user
     const { studyId } = req.body;
 
     try {
@@ -153,7 +154,8 @@ async function deleteNote(req, res) {
  * 3. 스터디장(발제자)과 모임장만 스터디 노트 수정 가능 
  ===================================================================*/
 async function updateNote(req, res) {
-    const { userId } = req.query;//임시 로그인 유저
+    // const { userId } = req.query;//임시 로그인 유저
+    const { userId } = res.locals.user
     const { studyId, studyNote } = req.body;
 
 

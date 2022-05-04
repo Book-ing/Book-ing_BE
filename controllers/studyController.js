@@ -208,7 +208,8 @@ async function getStudyLists(req, res) {
  */
 async function postStudy(req, res) {
     //임시 유저
-    const { userId } = req.query;
+    // const { userId } = req.query;
+    const { userId } = res.locals.user
 
     const validUser = await USER.findOne({ userId })
     if (!validUser) {
@@ -221,7 +222,6 @@ async function postStudy(req, res) {
     //스터디 만들때 모임에 가입된 여부 확인로직
     //없는 미팅에 스터디 만들때 체크
 
-    // const { userId } = res.locals
     // const studyMasterId = res.locals.user.userId
     let {
         meetingId,
@@ -323,8 +323,8 @@ async function postStudy(req, res) {
  *
  */
 async function updateStudy(req, res) {
-    const { userId } = req.query; //임시로 로그인한 유저 표시
-    // const userId = res.locals.userId
+    // const { userId } = req.query; //임시로 로그인한 유저 표시
+    const { userId } = res.locals.user
     const validUser = await USER.findOne({ userId })
     if (!validUser) {
         return res.status(403).json({
@@ -445,7 +445,8 @@ async function updateStudy(req, res) {
  *
  */
 async function inoutStudy(req, res) {
-    const { userId } = req.query;//임시 로그인 유저
+    // const { userId } = req.query;//임시 로그인 유저
+    const { userId } = res.locals.user
     const { studyId, meetingId } = req.body;
     // const { userId } = res.locals
 
@@ -566,9 +567,9 @@ async function inoutStudy(req, res) {
  ===================================================================*/
 
 async function getStudyMembers(req, res) {
+    // const { userId } = req.query;//임시로 로그인한 유저로 친다.
+    const { userId } = res.locals.user
     const { studyId } = req.params;
-    const { userId } = req.query;//임시로 로그인한 유저로 친다.
-    // const { userId } = res.locals
 
     const validStudy = await STUDY.findOne({ studyId })
     if (!validStudy) {
@@ -685,8 +686,8 @@ async function getStudyMembers(req, res) {
  * 
  ===================================================================*/
 async function kickUser(req, res) {
-    const { userId } = req.query;//로그인한 임시유저
-    // const { userId } = res.locals
+    // const { userId } = req.query;//로그인한 임시유저
+    const { userId } = res.locals.user
     //targetId ==강퇴시킬 유저
     const { studyId, targetId, meetingId } = req.body;
     try {
@@ -778,17 +779,16 @@ async function kickUser(req, res) {
  * 6. 삭제하려는 스터디가 모임에 종속되어 있는 지 체크 
  ===================================================================*/
 async function deleteStudy(req, res) {
+    const { userId } = res.locals.user
     const { studyId, meetingId } = req.params;
     //임시 유저
-    const { userId } = req.query;
-    // const { userId } = res.locals
-
+    // const { userId } = req.query;
     try {
         const targetStudy = await STUDY.findOne({ studyId });
         if (!targetStudy) {
             return res.status(400).json({
                 result: false,
-                message: '해당 스터디가 존재하지 않습니다! 새로고침해주세요!'
+                message: '해당 스터디가 존재하지 않습니다! '
             })
         }
         const validMeeting = await MEETING.findOne({ meetingId });
