@@ -5,6 +5,7 @@ const STUDY = require('../schemas/studys');
 const STUDYMEMBER = require('../schemas/studyMembers');
 const BANNEDUSER = require('../schemas/bannedUsers');
 const lib = require('../lib/util');
+const { deleteProfile } = require('../middlewares/multer');
 
 /**
  *     TODO 1. cookie에 유저 정보가 담기면 db에서 유저 검사 후 meetingMasterId 값으로 지정
@@ -400,6 +401,7 @@ async function modifyMeeting(req, res) {
 
     if (req.file) {
         const meetingImage = req.file.location;
+        deleteProfile(meeting.meetingImage);
         await MEETING.updateOne(
             { meetingId, meetingMasterId: userId },
             {
@@ -454,6 +456,7 @@ async function deleteMeeting(req, res) {
     await STUDYMEMBER.deleteMany({ studyId });
     await STUDY.deleteMany({ meetingId });
     await BANNEDUSER.deleteMany({ meetingId });
+    deleteProfile(meeting.meetingImage);
 
     res.status(201).json({
         result: true,
