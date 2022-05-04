@@ -5,6 +5,7 @@ const STUDY = require('../schemas/studys');
 const STUDYMEMBER = require('../schemas/studyMembers');
 const BANNEDUSER = require('../schemas/bannedUsers');
 const lib = require('../lib/util');
+const { deleteProfile } = require('../middlewares/multer');
 
 /**
  *     TODO 1. cookie에 유저 정보가 담기면 db에서 유저 검사 후 meetingMasterId 값으로 지정
@@ -13,8 +14,7 @@ const lib = require('../lib/util');
  *          4. 카테고리, 지역 올바른 값인지 확인
  */
 async function createMeeting(req, res) {
-    // FIXME res.locals가 작업되면 바꾼다.
-    const { userId } = req.query;
+    const { userId } = res.locals.user;
     const {
         meetingName,
         meetingCategory,
@@ -25,6 +25,7 @@ async function createMeeting(req, res) {
 
     const existMaster = await MEETING.find({ meetingMasterId: userId });
     if (existMaster.length) {
+        deleteProfile(req.file.location);
         return res
             .status(400)
             .json({ result: false, message: '이미 생성한 모임이 있습니다.' });
@@ -61,15 +62,16 @@ async function createMeeting(req, res) {
 
 async function getMeetingInfo(req, res) {
     const { meetingId } = req.params;
-    // FIXME res.locals가 작업되면 바꾼다.
-    const { userId } = req.query;
-
     let isMeetingJoined = false;
-    const existMeetingMember = await MEETINGMEMBER.findOne({
-        meetingMemberId: userId,
-        meetingId,
-    });
-    if (existMeetingMember) isMeetingJoined = true;
+
+    if (res.locals.user) {
+        const { userId } = res.locals.user;
+        const existMeetingMember = await MEETINGMEMBER.findOne({
+            meetingMemberId: userId,
+            meetingId,
+        });
+        if (existMeetingMember) isMeetingJoined = true;
+    }
 
     // 모임 정보
     const meetingInfo = await MEETING.findOne({ meetingId });
@@ -141,8 +143,7 @@ async function getMeetingInfo(req, res) {
 
 async function getMeetingUsers(req, res) {
     const { meetingId } = req.params;
-    // FIXME res.locals가 작업되면 바꾼다.
-    const { userId } = req.query;
+    const { userId } = res.locals.user;
 
     const myProfile = await USER.findOne(
         { userId },
@@ -233,8 +234,7 @@ async function getMeetingUsers(req, res) {
 
 async function inoutMeeting(req, res) {
     const { meetingId } = req.body;
-    // FIXME res.locals가 작업되면 바꾼다.
-    const { userId } = req.query;
+    const { userId } = res.locals.user;
 
     const existMeetingMember = await MEETINGMEMBER.findOne({
         meetingMemberId: userId,
@@ -242,8 +242,7 @@ async function inoutMeeting(req, res) {
     });
 
     const meeting = await MEETING.findOne({ meetingId });
-    // FIXME res.locals가 작업되면 넘어오는 값이 int인지 아닌지 확인 후 수정
-    if (parseInt(userId) === meeting.meetingMasterId) {
+    if (userId === meeting.meetingMasterId) {
         return res.status(400).json({
             result: false,
             message: '모임 마스터는 모임 참여, 탈퇴가 불가능합니다.',
@@ -310,13 +309,11 @@ async function inoutMeeting(req, res) {
 
 async function kickMeetingMember(req, res) {
     const { targetId, meetingId } = req.body; // targetId: 강퇴를 당하는 사람의 Id (밴 당하는 유저)
-    // FIXME res.locals가 작업되면 바꾼다.
-    const { userId } = req.query; // 강퇴를 하는 사람의 Id (모임 마스터)
+    const { userId } = res.locals.user; // 강퇴를 하는 사람의 Id (모임 마스터)
 
     const meeting = await MEETING.findOne({ meetingId });
-    // FIXME res.locals가 작업되면 넘어오는 값이 int인지 아닌지 확인 후 수정
     // 모임 마스터만 내보내기가 가능하다.
-    if (parseInt(userId) !== meeting.meetingMasterId) {
+    if (userId !== meeting.meetingMasterId) {
         return res.status(400).json({
             result: false,
             message: '모임 마스터만 내보내기가 가능합니다.',
@@ -386,12 +383,10 @@ async function modifyMeeting(req, res) {
         meetingLocation,
         meetingIntro,
     } = req.body;
-    // FIXME res.locals가 작업되면 바꾼다.
-    const { userId } = req.query;
+    const { userId } = res.locals.user;
 
     const meeting = await MEETING.findOne({ meetingId });
-    // FIXME res.locals가 작업되면 넘어오는 값이 int인지 아닌지 확인 후 수정
-    if (parseInt(userId) !== meeting.meetingMasterId) {
+    if (userId !== meeting.meetingMasterId) {
         return res.status(400).json({
             result: false,
             message: '모임 마스터만 모임 정보 수정이 가능합니다.',
@@ -400,6 +395,7 @@ async function modifyMeeting(req, res) {
 
     if (req.file) {
         const meetingImage = req.file.location;
+        deleteProfile(meeting.meetingImage);
         await MEETING.updateOne(
             { meetingId, meetingMasterId: userId },
             {
@@ -434,12 +430,10 @@ async function modifyMeeting(req, res) {
 
 async function deleteMeeting(req, res) {
     const { meetingId } = req.params;
-    // FIXME res.locals가 작업되면 바꾼다.
-    const { userId } = req.query;
+    const { userId } = res.locals.user;
 
     const meeting = await MEETING.findOne({ meetingId });
-    // FIXME res.locals가 작업되면 넘어오는 값이 int인지 아닌지 확인 후 수정
-    if (parseInt(userId) !== meeting.meetingMasterId) {
+    if (userId !== meeting.meetingMasterId) {
         return res.status(400).json({
             result: false,
             message: '모임 마스터만 모임 삭제가 가능합니다.',
@@ -454,6 +448,7 @@ async function deleteMeeting(req, res) {
     await STUDYMEMBER.deleteMany({ studyId });
     await STUDY.deleteMany({ meetingId });
     await BANNEDUSER.deleteMany({ meetingId });
+    deleteProfile(meeting.meetingImage);
 
     res.status(201).json({
         result: true,

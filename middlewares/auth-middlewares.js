@@ -1,5 +1,10 @@
 const jwt = require('jsonwebtoken');
-const {accessTokenSign, accessTokenVerify, refreshTokenSign, refreshTokenVerify} = require('../lib/jwt');
+const {
+    accessTokenSign,
+    accessTokenVerify,
+    refreshTokenSign,
+    refreshTokenVerify,
+} = require('../lib/jwt');
 
 const USER = require('../schemas/user');
 
@@ -11,63 +16,95 @@ const USER = require('../schemas/user');
  *      2-1. 토큰이 정상적으로 입력되었는지 검사한다.
  *  3. 해당 AccessToken의 만료여부를 검사한다.
  * FIXME:
- *  1. 
+ *  1.
  */
 module.exports = async (req, res, next) => {
-    const { authorization, refreshtoken } = req.headers;
+    const { authorization, refreshtoken, required } = req.headers;
 
-    if(!authorization)
-        return res.status(401).json({ result: false, message: '로그인이 필요합니다.' });
+    if (required === '0') {
+        if (!authorization) {
+            return next();
+        }
+    }
 
-    if(authorization.split(' ').length !== 2)
-        return res.status(401).json({ result: false, message: '요청 헤더 내 authorization 값이 올바르지 않습니다.' });
+    if (!authorization)
+        return res
+            .status(401)
+            .json({ result: false, message: '로그인이 필요합니다.' });
+
+    if (authorization.split(' ').length !== 2)
+        return res.status(401).json({
+            result: false,
+            message: '요청 헤더 내 authorization 값이 올바르지 않습니다.',
+        });
 
     const [tokenType, tokenValue] = authorization.split(' ');
     if (tokenType !== 'Bearer')
-        return res.status(401).json({ result: false, message: '인증타입이 올바르지 않습니다.' });
+        return res
+            .status(401)
+            .json({ result: false, message: '인증타입이 올바르지 않습니다.' });
 
     const decoded = jwt.decode(tokenValue);
-    if(decoded === null)
-        return res.status(401).json({ result: false, message: '권한이 없습니다.' });
+    if (decoded === null)
+        return res
+            .status(401)
+            .json({ result: false, message: '권한이 없습니다.' });
 
     const accessTokenResult = accessTokenVerify(tokenValue);
-    if(accessTokenResult.result === true){
+    if (accessTokenResult.result === true) {
         // accessToken이 정상인 경우
-        const existUser = await USER.findOne({ userId: accessTokenResult.id});
+        const existUser = await USER.findOne({ userId: accessTokenResult.id });
         // accessToken 내 사용자정보가 DB 내 존재하지 않는다면, 검증실패.
-        if(!existUser)
-            return res.status(401).json({ result: false, message: '요청한 accessToken 내 사용자정보가 존재하지 않습니다.' });
+        if (!existUser)
+            return res.status(401).json({
+                result: false,
+                message:
+                    '요청한 accessToken 내 사용자정보가 존재하지 않습니다.',
+            });
 
         res.locals.user = existUser;
         next();
-    }else{
+    } else {
         // accessToken이 비정상인 경우
-        if(accessTokenResult.message === 'jwt expired'){
+        if (accessTokenResult.message === 'jwt expired') {
             // accessToken이 만료된 경우
-            const refreshTokenResult = await refreshTokenVerify(refreshtoken, decoded.userId);
-            if(!refreshTokenResult)
+            const refreshTokenResult = await refreshTokenVerify(
+                refreshtoken,
+                decoded.userId
+            );
+            if (!refreshTokenResult)
                 // refreshToken이 비정상이라면, 클라이언트에서 로그인창으로 이동시켜줘야한다.
-                return res.status(401).json({ result: false, message: '해당 사용자의 refreshToken이 만료되었습니다. 재로그인이 필요합니다.' });
-            else{
+                return res.status(401).json({
+                    result: false,
+                    message:
+                        '해당 사용자의 refreshToken이 만료되었습니다. 재로그인이 필요합니다.',
+                });
+            else {
                 // refreshToken이 정상이고 accessToken이 재발행 되었다면, 클라이언트에서 토큰정보를 갱신하고, 재실행 시켜야한다.
                 // 201 Created : 요청이 성공적이었으며 그 결과로 새로운 리소스가 생성되었습니다. 이 응답은 일반적으로 POST 요청 또는 일부 PUT 요청 이후에 따라옵니다.
-                return res.status(201).json({ 
+                return res.status(201).json({
                     result: true,
                     message: 'accessToken 재발행 성공.',
                     data: {
-                        accessToken: accessTokenSign({userId: decoded.userId}),
-                        refreshToken: refreshtoken
-                    } 
+                        accessToken: accessTokenSign({
+                            userId: decoded.userId,
+                        }),
+                        refreshToken: refreshtoken,
+                    },
                 });
             }
-        }else{
-            return res.status(401).json({ result: false, message: 'accessToken이 올바르지 않습니다. 사유: ' + accessTokenResult.message });
+        } else {
+            return res.status(401).json({
+                result: false,
+                message:
+                    'accessToken이 올바르지 않습니다. 사유: ' +
+                    accessTokenResult.message,
+            });
         }
-
     }
 };
 
-/** 
+/**
  * 2022. 05. 03. HSYOO.
  * 혹시 모르니, 이전 호진님 소스 지우지 않고 가지고 있는다.
  */
