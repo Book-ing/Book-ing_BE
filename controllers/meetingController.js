@@ -61,6 +61,14 @@ async function createMeeting(req, res) {
 
 async function getMeetingInfo(req, res) {
     const { meetingId } = req.params;
+    // FIXME res.locals가 작업되면 바꾼다.
+    const { userId } = req.query;
+
+    let isMeetingJoined = false;
+    const existMeetingMember = await MEETINGMEMBER.findOne({
+        meetingMemberId: userId, meetingId
+    });
+    if (existMeetingMember) isMeetingJoined = true;
 
     // 모임 정보
     const meetingInfo = await MEETING.findOne({ meetingId });
@@ -117,6 +125,7 @@ async function getMeetingInfo(req, res) {
             meetingIntro: meetingInfo.meetingIntro,
             meetingUserCnt: meetingUserList.length,
             meetingLimitCnt: meetingInfo.meetingLimitCnt,
+            isMeetingJoined,
             meetingMasterProfile: {
                 userId: meetingMasterProfile.userId,
                 nickname: meetingMasterProfile.username,
