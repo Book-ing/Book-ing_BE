@@ -61,9 +61,9 @@ const MEETINGMEMBERS = require('../schemas/meetingMember');
  */
 async function getStudyLists(req, res) {
     const { meetingId } = req.params;
+    // const { userId } = res.locals.user
     const { userId } = req.query; //임시로 로그인한 유저라 판단
 
-    // const { userId } = res.locals
 
     /**===================================================================
   * 각 모임id별로 있는 스터디 존재 
@@ -81,13 +81,6 @@ async function getStudyLists(req, res) {
                 message: '유효하지 않은 유저입니다.'
             })
         }
-        // const validUser = await checkService.checkUser(userId)
-        // if (!validUser) {
-        //     return res.status(403).json({
-        //         result: 'false',
-        //         message: '유효하지 않은 유저입니다.'
-        //     })
-        // }
 
         const validMeeting = await MEETING.findOne({ meetingId });
 
@@ -210,6 +203,7 @@ async function postStudy(req, res) {
     //임시 유저
     // const { userId } = req.query;
     const { userId } = res.locals.user
+    console.log("@@@2", userId)
 
     const validUser = await USER.findOne({ userId })
     if (!validUser) {
@@ -456,10 +450,29 @@ async function inoutStudy(req, res) {
         if (!validMeeting) {
             return res.status(403).json({
                 result: false,
-                message: '존재하지 않은 모임입니다. 다시 접근해주세요'
+                message: '존재하지 않은 모임입니다. '
             })
         }
-
+        const validStudy = await STUDY.findOne({ studyId })
+        if (!validStudy) {
+            return res.status(403).json({
+                result: false,
+                message: '유효하지 않은 스터디입니다'
+            })
+        }
+        //모임안에 있는 스터디들
+        const targetStudy = await STUDY.find({ meetingId })
+        let targetStudyId = [];
+        for (let i = 0; i < targetStudy.length; i++) {
+            targetStudyId.push(targetStudy[i].studyId)
+        }
+        console.log(`${meetingId}안에 있는 스터디들의 아이디`, targetStudyId)
+        if (!targetStudyId.includes(Number(studyId))) {
+            return res.status(403).json({
+                result: false,
+                message: '해당 모임에 존재하지 않는 스터디입니다'
+            })
+        }
 
         let meetingMemberId = [];
         let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
