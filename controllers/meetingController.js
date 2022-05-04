@@ -26,6 +26,7 @@ async function createMeeting(req, res) {
 
     const existMaster = await MEETING.find({ meetingMasterId: userId });
     if (existMaster.length) {
+        deleteProfile(req.file.location);
         return res
             .status(400)
             .json({ result: false, message: '이미 생성한 모임이 있습니다.' });
