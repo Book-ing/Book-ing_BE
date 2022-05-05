@@ -7,16 +7,13 @@ const error = (req, res, next) => {
         return next();
     }
     console.log(errors.array()[0].msg);
-    return res.json({ result: 'fail', errorMessage: errors.array()[0].msg });
+    return res.json({ result: false, message: errors.array()[0].msg });
 };
 
 const createStudyValidation = [
     body('meetingId')
         .notEmpty()
         .withMessage('스터디는 모임을 만든 후에 만들 수 있습니다'),
-    body('studyMasterId')
-        .notEmpty()
-        .withMessage('스터디는 방장이 있어야 합니다'),
     body('studyTitle')
         .notEmpty()
         .withMessage('스터디 제목을 입력해주세요.')
