@@ -39,7 +39,7 @@ async function getSelectMainView(req, res) {
      * 내 모임 조회
      ===================================================================*/
     // 사용자가 로그인하지 않은 경우, 빈 오브젝트를 내려준다.
-    if (!req.query.userId) {
+    if (!res.locals.user.userId) {
         response.myMeeting = {};
     } else {
         // 로그인 한 경우, 해당 사용자가 가입한 모임이 있는지 검사한다.
@@ -54,7 +54,7 @@ async function getSelectMainView(req, res) {
             .includes(true);
 
         // 가입한 모임이 없는 경우, 빈 오브젝트를 내려준다.
-        if (!meetings) {
+        if (meetings.length === 0) {
             response.myMeeting = {};
         } else {
             // 가입한 모임이 있는 경우, 가입한 모임의 meetingId list로 Meetings Collection을 조회한 오브젝트를 내려준다.
@@ -132,7 +132,6 @@ async function getSelectMainView(req, res) {
                 break;
         } else i--;
     }
-    console.log('여긴왔어1?');
     const todayMeetingList = await MEETING.find(
         { meetingId: arrTodayRandomMeetingId },
         {
@@ -219,7 +218,6 @@ async function getSelectMainView(req, res) {
         .limit(5);
     response.newMeeting = newMettingList;
 
-    console.log(response);
     res.status(200).json({
         result: true,
         message: '메인 페이지 조회 성공',
