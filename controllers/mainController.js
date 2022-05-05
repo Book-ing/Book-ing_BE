@@ -39,7 +39,7 @@ async function getSelectMainView(req, res) {
      * 내 모임 조회
      ===================================================================*/
     // 사용자가 로그인하지 않은 경우, 빈 오브젝트를 내려준다.
-    if (!res.locals.user.userId) {
+    if (!req.query.userId) {
         response.myMeeting = {};
     } else {
         // 로그인 한 경우, 해당 사용자가 가입한 모임이 있는지 검사한다.
