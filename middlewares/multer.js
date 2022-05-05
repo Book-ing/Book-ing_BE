@@ -57,7 +57,7 @@ const upload = multer({
     fileFilter: fileFilter,
 });
 
-const deleteProfile = (url) => {
+const deleteImage = (url) => {
     if (url === 'https://img.lovepik.com/element/40135/2302.png_300.png')
         return;
     const filename = url.split('/')[3];
@@ -70,4 +70,4 @@ const deleteProfile = (url) => {
     );
 };
 
-module.exports = { upload, deleteProfile };
+module.exports = { upload, deleteImage };
