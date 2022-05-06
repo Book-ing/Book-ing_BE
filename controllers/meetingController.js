@@ -4,6 +4,7 @@ const MEETINGMEMBER = require('../schemas/meetingMember');
 const STUDY = require('../schemas/studys');
 const STUDYMEMBER = require('../schemas/studyMembers');
 const BANNEDUSER = require('../schemas/bannedUsers');
+const CODE = require('../schemas/codes');
 const lib = require('../lib/util');
 const { deleteImage } = require('../middlewares/multer');
 
@@ -41,11 +42,26 @@ async function createMeeting(req, res) {
                 'https://img.lovepik.com/element/40135/2302.png_300.png';
         }
 
+        const categoryCode = await CODE.findOne({ codeValue: meetingCategory });
+        const locationCode = await CODE.findOne({ codeValue: meetingLocation });
+
+        if (!categoryCode) {
+            return res.status(400).json({
+                result: false,
+                message: '모임 카테고리 입력 오류',
+            });
+        } else if (!locationCode) {
+            return res.status(400).json({
+                result: false,
+                message: '모임 지역 입력 오류',
+            });
+        }
+
         await MEETING.create({
             meetingMasterId: userId,
             meetingName,
-            meetingCategory,
-            meetingLocation,
+            meetingCategory: categoryCode.codeId,
+            meetingLocation: locationCode.codeId,
             meetingImage,
             meetingIntro,
             meetingLimitCnt,
@@ -84,6 +100,13 @@ async function getMeetingInfo(req, res) {
 
         // 모임 정보
         const meetingInfo = await MEETING.findOne({ meetingId });
+        const meetingCategory = await CODE.findOne({
+            codeId: meetingInfo.meetingCategory,
+        });
+        const meetingLocation = await CODE.findOne({
+            codeId: meetingInfo.meetingLocation,
+        });
+
         // 모임 마스터의 프로필 정보
         const meetingMasterProfile = await USER.findOne({
             userId: meetingInfo.meetingMasterId,
@@ -131,8 +154,8 @@ async function getMeetingInfo(req, res) {
             data: {
                 meetingId: meetingInfo.meetingId,
                 meetingName: meetingInfo.meetingName,
-                meetingCategory: meetingInfo.meetingCategory,
-                meetingLocation: meetingInfo.meetingLocation,
+                meetingCategory: meetingCategory.codeValue,
+                meetingLocation: meetingLocation.codeValue,
                 meetingImage: meetingInfo.meetingImage,
                 meetingIntro: meetingInfo.meetingIntro,
                 meetingUserCnt: meetingUserList.length,
@@ -441,6 +464,21 @@ async function modifyMeeting(req, res) {
             });
         }
 
+        const categoryCode = await CODE.findOne({ codeValue: meetingCategory });
+        const locationCode = await CODE.findOne({ codeValue: meetingLocation });
+
+        if (!categoryCode) {
+            return res.status(400).json({
+                result: false,
+                message: '모임 카테고리 입력 오류',
+            });
+        } else if (!locationCode) {
+            return res.status(400).json({
+                result: false,
+                message: '모임 지역 입력 오류',
+            });
+        }
+
         if (req.file) {
             const meetingImage = req.file.location;
             deleteImage(meeting.meetingImage);
@@ -449,8 +487,8 @@ async function modifyMeeting(req, res) {
                 {
                     $set: {
                         meetingName,
-                        meetingCategory,
-                        meetingLocation,
+                        meetingCategory: categoryCode.codeId,
+                        meetingLocation: locationCode.codeId,
                         meetingIntro,
                         meetingImage,
                     },
@@ -462,8 +500,8 @@ async function modifyMeeting(req, res) {
                 {
                     $set: {
                         meetingName,
-                        meetingCategory,
-                        meetingLocation,
+                        meetingCategory: categoryCode.codeId,
+                        meetingLocation: locationCode.codeId,
                         meetingIntro,
                     },
                 }
