@@ -5,7 +5,7 @@ const { getDate } = require('../lib/util');
 const MEETING = require('../schemas/meeting');
 const BANNEDUSERS = require('../schemas/bannedUsers');
 const MEETINGMEMBERS = require('../schemas/meetingMember');
-
+const NodeGeocoder = require('node-geocoder');
 /**
  * 2022. 05. 03. HOJIN
  * TODO:
@@ -208,13 +208,7 @@ async function postStudy(req, res) {
     const { userId } = res.locals.user;
     console.log('@@@2', userId);
 
-    const validUser = await USER.findOne({ userId });
-    if (!validUser) {
-        return res.status(403).json({
-            result: false,
-            message: '유효하지 않은 유저입니다.',
-        });
-    }
+
 
     //스터디 만들때 모임에 가입된 여부 확인로직
     //없는 미팅에 스터디 만들때 체크
@@ -234,17 +228,49 @@ async function postStudy(req, res) {
         studyBookInfo,
     } = req.body;
 
-    let validMeeting = await MEETING.findOne({ meetingId });
-    // console.log("만들 스터디의 모임", validMeeting)
-    let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
-    // console.log(`${meetingId}모임의 멤버들`, meetingMembers)
-    let meetingMemberId = [];
-    //스터디를 만들때 모임이 존재한다면
-    if (validMeeting) {
+
+
+    //스터디를 만든 사람이 방장이 된다.
+    try {
+
+        const validUser = await USER.findOne({ userId });
+        if (!validUser) {
+            return res.status(403).json({
+                result: false,
+                message: '유효하지 않은 유저입니다.',
+            });
+        }
+        let validMeeting = await MEETING.findOne({ meetingId });
+        if (!validMeeting) {
+            return res.status(403).json({
+                result: false,
+                message: '유효하지 않은 모임입니다.'
+            })
+        }
+
+        const options = {
+            provider: 'google',
+            apiKey: process.env.GOOGLE_GEOCODING_APIKEY,
+        };
+        const geocoder = NodeGeocoder(options);
+        const regionResult = await geocoder.geocode(studyAddr);
+        const Lat = regionResult[0].latitude; //위도
+        const Long = regionResult[0].longitude; //경도
+
+        console.log("위도", Lat)
+        console.log('경도', Long)
+
+
+        // console.log("만들 스터디의 모임", validMeeting)
+        let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
+        // console.log(`${meetingId}모임의 멤버들`, meetingMembers)
+        let meetingMemberId = [];
+        //스터디를 만들때 모임이 존재한다면
+
         for (let i = 0; i < meetingMembers.length; i++) {
             meetingMemberId.push(meetingMembers[i].meetingMemberId);
         }
-        console.log(`${meetingId}에 있는 멤버들의 아이디`, meetingMemberId);
+        // console.log(`${meetingId}에 있는 멤버들의 아이디`, meetingMemberId);
         // console.log("모임에 가입한 사람들의 아이디", meetingMemberId)
         //로그인한 유저가 모임에 가입되었는지 아닌지 여부 체크
         if (meetingMemberId.includes(Number(userId))) {
@@ -254,43 +280,36 @@ async function postStudy(req, res) {
                     'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
             }
 
-            //스터디를 만든 사람이 방장이 된다.
-            try {
-                await STUDY.create({
-                    meetingId,
-                    studyMasterId: userId,
-                    studyTitle,
-                    studyDateTime,
-                    studyAddr,
-                    studyAddrDetail,
-                    studyLimitCnt,
-                    studyPrice,
-                    studyNotice,
-                    studyBookImg,
-                    studyBookTitle,
-                    studyBookInfo,
-                    regDate: getDate(),
-                }).then(
-                    async (study) =>
-                        await STUDYMEMBERS.create({
-                            studyMemberId: userId,
-                            studyId: study.studyId,
-                            isStudyMaster: true,
-                            regDate: getDate(),
-                        })
-                );
+            await STUDY.create({
+                meetingId,
+                studyMasterId: userId,
+                studyTitle,
+                studyDateTime,
+                studyAddr,
+                studyAddrDetail,
+                studyLimitCnt,
+                studyPrice,
+                studyNotice,
+                studyBookImg,
+                studyBookTitle,
+                studyBookInfo,
+                regDate: getDate(),
+            }).then(
+                async (study) =>
+                    await STUDYMEMBERS.create({
+                        studyMemberId: userId,
+                        studyId: study.studyId,
+                        isStudyMaster: true,
+                        regDate: getDate(),
+                    })
+            );
 
-                return res.status(201).json({
-                    result: true,
-                    message: '스터디 등록 성공',
-                });
-            } catch (err) {
-                console.log(err);
-                return res.status(400).json({
-                    result: false,
-                    message: '스터디 등록 실패!',
-                });
-            }
+            return res.status(201).json({
+                result: true,
+                message: '스터디 등록 성공',
+                Lat, Long
+            });
+
         } else {
             return res.status(403).json({
                 result: false,
@@ -298,10 +317,12 @@ async function postStudy(req, res) {
                     '모임에 가입하지 않으셨습니다 먼저 모임에 가입해주세요!',
             });
         }
-    } else {
-        return res.status(403).json({
-            result: fasle,
-            message: '유효하지 않은 모임입니다. 다시 입력해주세요',
+
+    } catch (err) {
+        console.log(err);
+        return res.status(400).json({
+            result: false,
+            message: '스터디 등록 실패!',
         });
     }
 }
@@ -328,7 +349,7 @@ async function updateStudy(req, res) {
             message: '유효하지 않은 유저입니다.',
         });
     }
-    const {
+    let {
         studyId,
         studyTitle,
         studyDateTime,
@@ -341,55 +362,72 @@ async function updateStudy(req, res) {
         studyBookImg,
         studyBookInfo,
     } = req.body;
-    const targetStudy = await STUDY.findOne({ studyId });
-    if (!targetStudy) {
-        return res.status(400).json({
-            result: false,
-            message: '해당 스터디가 존재하지 않습니다! 새로고침해주세요!',
-        });
-    }
-    let validMeeting = await MEETING.findOne({ meetingId });
-    // console.log("수정하려고 하는 모임", validMeeting)
-    let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
-    let meetingMemberId = [];
-    //해당 모임에 가입되어 있는 사람들 찾음
-    if (!validMeeting) {
-        return res.status(403).json({
-            result: false,
-            message: '모임이 존재하지 않습니다.',
-        });
-    }
-    for (let i = 0; i < meetingMembers.length; i++) {
-        meetingMemberId.push(meetingMembers[i].meetingMemberId);
-    }
-    const checkStudy = await STUDY.find({ meetingId });
-    let checkStudyId = [];
-    for (let i = 0; i < checkStudy.length; i++) {
-        checkStudyId.push(checkStudy[i].studyId);
-    }
-    // console.log("미팅 아이디 안에 종속되어 있는 스터디들", checkStudy)
-    console.log('미팅 아이디 안에 종속되어 있는 스터디 아이디들', checkStudyId);
-    if (!checkStudyId.includes(Number(studyId))) {
-        return res.status(403).json({
-            result: false,
-            message:
-                '해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다!',
-        });
-    }
-    const updateStudy = await STUDY.findOne({ studyId });
-    console.log(`${meetingId}모임의 멤버들 아이디`, meetingMemberId);
 
-    //로그인한 유저가 해당 모임에 가입되어 있다면
-    if (meetingMemberId.includes(Number(userId))) {
-        // 수정하고자 하는 스터디가 존재한다면
-        if (updateStudy) {
-            // console.log("수정하고자 하는 스터디", updateStudy)
 
-            if (
-                updateStudy.studyMasterId === Number(userId) ||
-                validMeeting.meetingMasterId === Number(userId)
-            ) {
-                try {
+    try {
+        if (studyBookImg === '' || studyBookImg === null) {
+            studyBookImg = 'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
+        }
+
+        const options = {
+            provider: 'google',
+            apiKey: process.env.GOOGLE_GEOCODING_APIKEY,
+        };
+        const geocoder = NodeGeocoder(options);
+        const regionResult = await geocoder.geocode(studyAddr);
+        const Lat = regionResult[0].latitude; //위도
+        const Long = regionResult[0].longitude; //경도
+
+        // console.log("위도", Lat)
+        // console.log('경도', Long)
+
+
+        const targetStudy = await STUDY.findOne({ studyId });
+        if (!targetStudy) {
+            return res.status(400).json({
+                result: false,
+                message: '해당 스터디가 존재하지 않습니다! ',
+            });
+        }
+        let validMeeting = await MEETING.findOne({ meetingId });
+        // console.log("수정하려고 하는 모임", validMeeting)
+        let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
+        let meetingMemberId = [];
+        //해당 모임에 가입되어 있는 사람들 찾음
+        if (!validMeeting) {
+            return res.status(403).json({
+                result: false,
+                message: '모임이 존재하지 않습니다.',
+            });
+        }
+        for (let i = 0; i < meetingMembers.length; i++) {
+            meetingMemberId.push(meetingMembers[i].meetingMemberId);
+        }
+        const checkStudy = await STUDY.find({ meetingId });
+        let checkStudyId = [];
+        for (let i = 0; i < checkStudy.length; i++) {
+            checkStudyId.push(checkStudy[i].studyId);
+        }
+        // console.log("미팅 아이디 안에 종속되어 있는 스터디들", checkStudy)
+        // console.log('미팅 아이디 안에 종속되어 있는 스터디 아이디들', checkStudyId);
+        if (!checkStudyId.includes(Number(studyId))) {
+            return res.status(403).json({
+                result: false,
+                message:
+                    '해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다!',
+            });
+        }
+        const updateStudy = await STUDY.findOne({ studyId });
+        // console.log(`${meetingId}모임의 멤버들 아이디`, meetingMemberId);
+
+        //로그인한 유저가 해당 모임에 가입되어 있다면
+
+        if (meetingMemberId.includes(Number(userId))) {
+            // 수정하고자 하는 스터디가 존재한다면
+            if (updateStudy) {
+                // console.log("수정하고자 하는 스터디", updateStudy)
+
+                if (updateStudy.studyMasterId === Number(userId) || validMeeting.meetingMasterId === Number(userId)) {
                     await STUDY.updateOne(
                         { studyId },
                         {
@@ -409,32 +447,34 @@ async function updateStudy(req, res) {
                     return res.status(201).json({
                         result: true,
                         message: '스터디 정보 수정 완료!',
+                        Lat, Long
                     });
-                } catch (err) {
-                    console.log(err);
-                    res.status(400).json({
+                } else {
+                    return res.status(403).json({
                         result: false,
-                        message: '스터디를 수정할 수 없습니다!',
+                        message:
+                            '스터디 정보 수정은 스터디장 또는 모임장만 가능합니다.',
                     });
                 }
             } else {
                 return res.status(403).json({
                     result: false,
-                    message:
-                        '스터디 정보 수정은 스터디장 또는 모임장만 가능합니다.',
+                    message: '존재하지 않은 스터디에 접근하려고 합니다.',
                 });
             }
         } else {
-            return res.status(403).json({
+            res.status(403).json({
                 result: false,
-                message: '존재하지 않은 스터디에 접근하려고 합니다.',
+                message:
+                    '해당 모임에 가입되어 있지 않습니다! 모임에 먼저 가입하세요!',
             });
         }
-    } else {
-        res.status(403).json({
+    }
+    catch (err) {
+        console.log(err);
+        res.status(400).json({
             result: false,
-            message:
-                '해당 모임에 가입되어 있지 않습니다! 모임에 먼저 가입하세요!',
+            message: '스터디를 수정할 수 없습니다!',
         });
     }
 }
@@ -477,7 +517,7 @@ async function inoutStudy(req, res) {
         for (let i = 0; i < targetStudy.length; i++) {
             targetStudyId.push(targetStudy[i].studyId);
         }
-        console.log(`${meetingId}안에 있는 스터디들의 아이디`, targetStudyId);
+        // console.log(`${meetingId}안에 있는 스터디들의 아이디`, targetStudyId);
         if (!targetStudyId.includes(Number(studyId))) {
             return res.status(403).json({
                 result: false,
@@ -490,7 +530,7 @@ async function inoutStudy(req, res) {
         for (let i = 0; i < meetingMembers.length; i++) {
             meetingMemberId.push(meetingMembers[i].meetingMemberId);
         }
-        console.log(`${meetingId}모임에 참가한 멤버의 아이디`, meetingMemberId);
+        // console.log(`${meetingId}모임에 참가한 멤버의 아이디`, meetingMemberId);
         if (meetingMemberId.includes(Number(userId))) {
             let master = false;
             //모임에서 강퇴당한 유저 찾기
@@ -765,8 +805,8 @@ async function kickUser(req, res) {
                 meetingMaster = meetingMembers[i].meetingMemberId;
             }
         }
-        console.log('모임 마스터', meetingMaster);
-        console.log(`${meetingId}모임의 멤버 아이디`, meetingMemberId);
+        // console.log('모임 마스터', meetingMaster);
+        // console.log(`${meetingId}모임의 멤버 아이디`, meetingMemberId);
 
         //삭제할 유저가 있는 모임 (모임장을 뽑기 위해)
         validMeeting = await MEETING.findOne({ meetingId });
@@ -858,7 +898,7 @@ async function deleteStudy(req, res) {
         for (let i = 0; i < deleteStudy.length; i++) {
             deleteStudyId.push(deleteStudy[i].studyId);
         }
-        console.log('삭제하려고 하는 스터디들의 아이디', deleteStudyId);
+        // console.log('삭제하려고 하는 스터디들의 아이디', deleteStudyId);
         if (!deleteStudyId.includes(Number(studyId))) {
             return res.status(403).json({
                 result: fasle,
@@ -874,7 +914,7 @@ async function deleteStudy(req, res) {
                 meetingMaster = meetingMembers[i].meetingMemberId;
             }
         }
-        console.log(`${meetingId}모임의 멤버 아이디`, meetingMemberId);
+        // console.log(`${meetingId}모임의 멤버 아이디`, meetingMemberId);
 
         if (meetingMemberId.includes(Number(userId))) {
             const targetStudyMember = await STUDYMEMBERS.find({ studyId });
