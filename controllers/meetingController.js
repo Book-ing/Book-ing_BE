@@ -73,7 +73,7 @@ async function getMeetingInfo(req, res) {
     try {
         let isMeetingJoined = false;
 
-        if (res.locals.user) {
+        if (res.locals) {
             const { userId } = res.locals.user;
             const existMeetingMember = await MEETINGMEMBER.findOne({
                 meetingMemberId: userId,
