@@ -4,8 +4,9 @@ const MEETINGMEMBER = require('../schemas/meetingMember');
 const STUDY = require('../schemas/studys');
 const STUDYMEMBER = require('../schemas/studyMembers');
 const BANNEDUSER = require('../schemas/bannedUsers');
+const CODE = require('../schemas/codes');
 const lib = require('../lib/util');
-const { deleteProfile } = require('../middlewares/multer');
+const { deleteImage } = require('../middlewares/multer');
 
 /**
  *     TODO 1. cookie에 유저 정보가 담기면 db에서 유저 검사 후 meetingMasterId 값으로 지정
@@ -26,7 +27,7 @@ async function createMeeting(req, res) {
     try {
         const existMaster = await MEETING.find({ meetingMasterId: userId });
         if (existMaster.length) {
-            deleteProfile(req.file.location);
+            if (req.file) deleteImage(req.file.location);
             return res.status(400).json({
                 result: false,
                 message: '이미 생성한 모임이 있습니다.',
@@ -41,11 +42,26 @@ async function createMeeting(req, res) {
                 'https://img.lovepik.com/element/40135/2302.png_300.png';
         }
 
+        const categoryCode = await CODE.findOne({ codeValue: meetingCategory });
+        const locationCode = await CODE.findOne({ codeValue: meetingLocation });
+
+        if (!categoryCode) {
+            return res.status(400).json({
+                result: false,
+                message: '모임 카테고리 입력 오류',
+            });
+        } else if (!locationCode) {
+            return res.status(400).json({
+                result: false,
+                message: '모임 지역 입력 오류',
+            });
+        }
+
         await MEETING.create({
             meetingMasterId: userId,
             meetingName,
-            meetingCategory,
-            meetingLocation,
+            meetingCategory: categoryCode.codeId,
+            meetingLocation: locationCode.codeId,
             meetingImage,
             meetingIntro,
             meetingLimitCnt,
@@ -73,7 +89,7 @@ async function getMeetingInfo(req, res) {
     try {
         let isMeetingJoined = false;
 
-        if (res.locals.user) {
+        if (res.locals) {
             const { userId } = res.locals.user;
             const existMeetingMember = await MEETINGMEMBER.findOne({
                 meetingMemberId: userId,
@@ -84,6 +100,13 @@ async function getMeetingInfo(req, res) {
 
         // 모임 정보
         const meetingInfo = await MEETING.findOne({ meetingId });
+        const meetingCategory = await CODE.findOne({
+            codeId: meetingInfo.meetingCategory,
+        });
+        const meetingLocation = await CODE.findOne({
+            codeId: meetingInfo.meetingLocation,
+        });
+
         // 모임 마스터의 프로필 정보
         const meetingMasterProfile = await USER.findOne({
             userId: meetingInfo.meetingMasterId,
@@ -131,8 +154,8 @@ async function getMeetingInfo(req, res) {
             data: {
                 meetingId: meetingInfo.meetingId,
                 meetingName: meetingInfo.meetingName,
-                meetingCategory: meetingInfo.meetingCategory,
-                meetingLocation: meetingInfo.meetingLocation,
+                meetingCategory: meetingCategory.codeValue,
+                meetingLocation: meetingLocation.codeValue,
                 meetingImage: meetingInfo.meetingImage,
                 meetingIntro: meetingInfo.meetingIntro,
                 meetingUserCnt: meetingUserList.length,
@@ -162,6 +185,19 @@ async function getMeetingUsers(req, res) {
     const { userId } = res.locals.user;
 
     try {
+        let isMeetingMaster = false;
+        let isMeetingJoined = false;
+        const existMeetingMember = await MEETINGMEMBER.findOne({
+            meetingMemberId: userId,
+            meetingId,
+        });
+        if (!existMeetingMember) {
+            return res.status(400).json({
+                result: false,
+                message: '모임 가입 유저만 조회가 가능합니다.',
+            });
+        }
+
         const myProfile = await USER.findOne(
             { userId },
             {
@@ -194,12 +230,6 @@ async function getMeetingUsers(req, res) {
             }
         );
 
-        let isMeetingMaster = false;
-        let isMeetingJoined = false;
-        const existMeetingMember = await MEETINGMEMBER.findOne({
-            meetingMemberId: userId,
-            meetingId,
-        });
         if (existMeetingMember) isMeetingJoined = true;
         if (userId === meetingInfo.meetingMasterId) {
             isMeetingMaster = true;
@@ -421,7 +451,6 @@ async function kickMeetingMember(req, res) {
     }
 }
 
-// TODO 이미지 업데이트 시 기존 사진 삭제하는 로직 추가해야 함
 async function modifyMeeting(req, res) {
     const {
         meetingId,
@@ -441,16 +470,31 @@ async function modifyMeeting(req, res) {
             });
         }
 
+        const categoryCode = await CODE.findOne({ codeValue: meetingCategory });
+        const locationCode = await CODE.findOne({ codeValue: meetingLocation });
+
+        if (!categoryCode) {
+            return res.status(400).json({
+                result: false,
+                message: '모임 카테고리 입력 오류',
+            });
+        } else if (!locationCode) {
+            return res.status(400).json({
+                result: false,
+                message: '모임 지역 입력 오류',
+            });
+        }
+
         if (req.file) {
             const meetingImage = req.file.location;
-            deleteProfile(meeting.meetingImage);
+            deleteImage(meeting.meetingImage);
             await MEETING.updateOne(
                 { meetingId, meetingMasterId: userId },
                 {
                     $set: {
                         meetingName,
-                        meetingCategory,
-                        meetingLocation,
+                        meetingCategory: categoryCode.codeId,
+                        meetingLocation: locationCode.codeId,
                         meetingIntro,
                         meetingImage,
                     },
@@ -462,8 +506,8 @@ async function modifyMeeting(req, res) {
                 {
                     $set: {
                         meetingName,
-                        meetingCategory,
-                        meetingLocation,
+                        meetingCategory: categoryCode.codeId,
+                        meetingLocation: locationCode.codeId,
                         meetingIntro,
                     },
                 }
@@ -501,7 +545,7 @@ async function deleteMeeting(req, res) {
         await STUDYMEMBER.deleteMany({ studyId });
         await STUDY.deleteMany({ meetingId });
         await BANNEDUSER.deleteMany({ meetingId });
-        deleteProfile(meeting.meetingImage);
+        deleteImage(meeting.meetingImage);
 
         res.status(201).json({
             result: true,
