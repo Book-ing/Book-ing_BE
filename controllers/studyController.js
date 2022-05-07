@@ -108,6 +108,16 @@ async function getStudyLists(req, res) {
             const studyMasterProfile = data[i].studyMasterProfile;
             const regDate = data[i].regDate;
 
+
+            const options = {
+                provider: 'google',
+                apiKey: process.env.GOOGLE_GEOCODING_APIKEY,
+            };
+            const geocoder = NodeGeocoder(options);
+            const regionResult = await geocoder.geocode(data[i].studyAddr);
+            const Lat = regionResult[0].latitude; //위도
+            const Long = regionResult[0].longitude; //경도
+
             //모임에 있는 각!! 스터디 아이디에 참여한 멤버들을 가지고 온다.
             people = await STUDYMEMBERS.find({ studyId });
             let studyUserCnt = 0;
@@ -172,6 +182,8 @@ async function getStudyLists(req, res) {
                 studyNote,
                 studyMasterProfile,
                 regDate,
+                Lat,
+                Long,
                 together,
             });
         }
@@ -206,7 +218,7 @@ async function postStudy(req, res) {
     //임시 유저
     // const { userId } = req.query;
     const { userId } = res.locals.user;
-    console.log('@@@2', userId);
+    // console.log('@@@2', userId);
 
 
 
@@ -247,18 +259,6 @@ async function postStudy(req, res) {
                 message: '유효하지 않은 모임입니다.'
             })
         }
-
-        const options = {
-            provider: 'google',
-            apiKey: process.env.GOOGLE_GEOCODING_APIKEY,
-        };
-        const geocoder = NodeGeocoder(options);
-        const regionResult = await geocoder.geocode(studyAddr);
-        const Lat = regionResult[0].latitude; //위도
-        const Long = regionResult[0].longitude; //경도
-
-        console.log("위도", Lat)
-        console.log('경도', Long)
 
 
         // console.log("만들 스터디의 모임", validMeeting)
@@ -307,7 +307,6 @@ async function postStudy(req, res) {
             return res.status(201).json({
                 result: true,
                 message: '스터디 등록 성공',
-                Lat, Long
             });
 
         } else {
@@ -369,17 +368,7 @@ async function updateStudy(req, res) {
             studyBookImg = 'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
         }
 
-        const options = {
-            provider: 'google',
-            apiKey: process.env.GOOGLE_GEOCODING_APIKEY,
-        };
-        const geocoder = NodeGeocoder(options);
-        const regionResult = await geocoder.geocode(studyAddr);
-        const Lat = regionResult[0].latitude; //위도
-        const Long = regionResult[0].longitude; //경도
 
-        // console.log("위도", Lat)
-        // console.log('경도', Long)
 
 
         const targetStudy = await STUDY.findOne({ studyId });
@@ -447,7 +436,6 @@ async function updateStudy(req, res) {
                     return res.status(201).json({
                         result: true,
                         message: '스터디 정보 수정 완료!',
-                        Lat, Long
                     });
                 } else {
                     return res.status(403).json({
