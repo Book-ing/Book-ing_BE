@@ -185,6 +185,19 @@ async function getMeetingUsers(req, res) {
     const { userId } = res.locals.user;
 
     try {
+        let isMeetingMaster = false;
+        let isMeetingJoined = false;
+        const existMeetingMember = await MEETINGMEMBER.findOne({
+            meetingMemberId: userId,
+            meetingId,
+        });
+        if (!existMeetingMember) {
+            return res.status(400).json({
+                result: false,
+                message: '모임 가입 유저만 조회가 가능합니다.',
+            });
+        }
+
         const myProfile = await USER.findOne(
             { userId },
             {
@@ -217,12 +230,6 @@ async function getMeetingUsers(req, res) {
             }
         );
 
-        let isMeetingMaster = false;
-        let isMeetingJoined = false;
-        const existMeetingMember = await MEETINGMEMBER.findOne({
-            meetingMemberId: userId,
-            meetingId,
-        });
         if (existMeetingMember) isMeetingJoined = true;
         if (userId === meetingInfo.meetingMasterId) {
             isMeetingMaster = true;
@@ -444,7 +451,6 @@ async function kickMeetingMember(req, res) {
     }
 }
 
-// TODO 이미지 업데이트 시 기존 사진 삭제하는 로직 추가해야 함
 async function modifyMeeting(req, res) {
     const {
         meetingId,
