@@ -215,17 +215,11 @@ async function getStudyLists(req, res) {
  *
  */
 async function postStudy(req, res) {
-    //임시 유저
-    // const { userId } = req.query;
     const { userId } = res.locals.user;
-    // console.log('@@@2', userId);
-
-
 
     //스터디 만들때 모임에 가입된 여부 확인로직
     //없는 미팅에 스터디 만들때 체크
 
-    // const studyMasterId = res.locals.user.userId
     let {
         meetingId,
         studyTitle,
@@ -261,17 +255,14 @@ async function postStudy(req, res) {
         }
 
 
-        // console.log("만들 스터디의 모임", validMeeting)
         let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
-        // console.log(`${meetingId}모임의 멤버들`, meetingMembers)
         let meetingMemberId = [];
         //스터디를 만들때 모임이 존재한다면
 
         for (let i = 0; i < meetingMembers.length; i++) {
             meetingMemberId.push(meetingMembers[i].meetingMemberId);
         }
-        // console.log(`${meetingId}에 있는 멤버들의 아이디`, meetingMemberId);
-        // console.log("모임에 가입한 사람들의 아이디", meetingMemberId)
+
         //로그인한 유저가 모임에 가입되었는지 아닌지 여부 체크
         if (meetingMemberId.includes(Number(userId))) {
             // 책에 이미지를 넣지 않았다면
@@ -339,15 +330,9 @@ async function postStudy(req, res) {
  *
  */
 async function updateStudy(req, res) {
-    // const { userId } = req.query; //임시로 로그인한 유저 표시
     const { userId } = res.locals.user;
-    const validUser = await USER.findOne({ userId });
-    if (!validUser) {
-        return res.status(403).json({
-            result: false,
-            message: '유효하지 않은 유저입니다.',
-        });
-    }
+
+
     let {
         studyId,
         studyTitle,
@@ -364,12 +349,17 @@ async function updateStudy(req, res) {
 
 
     try {
+
+        const validUser = await USER.findOne({ userId });
+        if (!validUser) {
+            return res.status(403).json({
+                result: false,
+                message: '유효하지 않은 유저입니다.',
+            });
+        }
         if (studyBookImg === '' || studyBookImg === null) {
             studyBookImg = 'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
         }
-
-
-
 
         const targetStudy = await STUDY.findOne({ studyId });
         if (!targetStudy) {
@@ -379,7 +369,6 @@ async function updateStudy(req, res) {
             });
         }
         let validMeeting = await MEETING.findOne({ meetingId });
-        // console.log("수정하려고 하는 모임", validMeeting)
         let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
         let meetingMemberId = [];
         //해당 모임에 가입되어 있는 사람들 찾음
@@ -397,8 +386,7 @@ async function updateStudy(req, res) {
         for (let i = 0; i < checkStudy.length; i++) {
             checkStudyId.push(checkStudy[i].studyId);
         }
-        // console.log("미팅 아이디 안에 종속되어 있는 스터디들", checkStudy)
-        // console.log('미팅 아이디 안에 종속되어 있는 스터디 아이디들', checkStudyId);
+
         if (!checkStudyId.includes(Number(studyId))) {
             return res.status(403).json({
                 result: false,
@@ -407,14 +395,12 @@ async function updateStudy(req, res) {
             });
         }
         const updateStudy = await STUDY.findOne({ studyId });
-        // console.log(`${meetingId}모임의 멤버들 아이디`, meetingMemberId);
 
         //로그인한 유저가 해당 모임에 가입되어 있다면
 
         if (meetingMemberId.includes(Number(userId))) {
             // 수정하고자 하는 스터디가 존재한다면
             if (updateStudy) {
-                // console.log("수정하고자 하는 스터디", updateStudy)
 
                 if (updateStudy.studyMasterId === Number(userId) || validMeeting.meetingMasterId === Number(userId)) {
                     await STUDY.updateOne(
@@ -478,10 +464,8 @@ async function updateStudy(req, res) {
  *
  */
 async function inoutStudy(req, res) {
-    // const { userId } = req.query;//임시 로그인 유저
     const { userId } = res.locals.user;
     const { studyId, meetingId } = req.body;
-    // const { userId } = res.locals
 
     try {
         //받은 모임이 존재하는 지 체크
@@ -505,7 +489,6 @@ async function inoutStudy(req, res) {
         for (let i = 0; i < targetStudy.length; i++) {
             targetStudyId.push(targetStudy[i].studyId);
         }
-        // console.log(`${meetingId}안에 있는 스터디들의 아이디`, targetStudyId);
         if (!targetStudyId.includes(Number(studyId))) {
             return res.status(403).json({
                 result: false,
@@ -518,7 +501,6 @@ async function inoutStudy(req, res) {
         for (let i = 0; i < meetingMembers.length; i++) {
             meetingMemberId.push(meetingMembers[i].meetingMemberId);
         }
-        // console.log(`${meetingId}모임에 참가한 멤버의 아이디`, meetingMemberId);
         if (meetingMemberId.includes(Number(userId))) {
             let master = false;
             //모임에서 강퇴당한 유저 찾기
@@ -626,23 +608,23 @@ async function getStudyMembers(req, res) {
     // const { userId } = req.query;//임시로 로그인한 유저로 친다.
     const { userId } = res.locals.user;
     const { studyId } = req.params;
-
-    const validStudy = await STUDY.findOne({ studyId });
-    if (!validStudy) {
-        return res.status(403).json({
-            result: false,
-            message: '유효하지 않은 스터디 입니다.',
-        });
-    }
-    const validUser = await USER.findOne({ userId });
-    if (!validUser) {
-        return res.status(403).json({
-            result: false,
-            message: '유효하지 않은 유저입니다! ',
-        });
-    }
-
     try {
+        const validStudy = await STUDY.findOne({ studyId });
+        if (!validStudy) {
+            return res.status(403).json({
+                result: false,
+                message: '유효하지 않은 스터디 입니다.',
+            });
+        }
+        const validUser = await USER.findOne({ userId });
+        if (!validUser) {
+            return res.status(403).json({
+                result: false,
+                message: '유효하지 않은 유저입니다! ',
+            });
+        }
+
+
         let studyUsers = [];
         let myProfileData = {};
         let masterProfileData = {};
@@ -758,8 +740,8 @@ async function getStudyMembers(req, res) {
  * 
  ===================================================================*/
 async function kickUser(req, res) {
-    // const { userId } = req.query;//로그인한 임시유저
     const { userId } = res.locals.user;
+
     //targetId ==강퇴시킬 유저
     const { studyId, targetId, meetingId } = req.body;
     try {
@@ -793,8 +775,7 @@ async function kickUser(req, res) {
                 meetingMaster = meetingMembers[i].meetingMemberId;
             }
         }
-        // console.log('모임 마스터', meetingMaster);
-        // console.log(`${meetingId}모임의 멤버 아이디`, meetingMemberId);
+
 
         //삭제할 유저가 있는 모임 (모임장을 뽑기 위해)
         validMeeting = await MEETING.findOne({ meetingId });
@@ -856,8 +837,7 @@ async function kickUser(req, res) {
 async function deleteStudy(req, res) {
     const { userId } = res.locals.user;
     const { studyId, meetingId } = req.params;
-    //임시 유저
-    // const { userId } = req.query;
+
     try {
         const targetStudy = await STUDY.findOne({ studyId });
         if (!targetStudy) {
@@ -882,11 +862,9 @@ async function deleteStudy(req, res) {
         }
         const deleteStudy = await STUDY.find({ meetingId });
         let deleteStudyId = [];
-        // console.log("삭제하려고 하는 스터디들", deleteStudy)
         for (let i = 0; i < deleteStudy.length; i++) {
             deleteStudyId.push(deleteStudy[i].studyId);
         }
-        // console.log('삭제하려고 하는 스터디들의 아이디', deleteStudyId);
         if (!deleteStudyId.includes(Number(studyId))) {
             return res.status(403).json({
                 result: fasle,
@@ -902,7 +880,6 @@ async function deleteStudy(req, res) {
                 meetingMaster = meetingMembers[i].meetingMemberId;
             }
         }
-        // console.log(`${meetingId}모임의 멤버 아이디`, meetingMemberId);
 
         if (meetingMemberId.includes(Number(userId))) {
             const targetStudyMember = await STUDYMEMBERS.find({ studyId });
