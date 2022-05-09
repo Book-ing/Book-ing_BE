@@ -59,7 +59,7 @@ async function postNote(req, res) {
             }
             // studyMemberId.push(studyMembers[i].)
         }
-        console.log('스터디 노트 작성 가능한 자', editMaster);
+        // console.log('스터디 노트 작성 가능한 자', editMaster);
         if (editMaster.includes(Number(userId))) {
             await STUDY.updateOne({ studyId }, { $set: { studyNote } });
             return res
@@ -192,7 +192,7 @@ async function updateNote(req, res) {
                 editMaster.push(studyMembers[i].studyMemberId);
             }
         }
-        console.log('WWWw', editMaster);
+        // console.log('WWWw', editMaster);
         if (editMaster.includes(Number(userId))) {
             await STUDY.updateOne({ studyId }, { $set: { studyNote } });
             return res
