@@ -119,3 +119,4 @@ dist
 # custom
 .idea/
 swagger-output.json
+/config/
