@@ -40,12 +40,12 @@ async function postNote(req, res) {
         let studyMembers = await STUDYMEMBERS.find({ studyId });
         // console.log(`${studyId}에 참여한 사람들`, studyMembers)
         //받은 스터디의 모임 찾음
-        // if (!studyMembers.includes(Number(userId))) {
-        //     return res.status(403).json({
-        //         result: 'false',
-        //         message: '해당 스터디 참여 멤버가 아닙니다'
-        //     })
-        // }
+        if (!studyMembers.includes(Number(userId))) {
+            return res.status(403).json({
+                result: 'false',
+                message: '해당 스터디 참여 멤버가 아닙니다'
+            })
+        }
         let targetMeeting = await MEETING.findOne({
             meetingId: validStudy.meetingId,
         });
@@ -59,7 +59,7 @@ async function postNote(req, res) {
             }
             // studyMemberId.push(studyMembers[i].)
         }
-        console.log('스터디 노트 작성 가능한 자', editMaster);
+        // console.log('스터디 노트 작성 가능한 자', editMaster);
         if (editMaster.includes(Number(userId))) {
             await STUDY.updateOne({ studyId }, { $set: { studyNote } });
             return res
@@ -192,7 +192,7 @@ async function updateNote(req, res) {
                 editMaster.push(studyMembers[i].studyMemberId);
             }
         }
-        console.log('WWWw', editMaster);
+        // console.log('WWWw', editMaster);
         if (editMaster.includes(Number(userId))) {
             await STUDY.updateOne({ studyId }, { $set: { studyNote } });
             return res
