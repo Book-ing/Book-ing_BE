@@ -112,7 +112,7 @@ async function getMeetingInfo(req, res) {
             userId: meetingInfo.meetingMasterId,
         });
         // 모임에 가입된 유저들
-        const meetingUserList = await MEETINGMEMBER.find({ meetingId });
+        const meetingUserList = await MEETINGMEMBER.find({ meetingId, isMeetingMaster: false });
         // 모임에 가입된 유저들 고유 id
         const meetingUsersId = meetingUserList.map(
             (result) => result.meetingMemberId
@@ -127,7 +127,7 @@ async function getMeetingInfo(req, res) {
                 statusMessage: true,
                 _id: false,
             }
-        ).limit(4);
+        ).limit(3);
 
         const meetingUsersProfileArr = [];
         for (let i = 0; i < meetingUsersProfile.length; i++) {
@@ -158,7 +158,7 @@ async function getMeetingInfo(req, res) {
                 meetingLocation: meetingLocation.codeValue,
                 meetingImage: meetingInfo.meetingImage,
                 meetingIntro: meetingInfo.meetingIntro,
-                meetingUserCnt: meetingUserList.length,
+                meetingUserCnt: meetingUserList.length + 1,
                 meetingLimitCnt: meetingInfo.meetingLimitCnt,
                 isMeetingJoined,
                 meetingMasterProfile: {
