@@ -118,6 +118,7 @@ async function getStudyLists(req, res) {
             const Lat = regionResult[0].latitude; //위도
             const Long = regionResult[0].longitude; //경도
 
+
             //모임에 있는 각!! 스터디 아이디에 참여한 멤버들을 가지고 온다.
             people = await STUDYMEMBERS.find({ studyId });
             let studyUserCnt = 0;
