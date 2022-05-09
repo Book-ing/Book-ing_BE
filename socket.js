@@ -1,10 +1,17 @@
 const app = require('./app');
 const http = require('http');
+const https = require('https');
 const MEETINGMEMBER = require('./schemas/meetingMember');
 const CHAT = require('./schemas/chats');
 const lib = require('./lib/util');
+const credentials = require('./config/httpsConfig');
 
-const server = http.createServer(app);
+let server = '';
+if (process.env.PORT) {
+    server = https.createServer(credentials, app);
+} else {
+    server = http.createServer(app);
+}
 const io = require('socket.io')(server, {
     cors: {
         origin: '*',
@@ -22,7 +29,7 @@ io.on('connection', (socket) => {
         try {
             const existMember = await MEETINGMEMBER.findOne({ meetingId, meetingMemberId: userId });
             if (existMember) {
-                socket.join(meetingId);
+                socket.join('meeting', meetingId);
                 io.to(meetingId).emit('joinMeetingRoom', userId);
                 console.log(`${userId} join a ${meetingId} Room`);
             }
