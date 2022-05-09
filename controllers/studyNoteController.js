@@ -40,12 +40,12 @@ async function postNote(req, res) {
         let studyMembers = await STUDYMEMBERS.find({ studyId });
         // console.log(`${studyId}에 참여한 사람들`, studyMembers)
         //받은 스터디의 모임 찾음
-        // if (!studyMembers.includes(Number(userId))) {
-        //     return res.status(403).json({
-        //         result: 'false',
-        //         message: '해당 스터디 참여 멤버가 아닙니다'
-        //     })
-        // }
+        if (!studyMembers.includes(Number(userId))) {
+            return res.status(403).json({
+                result: 'false',
+                message: '해당 스터디 참여 멤버가 아닙니다'
+            })
+        }
         let targetMeeting = await MEETING.findOne({
             meetingId: validStudy.meetingId,
         });
