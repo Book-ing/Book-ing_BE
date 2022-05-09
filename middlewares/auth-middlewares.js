@@ -19,7 +19,7 @@ const USER = require('../schemas/user');
  *  1.
  */
 module.exports = async (req, res, next) => {
-    const { authorization, refreshtoken, required } = req.headers;
+    const { authorization, required } = req.headers;
 
     if (required === '0') {
         if (!authorization) {
@@ -28,15 +28,10 @@ module.exports = async (req, res, next) => {
     }
 
     if (!authorization)
-        return res
-            .status(401)
-            .json({ result: false, message: '로그인이 필요합니다.' });
+        return res.status(401).json({ result: false, message: '로그인이 필요합니다.' });
 
     if (authorization.split(' ').length !== 2)
-        return res.status(401).json({
-            result: false,
-            message: '요청 헤더 내 authorization 값이 올바르지 않습니다.',
-        });
+        return res.status(401).json({ result: false, message: '요청 헤더 내 authorization 값이 올바르지 않습니다.' });
 
     const [tokenType, tokenValue] = authorization.split(' ');
     if (tokenType !== 'Bearer')
@@ -59,48 +54,14 @@ module.exports = async (req, res, next) => {
             return res.status(401).json({
                 result: false,
                 message:
-                    '요청한 accessToken 내 사용자정보가 존재하지 않습니다.',
+                    '사용자정보가 존재하지 않습니다.',
             });
 
         res.locals.user = existUser;
         next();
     } else {
         // accessToken이 비정상인 경우
-        if (accessTokenResult.message === 'jwt expired') {
-            // accessToken이 만료된 경우
-            const refreshTokenResult = await refreshTokenVerify(
-                refreshtoken,
-                decoded.userId
-            );
-            if (!refreshTokenResult)
-                // refreshToken이 비정상이라면, 클라이언트에서 로그인창으로 이동시켜줘야한다.
-                return res.status(401).json({
-                    result: false,
-                    message:
-                        '해당 사용자의 refreshToken이 만료되었습니다. 재로그인이 필요합니다.',
-                });
-            else {
-                // refreshToken이 정상이고 accessToken이 재발행 되었다면, 클라이언트에서 토큰정보를 갱신하고, 재실행 시켜야한다.
-                // 201 Created : 요청이 성공적이었으며 그 결과로 새로운 리소스가 생성되었습니다. 이 응답은 일반적으로 POST 요청 또는 일부 PUT 요청 이후에 따라옵니다.
-                return res.status(201).json({
-                    result: true,
-                    message: 'accessToken 재발행 성공.',
-                    data: {
-                        accessToken: accessTokenSign({
-                            userId: decoded.userId,
-                        }),
-                        refreshToken: refreshtoken,
-                    },
-                });
-            }
-        } else {
-            return res.status(401).json({
-                result: false,
-                message:
-                    'accessToken이 올바르지 않습니다. 사유: ' +
-                    accessTokenResult.message,
-            });
-        }
+        return res.status(401).json({ result: false, message: 'accessToken이 만료되었거나, 유효하지 않습니다.'})
     }
 };
 
