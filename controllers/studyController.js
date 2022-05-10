@@ -58,7 +58,6 @@ const NodeGeocoder = require('node-geocoder');
  */
 async function getStudyLists(req, res) {
     const { meetingId } = req.params;
-    const { userId } = req.query;
 
     /**===================================================================
   * 각 모임id별로 있는 스터디 존재 
@@ -68,13 +67,7 @@ async function getStudyLists(req, res) {
         //해당 모임id 에 있는 전체 스터디 목록 찾기
 
         //유저가 유효한 유저인지 체크
-        const validUser = await USER.findOne({ userId });
-        if (!validUser) {
-            return res.status(403).json({
-                result: false,
-                message: '유효하지 않은 유저입니다.',
-            });
-        }
+
 
         const validMeeting = await MEETING.findOne({ meetingId });
 
@@ -105,7 +98,6 @@ async function getStudyLists(req, res) {
             const studyBookImg = data[i].studyBookImg;
             const studyBookInfo = data[i].studyBookInfo;
             const studyNote = data[i].studyNote;
-            const studyMasterProfile = data[i].studyMasterProfile;
             const regDate = data[i].regDate;
 
 
@@ -118,18 +110,30 @@ async function getStudyLists(req, res) {
             const Lat = regionResult[0].latitude; //위도
             const Long = regionResult[0].longitude; //경도
 
-
             //모임에 있는 각!! 스터디 아이디에 참여한 멤버들을 가지고 온다.
             people = await STUDYMEMBERS.find({ studyId });
             let studyUserCnt = 0;
             let isStudyJoined = false;
 
-            //지금 로그인한 유저가 이 스터디에 참가 했는지 안했는지 판단
-            for (let k = 0; k < people.length; k++) {
-                if (people[k].studyMemberId === Number(userId)) {
-                    isStudyJoined = true;
+
+            //유저가 로그인하지 않아도 내용을 볼 수 있도록 
+            if (res.locals.user) {
+                const { userId } = res.locals.user
+
+                for (let k = 0; k < people.length; k++) {
+                    if (people[k].studyMemberId === Number(userId)) {
+                        isStudyJoined = true;
+                    }
+                }
+                const validUser = await USER.findOne({ userId });
+                if (!validUser) {
+                    return res.status(403).json({
+                        result: false,
+                        message: '유효하지 않은 유저입니다.',
+                    });
                 }
             }
+            //지금 로그인한 유저가 이 스터디에 참가 했는지 안했는지 판단
 
             const together = [];
             let isStudyMaster;
@@ -139,6 +143,9 @@ async function getStudyLists(req, res) {
           ===================================================================*/
             //각 스터디에 참여한 멤버들을 유저에서 찾아 유저 아이디와 프로필을 가져오기 위한 것
             //각 스터디에 참여한 멤버들이 마스터인지 아닌지 판단 여부 넣어줌
+            //people===스터디에 참여한 사람들 
+            const studyMasterProfile = {};
+
             for (let j = 0; j < people.length; j++) {
                 let joinedUser = await USER.find({
                     userId: people[j].studyMemberId,
@@ -158,12 +165,17 @@ async function getStudyLists(req, res) {
                 const profileImage = joinedUser[0].profileImage;
                 studyUserCnt = people.length;
                 isStudyMaster = people[j].isStudyMaster;
-
-                together.push({
-                    userId,
-                    isStudyMaster,
-                    profileImage,
-                });
+                if (isStudyMaster) {
+                    studyMasterProfile.userId = userId
+                    studyMasterProfile.profileImage = profileImage
+                    studyMasterProfile.isStudyMaster = isStudyMaster
+                } else {
+                    together.push({
+                        userId,
+                        isStudyMaster,
+                        profileImage,
+                    });
+                }
             }
 
             studyList.push({
@@ -185,6 +197,7 @@ async function getStudyLists(req, res) {
                 regDate,
                 Lat,
                 Long,
+                studyMasterProfile,
                 together,
             });
         }

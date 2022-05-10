@@ -61,7 +61,7 @@ module.exports = async (req, res, next) => {
         next();
     } else {
         // accessToken이 비정상인 경우
-        return res.status(401).json({ result: false, message: 'accessToken이 만료되었거나, 유효하지 않습니다.'})
+        return res.status(401).json({ result: false, message: 'accessToken이 만료되었거나, 유효하지 않습니다.' })
     }
 };
 
