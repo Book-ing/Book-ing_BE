@@ -22,7 +22,7 @@ module.exports = async (req, res, next) => {
     const { authorization, required } = req.headers;
 
     if (required === '0') {
-        if (!authorization) {
+        if (authorization === 'Bearer undefined') {
             return next();
         }
     }
