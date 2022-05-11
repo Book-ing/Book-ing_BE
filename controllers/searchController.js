@@ -38,7 +38,6 @@ async function getSelectSearchMeeting(req, res){
     );
 
     searchData = arrSearchMeetingList;
-    console.log(searchData);
 
     // 사용자가 선택한 지역을 검색한다.
     if(location !== ''){
@@ -88,12 +87,14 @@ async function getSelectSearchMeeting(req, res){
         });
 
         const locationName = codeByLotationName.find((element) => {
-            if(String(element.codeId) === val.meetingLocation) return true;
+            if(String(element.codeId) === String(val.meetingLocation)) return true;
         });
+        console.log('locationName', locationName);
 
         const CategoryName = codeByCategoryName.find((element) => {
-            if(String(element.codeId) === val.meetingCategory) return true;
+            if(String(element.codeId) === String(val.meetingCategory)) return true;
         });
+        console.log('CategoryName', CategoryName);
 
         return {
             meetingId: val.meetingId,
