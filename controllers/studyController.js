@@ -97,6 +97,8 @@ async function getStudyLists(req, res) {
             const studyBookTitle = data[i].studyBookTitle;
             const studyBookImg = data[i].studyBookImg;
             const studyBookInfo = data[i].studyBookInfo;
+            const studyBookWriter = data[i].studyBookWriter;
+            const studyBookPurblisher = data[i].studyBookPurblisher;
             const studyNote = data[i].studyNote;
             const regDate = data[i].regDate;
 
@@ -192,6 +194,8 @@ async function getStudyLists(req, res) {
                 studyBookTitle,
                 studyBookImg,
                 studyBookInfo,
+                studyBookWriter,
+                studyBookPurblisher,
                 studyNote,
                 studyMasterProfile,
                 regDate,
@@ -246,6 +250,8 @@ async function postStudy(req, res) {
         studyBookTitle,
         studyBookImg,
         studyBookInfo,
+        studyBookWriter,
+        studyBookPurblisher,
     } = req.body;
 
 
@@ -298,6 +304,8 @@ async function postStudy(req, res) {
                 studyBookImg,
                 studyBookTitle,
                 studyBookInfo,
+                studyBookWriter,
+                studyBookPurblisher,
                 regDate: getDate(),
             }).then(
                 async (study) =>
@@ -359,6 +367,8 @@ async function updateStudy(req, res) {
         studyBookTitle,
         studyBookImg,
         studyBookInfo,
+        studyBookWriter,
+        studyBookPurblisher,
     } = req.body;
 
 
@@ -430,6 +440,8 @@ async function updateStudy(req, res) {
                                 studyBookTitle,
                                 studyBookImg,
                                 studyBookInfo,
+                                studyBookWriter,
+                                studyBookPurblisher,
                             },
                         }
                     );

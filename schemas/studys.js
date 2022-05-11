@@ -14,6 +14,8 @@ const studySchema = new mongoose.Schema({
     studyBookImg: { type: String },
     studyBookTitle: { type: String },
     studyBookInfo: { type: String },
+    studyBookWriter: { type: String },
+    studyBookPurblisher: { type: String },
     studyNote: { type: String },
     regDate: { type: String, required: true },
     modDate: { type: String },
