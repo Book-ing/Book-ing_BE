@@ -25,8 +25,8 @@ async function createMeeting(req, res) {
     } = req.body;
 
     try {
-        const existMaster = await MEETING.find({ meetingMasterId: userId });
-        if (existMaster.length) {
+        const existMaster = await MEETING.findOne({ meetingMasterId: userId });
+        if (existMaster) {
             if (req.file) deleteImage(req.file.location);
             return res.status(400).json({
                 result: false,
@@ -454,7 +454,6 @@ async function kickMeetingMember(req, res) {
 async function modifyMeeting(req, res) {
     const {
         meetingId,
-        meetingName,
         meetingCategory,
         meetingLocation,
         meetingIntro,
@@ -492,7 +491,6 @@ async function modifyMeeting(req, res) {
                 { meetingId, meetingMasterId: userId },
                 {
                     $set: {
-                        meetingName,
                         meetingCategory: categoryCode.codeId,
                         meetingLocation: locationCode.codeId,
                         meetingIntro,
@@ -505,7 +503,6 @@ async function modifyMeeting(req, res) {
                 { meetingId, meetingMasterId: userId },
                 {
                     $set: {
-                        meetingName,
                         meetingCategory: categoryCode.codeId,
                         meetingLocation: locationCode.codeId,
                         meetingIntro,
