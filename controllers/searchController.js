@@ -42,7 +42,7 @@ async function getSelectSearchMeeting(req, res){
     // 사용자가 선택한 지역을 검색한다.
     if(location !== ''){
         searchData = searchData.filter((val, i) => {
-            if(val.meetingLocation === location) return true;
+            if(String(val.meetingLocation) === String(location)) return true;
             else return false;
         })
     }
@@ -52,7 +52,7 @@ async function getSelectSearchMeeting(req, res){
         const arrSplitCategory = category.split(',');
         searchData = searchData.filter((val, i) => {
             for(let ii = 0; ii < arrSplitCategory.length; ii++){
-                if(val.meetingCategory === arrSplitCategory[ii]) return true;
+                if(String(val.meetingCategory) === String(arrSplitCategory[ii])) return true;
             }
             return false;
         })
