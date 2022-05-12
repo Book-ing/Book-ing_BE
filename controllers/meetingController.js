@@ -454,7 +454,6 @@ async function kickMeetingMember(req, res) {
 async function modifyMeeting(req, res) {
     const {
         meetingId,
-        meetingName,
         meetingCategory,
         meetingLocation,
         meetingIntro,
@@ -492,7 +491,6 @@ async function modifyMeeting(req, res) {
                 { meetingId, meetingMasterId: userId },
                 {
                     $set: {
-                        meetingName,
                         meetingCategory: categoryCode.codeId,
                         meetingLocation: locationCode.codeId,
                         meetingIntro,
@@ -505,7 +503,6 @@ async function modifyMeeting(req, res) {
                 { meetingId, meetingMasterId: userId },
                 {
                     $set: {
-                        meetingName,
                         meetingCategory: categoryCode.codeId,
                         meetingLocation: locationCode.codeId,
                         meetingIntro,
