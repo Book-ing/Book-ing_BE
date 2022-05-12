@@ -98,8 +98,10 @@ async function getSelectSearchMeeting(req, res){
 
         return {
             meetingId: val.meetingId,
-            meetingName: '['+locationName.codeValue+']'+val.meetingName+' ('+joinedCnt.count+'/'+val.meetingLimitCnt+')',
+            meetingName: val.meetingName,
             meetingIntro: val.meetingIntro,
+            meetingJoinedCnt: '('+joinedCnt.count+'/'+val.meetingLimitCnt+')',
+            meetingLocation: locationName.codeValue,
             meetingCategory: CategoryName.codeValue
         }
     });
