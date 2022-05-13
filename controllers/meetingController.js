@@ -25,8 +25,8 @@ async function createMeeting(req, res) {
     } = req.body;
 
     try {
-        const existMaster = await MEETING.find({ meetingMasterId: userId });
-        if (existMaster.length) {
+        const existMaster = await MEETING.findOne({ meetingMasterId: userId });
+        if (existMaster) {
             if (req.file) deleteImage(req.file.location);
             return res.status(400).json({
                 result: false,
@@ -342,7 +342,7 @@ async function inoutMeeting(req, res) {
                 studyMemberId: userId,
             });
             const joinedStudyId = memberStudys.map((result) => result.studyId);
-            const joinedStudys = await STUDY.find({ studyId: joinedStudyId });
+            const joinedStudys = await STUDY.find({ studyId: joinedStudyId, meetingId });
             for (let i = 0; i < joinedStudys.length; i++) {
                 if (
                     // 스터디가 완료되지 않고 강퇴당하는 유저가 스터디 마스터면 스터디와 스터디원 전부를 스터디에서 삭제시킨다.
@@ -412,7 +412,7 @@ async function kickMeetingMember(req, res) {
                 studyMemberId: targetId,
             });
             const joinedStudyId = memberStudys.map((result) => result.studyId);
-            const joinedStudys = await STUDY.find({ studyId: joinedStudyId });
+            const joinedStudys = await STUDY.find({ studyId: joinedStudyId, meetingId });
             for (let i = 0; i < joinedStudys.length; i++) {
                 if (
                     // 스터디가 완료되지 않고 강퇴당하는 유저가 스터디 마스터면 스터디와 스터디원 전부를 스터디에서 삭제시킨다.
@@ -457,7 +457,6 @@ async function kickMeetingMember(req, res) {
 async function modifyMeeting(req, res) {
     const {
         meetingId,
-        meetingName,
         meetingCategory,
         meetingLocation,
         meetingIntro,
@@ -495,7 +494,6 @@ async function modifyMeeting(req, res) {
                 { meetingId, meetingMasterId: userId },
                 {
                     $set: {
-                        meetingName,
                         meetingCategory: categoryCode.codeId,
                         meetingLocation: locationCode.codeId,
                         meetingIntro,
@@ -508,7 +506,6 @@ async function modifyMeeting(req, res) {
                 { meetingId, meetingMasterId: userId },
                 {
                     $set: {
-                        meetingName,
                         meetingCategory: categoryCode.codeId,
                         meetingLocation: locationCode.codeId,
                         meetingIntro,
