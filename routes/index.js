@@ -5,7 +5,7 @@ const mainRouter = require('./main');
 const studyRouter = require('./study');
 const meetingRouter = require('./meeting');
 const mypage = require('./mypage');
-const search = require('./search')
+const search = require('./search');
 const chat = require('./chat');
 
 router.use('/study', studyRouter);

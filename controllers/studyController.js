@@ -68,7 +68,6 @@ async function getStudyLists(req, res) {
 
         //유저가 유효한 유저인지 체크
 
-
         const validMeeting = await MEETING.findOne({ meetingId });
 
         //조회하고자 하는 모임이 존재하는 지 체크
@@ -102,7 +101,6 @@ async function getStudyLists(req, res) {
             const studyNote = data[i].studyNote;
             const regDate = data[i].regDate;
 
-
             const options = {
                 provider: 'google',
                 apiKey: process.env.GOOGLE_GEOCODING_APIKEY,
@@ -117,10 +115,9 @@ async function getStudyLists(req, res) {
             let studyUserCnt = 0;
             let isStudyJoined = false;
 
-
-            //유저가 로그인하지 않아도 내용을 볼 수 있도록 
+            //유저가 로그인하지 않아도 내용을 볼 수 있도록
             if (res.locals.user) {
-                const { userId } = res.locals.user
+                const { userId } = res.locals.user;
 
                 for (let k = 0; k < people.length; k++) {
                     if (people[k].studyMemberId === Number(userId)) {
@@ -145,7 +142,7 @@ async function getStudyLists(req, res) {
           ===================================================================*/
             //각 스터디에 참여한 멤버들을 유저에서 찾아 유저 아이디와 프로필을 가져오기 위한 것
             //각 스터디에 참여한 멤버들이 마스터인지 아닌지 판단 여부 넣어줌
-            //people===스터디에 참여한 사람들 
+            //people===스터디에 참여한 사람들
             const studyMasterProfile = {};
 
             for (let j = 0; j < people.length; j++) {
@@ -168,9 +165,9 @@ async function getStudyLists(req, res) {
                 studyUserCnt = people.length;
                 isStudyMaster = people[j].isStudyMaster;
                 if (isStudyMaster) {
-                    studyMasterProfile.userId = userId
-                    studyMasterProfile.profileImage = profileImage
-                    studyMasterProfile.isStudyMaster = isStudyMaster
+                    studyMasterProfile.userId = userId;
+                    studyMasterProfile.profileImage = profileImage;
+                    studyMasterProfile.isStudyMaster = isStudyMaster;
                 } else {
                     together.push({
                         userId,
@@ -254,11 +251,8 @@ async function postStudy(req, res) {
         studyBookPurblisher,
     } = req.body;
 
-
-
     //스터디를 만든 사람이 방장이 된다.
     try {
-
         const validUser = await USER.findOne({ userId });
         if (!validUser) {
             return res.status(403).json({
@@ -270,10 +264,9 @@ async function postStudy(req, res) {
         if (!validMeeting) {
             return res.status(403).json({
                 result: false,
-                message: '유효하지 않은 모임입니다.'
-            })
+                message: '유효하지 않은 모임입니다.',
+            });
         }
-
 
         let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
         let meetingMemberId = [];
@@ -321,7 +314,6 @@ async function postStudy(req, res) {
                 result: true,
                 message: '스터디 등록 성공',
             });
-
         } else {
             return res.status(403).json({
                 result: false,
@@ -329,7 +321,6 @@ async function postStudy(req, res) {
                     '모임에 가입하지 않으셨습니다 먼저 모임에 가입해주세요!',
             });
         }
-
     } catch (err) {
         console.log(err);
         return res.status(400).json({
@@ -354,7 +345,6 @@ async function postStudy(req, res) {
 async function updateStudy(req, res) {
     const { userId } = res.locals.user;
 
-
     let {
         studyId,
         studyTitle,
@@ -371,9 +361,7 @@ async function updateStudy(req, res) {
         studyBookPurblisher,
     } = req.body;
 
-
     try {
-
         const validUser = await USER.findOne({ userId });
         if (!validUser) {
             return res.status(403).json({
@@ -382,7 +370,8 @@ async function updateStudy(req, res) {
             });
         }
         if (studyBookImg === '' || studyBookImg === null) {
-            studyBookImg = 'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
+            studyBookImg =
+                'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
         }
 
         const targetStudy = await STUDY.findOne({ studyId });
@@ -425,8 +414,10 @@ async function updateStudy(req, res) {
         if (meetingMemberId.includes(Number(userId))) {
             // 수정하고자 하는 스터디가 존재한다면
             if (updateStudy) {
-
-                if (updateStudy.studyMasterId === Number(userId) || validMeeting.meetingMasterId === Number(userId)) {
+                if (
+                    updateStudy.studyMasterId === Number(userId) ||
+                    validMeeting.meetingMasterId === Number(userId)
+                ) {
                     await STUDY.updateOne(
                         { studyId },
                         {
@@ -469,8 +460,7 @@ async function updateStudy(req, res) {
                     '해당 모임에 가입되어 있지 않습니다! 모임에 먼저 가입하세요!',
             });
         }
-    }
-    catch (err) {
+    } catch (err) {
         console.log(err);
         res.status(400).json({
             result: false,
@@ -650,7 +640,6 @@ async function getStudyMembers(req, res) {
             });
         }
 
-
         let studyUsers = [];
         let myProfileData = {};
         let masterProfileData = {};
@@ -801,7 +790,6 @@ async function kickUser(req, res) {
                 meetingMaster = meetingMembers[i].meetingMemberId;
             }
         }
-
 
         //삭제할 유저가 있는 모임 (모임장을 뽑기 위해)
         validMeeting = await MEETING.findOne({ meetingId });

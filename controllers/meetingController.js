@@ -112,7 +112,10 @@ async function getMeetingInfo(req, res) {
             userId: meetingInfo.meetingMasterId,
         });
         // 모임에 가입된 유저들
-        const meetingUserList = await MEETINGMEMBER.find({ meetingId, isMeetingMaster: false });
+        const meetingUserList = await MEETINGMEMBER.find({
+            meetingId,
+            isMeetingMaster: false,
+        });
         // 모임에 가입된 유저들 고유 id
         const meetingUsersId = meetingUserList.map(
             (result) => result.meetingMemberId

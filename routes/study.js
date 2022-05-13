@@ -1,7 +1,10 @@
 const express = require('express');
 const studyController = require('../controllers/studyController');
 const studyNoteController = require('../controllers/studyNoteController');
-const { createStudyValidation, updateStudyValidation } = require('../middlewares/studyValidator');
+const {
+    createStudyValidation,
+    updateStudyValidation,
+} = require('../middlewares/studyValidator');
 const authMiddleware = require('../middlewares/auth-middlewares');
 const router = express.Router();
 

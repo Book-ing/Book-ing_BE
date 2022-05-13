@@ -2,7 +2,7 @@ const { body, validationResult } = require('express-validator');
 
 const error = (req, res, next) => {
     const errors = validationResult(req);
-    console.log('validateError : ', errors['errors']);
+
     if (errors.isEmpty()) {
         return next();
     }
@@ -38,7 +38,6 @@ const createStudyValidation = [
     error,
 ];
 
-
 const updateStudyValidation = [
     body('meetingId')
         .notEmpty()
@@ -60,6 +59,5 @@ const updateStudyValidation = [
         .withMessage('스터디 할 상세 주소도 필수 입력값입니다.'),
     error,
 ];
-
 
 module.exports = { createStudyValidation, updateStudyValidation };

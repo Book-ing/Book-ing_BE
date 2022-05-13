@@ -2,6 +2,9 @@ const STUDY = require('../schemas/studys');
 const STUDYMEMBERS = require('../schemas/studyMembers');
 const MEETING = require('../schemas/meeting');
 const USER = require('../schemas/user');
+const Buffer = require('buffer').Buffer
+const fs = require('fs');
+
 
 //💡
 //스터디 노트 작성
@@ -32,15 +35,21 @@ async function postNote(req, res) {
                 message: '유효하지 않은 유저입니다! ',
             });
         }
+        const decode = Buffer.from(studyNote, 'base64')
 
+        console.log("잘 되냐?", decode)
         //스터디 노트 작성 가능한 자
         let editMaster = [];
         // let studyMemberId = [];
         //받은 스터디 아이디의 멤버들 찾음
+        let validStudyMembers = [];
         let studyMembers = await STUDYMEMBERS.find({ studyId });
-        // console.log(`${studyId}에 참여한 사람들`, studyMembers)
+        for (let i = 0; i < studyMembers.length; i++) {
+            validStudyMembers.push(studyMembers[i].studyMemberId)
+        }
+
         //받은 스터디의 모임 찾음
-        if (!studyMembers.includes(Number(userId))) {
+        if (!validStudyMembers.includes(Number(userId))) {
             return res.status(403).json({
                 result: 'false',
                 message: '해당 스터디 참여 멤버가 아닙니다'
@@ -132,7 +141,7 @@ async function deleteNote(req, res) {
             await STUDY.updateOne({ studyId }, { $set: { studyNote: '' } });
             return res
                 .status(201)
-                .json({ result: true, message: '스터디 삭제 작성 완료!' });
+                .json({ result: true, message: '스터디 노트 삭제 완료!' });
         } else {
             return res.status(400).json({
                 result: false,
