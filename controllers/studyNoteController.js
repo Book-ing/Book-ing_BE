@@ -35,9 +35,9 @@ async function postNote(req, res) {
                 message: '유효하지 않은 유저입니다! ',
             });
         }
-        const decode = Buffer.from(studyNote, 'base64')
+        // const decode = Buffer.from(studyNote, 'base64')
 
-        console.log("잘 되냐?", decode)
+        // console.log("잘 되냐?", decode)
         //스터디 노트 작성 가능한 자
         let editMaster = [];
         // let studyMemberId = [];
