@@ -1127,45 +1127,45 @@ async function deleteStudy(req, res) {
     const { userId } = res.locals.user;
     const { studyId, meetingId } = req.params;
     try {
-        const targetStudy = await STUDY.findOne({ studyId: Number(studyId) });
-        if (!targetStudy) {
-            /*=====================================================================================
-               #swagger.responses[403] = {
-                   description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
-                   schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
-               }
-               =====================================================================================*/
-            return res.status(403).json({
-                result: false,
-                message: '해당 스터디가 존재하지 않습니다! ',
-            });
-        }
-        const validMeeting = await MEETING.findOne({ meetingId: Number(meetingId) });
-        if (!validMeeting) {
-            /*=====================================================================================
-               #swagger.responses[403] = {
-                   description: '받은 모임 id가 유효하지 않을 때 이 응답이 갑니다.',
-                   schema: { "result": false, 'message':'해당 모임이 존재하지 않습니다.', }
-               }
-               =====================================================================================*/
-            return res.status(403).json({
-                result: false,
-                message: '해당 모임이 존재하지 않습니다.',
-            });
-        }
-        const validUser = await USER.findOne({ userId: Number(userId) });
-        if (!validUser) {
-            /*=====================================================================================
-               #swagger.responses[403] = {
-                   description: '로그인한 유저가 유효하지 않은 유저일 때 이 응답이 갑니다.',
-                   schema: { "result": false, 'message':'유효하지 않은 유저입니다! ', }
-               }
-               =====================================================================================*/
-            return res.status(403).json({
-                result: false,
-                message: '유효하지 않은 유저입니다! ',
-            });
-        }
+        // const targetStudy = await STUDY.findOne({ studyId: Number(studyId) });
+        // if (!targetStudy) {
+        //     /*=====================================================================================
+        //        #swagger.responses[403] = {
+        //            description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
+        //            schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
+        //        }
+        //        =====================================================================================*/
+        //     return res.status(403).json({
+        //         result: false,
+        //         message: '해당 스터디가 존재하지 않습니다! ',
+        //     });
+        // }
+        // const validMeeting = await MEETING.findOne({ meetingId: Number(meetingId) });
+        // if (!validMeeting) {
+        //     /*=====================================================================================
+        //        #swagger.responses[403] = {
+        //            description: '받은 모임 id가 유효하지 않을 때 이 응답이 갑니다.',
+        //            schema: { "result": false, 'message':'해당 모임이 존재하지 않습니다.', }
+        //        }
+        //        =====================================================================================*/
+        //     return res.status(403).json({
+        //         result: false,
+        //         message: '해당 모임이 존재하지 않습니다.',
+        //     });
+        // }
+        // const validUser = await USER.findOne({ userId: Number(userId) });
+        // if (!validUser) {
+        //     /*=====================================================================================
+        //        #swagger.responses[403] = {
+        //            description: '로그인한 유저가 유효하지 않은 유저일 때 이 응답이 갑니다.',
+        //            schema: { "result": false, 'message':'유효하지 않은 유저입니다! ', }
+        //        }
+        //        =====================================================================================*/
+        //     return res.status(403).json({
+        //         result: false,
+        //         message: '유효하지 않은 유저입니다! ',
+        //     });
+        // }
         const deleteStudy = await STUDY.find({ meetingId: Number(meetingId) });
         let deleteStudyId = [];
         for (let i = 0; i < deleteStudy.length; i++) {
@@ -1200,9 +1200,9 @@ async function deleteStudy(req, res) {
                 targetStudy.studyMasterId === Number(userId) ||
                 meetingMaster === Number(userId)
             ) {
-                await STUDY.deleteOne({ studyId });
+                await STUDY.deleteOne({ studyId: Number(studyId) });
                 for (let i = 0; i < targetStudyMember.length; i++) {
-                    await STUDYMEMBERS.findOneAndDelete({ studyId });
+                    await STUDYMEMBERS.findOneAndDelete({ studyId: Number(studyId) });
                 }
 
                 /*=====================================================================================
