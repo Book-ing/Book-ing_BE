@@ -805,7 +805,7 @@ async function getStudyMembers(req, res) {
     const { userId } = res.locals.user;
     const { studyId } = req.params;
     try {
-        const validStudy = await STUDY.findOne({ studyId });
+        const validStudy = await STUDY.findOne({ studyId: Number(studyId) });
         if (!validStudy) {
             /*=====================================================================================
            #swagger.responses[403] = {
@@ -818,7 +818,7 @@ async function getStudyMembers(req, res) {
                 message: '유효하지 않은 스터디 입니다.',
             });
         }
-        const validUser = await USER.findOne({ userId });
+        const validUser = await USER.findOne({ userId: Number(userId) });
         if (!validUser) {
             /*=====================================================================================
          #swagger.responses[403] = {
@@ -844,7 +844,7 @@ async function getStudyMembers(req, res) {
         let isStudyMaster;
 
         //현재 조회한 스터디id에 참여한 유저들
-        const data = await STUDYMEMBERS.find({ studyId });
+        const data = await STUDYMEMBERS.find({ studyId: Number(studyId) });
         // console.log(`스터디 ${studyId}에 있는 스터디 멤버들`, data)
         //현재 스터디의 멤버 수만큼 반복 중
         for (let i = 0; i < data.length; i++) {
@@ -1126,22 +1126,21 @@ async function deleteStudy(req, res) {
 
     const { userId } = res.locals.user;
     const { studyId, meetingId } = req.params;
-
     try {
-        // const targetStudy = await STUDY.findOne({ studyId });
-        // if (!targetStudy) {
-        //     /*=====================================================================================
-        //        #swagger.responses[403] = {
-        //            description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
-        //            schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
-        //        }
-        //        =====================================================================================*/
-        //     return res.status(403).json({
-        //         result: false,
-        //         message: '해당 스터디가 존재하지 않습니다! ',
-        //     });
-        // }
-        const validMeeting = await MEETING.findOne({ meetingId });
+        const targetStudy = await STUDY.findOne({ studyId: Number(studyId) });
+        if (!targetStudy) {
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
+                   schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
+               }
+               =====================================================================================*/
+            return res.status(403).json({
+                result: false,
+                message: '해당 스터디가 존재하지 않습니다! ',
+            });
+        }
+        const validMeeting = await MEETING.findOne({ meetingId: Number(meetingId) });
         if (!validMeeting) {
             /*=====================================================================================
                #swagger.responses[403] = {
@@ -1154,7 +1153,7 @@ async function deleteStudy(req, res) {
                 message: '해당 모임이 존재하지 않습니다.',
             });
         }
-        const validUser = await USER.findOne({ userId });
+        const validUser = await USER.findOne({ userId: Number(userId) });
         if (!validUser) {
             /*=====================================================================================
                #swagger.responses[403] = {
@@ -1167,7 +1166,7 @@ async function deleteStudy(req, res) {
                 message: '유효하지 않은 유저입니다! ',
             });
         }
-        const deleteStudy = await STUDY.find({ meetingId });
+        const deleteStudy = await STUDY.find({ meetingId: Number(meetingId) });
         let deleteStudyId = [];
         for (let i = 0; i < deleteStudy.length; i++) {
             deleteStudyId.push(deleteStudy[i].studyId);
@@ -1185,7 +1184,7 @@ async function deleteStudy(req, res) {
             });
         }
         let meetingMemberId = [];
-        let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
+        let meetingMembers = await MEETINGMEMBERS.find({ meetingId: Number(meetingId) });
         let meetingMaster;
         for (let i = 0; i < meetingMembers.length; i++) {
             meetingMemberId.push(meetingMembers[i].meetingMemberId);
@@ -1195,7 +1194,7 @@ async function deleteStudy(req, res) {
         }
 
         if (meetingMemberId.includes(Number(userId))) {
-            const targetStudyMember = await STUDYMEMBERS.find({ studyId });
+            const targetStudyMember = await STUDYMEMBERS.find({ studyId: Number(studyId) });
             //스터디장과 모임장만이 스터디를 삭제할 수 있다.
             if (
                 targetStudy.studyMasterId === Number(userId) ||
