@@ -340,7 +340,7 @@ async function postStudy(req, res) {
             /*=====================================================================================
                #swagger.responses[201] = {
                    description: '스터디 생성에 성공했을 때 이 응답을 준다.',
-                   schema: { "result": false, 'message':'스터디 생성 성공', }
+                   schema: { "result": true, 'message':'스터디 생성 성공', }
                }
                =====================================================================================*/
             return res.status(201).json({
@@ -521,7 +521,7 @@ async function updateStudy(req, res) {
                     /*=====================================================================================
                        #swagger.responses[201] = {
                            description: '스터디 정보 수정이 완료되면 이 응답을 준다.',
-                           schema: { "result": false, 'message':'스터디 정보 수정 완료!', }
+                           schema: { "result": true, 'message':'스터디 정보 수정 완료!', }
                        }
                        =====================================================================================*/
                     return res.status(201).json({
@@ -734,7 +734,7 @@ async function inoutStudy(req, res) {
                     /*=====================================================================================
                    #swagger.responses[201] = {
                        description: '스터디 취소에 성공했을 때 이 응답을 준다.',
-                       schema: { "result": false, 'message':'스터디 취소 성공', }
+                       schema: { "result": true, 'message':'스터디 취소 성공', }
                    }
                    =====================================================================================*/
                     return res.status(201).json({
@@ -774,7 +774,7 @@ async function inoutStudy(req, res) {
             /*=====================================================================================
            #swagger.responses[201] = {
                description: '스터디 참가에 성공했을 때 이 응답을 준다.',
-               schema: { "result": false, 'message':'스터디 참가 성공', }
+               schema: { "result": true, 'message':'스터디 참가 성공', }
            }
            =====================================================================================*/
             return res.status(201).json({
@@ -948,7 +948,7 @@ async function getStudyMembers(req, res) {
         /*=====================================================================================
            #swagger.responses[200] = {
                description: '스터디 멤버를 조회하는 api ',
-               schema: { "result": false, 스터디 멤버들 데이터
+               schema: { "result": true, 스터디 멤버들 데이터
                (
                 myProfile,
                 studyMasterProfile,
@@ -1069,6 +1069,12 @@ async function kickUser(req, res) {
                         studyId: targetStudy.studyId,
                         studyMemberId: targetId,
                     });
+                    /*=====================================================================================
+                       #swagger.responses[201] = {
+                           description: '유저 강퇴를 성공할 경우 이 응답을 준다.',
+                           schema: { "result": true, 'message': '유저 강퇴', }
+                       }
+                       =====================================================================================*/
                     return res.status(201).json({
                         result: true,
                         message: '유저 강퇴',
@@ -1146,6 +1152,8 @@ async function deleteStudy(req, res) {
         #swagger.summary = '스터디 삭제 API'
         #swagger.description = '스터디 삭제 API'
     ========================================================================================================*/
+
+
 
     const { userId } = res.locals.user;
     const { studyId, meetingId } = req.params;
@@ -1236,7 +1244,7 @@ async function deleteStudy(req, res) {
                 /*=====================================================================================
                    #swagger.responses[200] = {
                        description: '스터디 삭제가 성공했음을 응답으로 넘겨줍니다.',
-                       schema: { "result": false, 'message:'스터디 삭제 성공', }
+                       schema: { "result": true, 'message:'스터디 삭제 성공', }
                    }
                    =====================================================================================*/
                 return res.status(200).json({

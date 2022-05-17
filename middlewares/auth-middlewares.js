@@ -33,12 +33,10 @@ module.exports = async (req, res, next) => {
             .json({ result: false, message: '로그인이 필요합니다.' });
 
     if (authorization.split(' ').length !== 2)
-        return res
-            .status(401)
-            .json({
-                result: false,
-                message: '요청 헤더 내 authorization 값이 올바르지 않습니다.',
-            });
+        return res.status(401).json({
+            result: false,
+            message: '요청 헤더 내 authorization 값이 올바르지 않습니다.',
+        });
 
     const [tokenType, tokenValue] = authorization.split(' ');
     if (tokenType !== 'Bearer')
@@ -67,12 +65,10 @@ module.exports = async (req, res, next) => {
         next();
     } else {
         // accessToken이 비정상인 경우
-        return res
-            .status(401)
-            .json({
-                result: false,
-                message: 'accessToken이 만료되었거나, 유효하지 않습니다.',
-            });
+        return res.status(401).json({
+            result: false,
+            message: 'accessToken이 만료되었거나, 유효하지 않습니다.',
+        });
     }
 };
 

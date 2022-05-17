@@ -342,7 +342,10 @@ async function inoutMeeting(req, res) {
                 studyMemberId: userId,
             });
             const joinedStudyId = memberStudys.map((result) => result.studyId);
-            const joinedStudys = await STUDY.find({ studyId: joinedStudyId, meetingId });
+            const joinedStudys = await STUDY.find({
+                studyId: joinedStudyId,
+                meetingId,
+            });
             for (let i = 0; i < joinedStudys.length; i++) {
                 if (
                     // 스터디가 완료되지 않고 강퇴당하는 유저가 스터디 마스터면 스터디와 스터디원 전부를 스터디에서 삭제시킨다.
@@ -412,7 +415,10 @@ async function kickMeetingMember(req, res) {
                 studyMemberId: targetId,
             });
             const joinedStudyId = memberStudys.map((result) => result.studyId);
-            const joinedStudys = await STUDY.find({ studyId: joinedStudyId, meetingId });
+            const joinedStudys = await STUDY.find({
+                studyId: joinedStudyId,
+                meetingId,
+            });
             for (let i = 0; i < joinedStudys.length; i++) {
                 if (
                     // 스터디가 완료되지 않고 강퇴당하는 유저가 스터디 마스터면 스터디와 스터디원 전부를 스터디에서 삭제시킨다.
@@ -455,12 +461,8 @@ async function kickMeetingMember(req, res) {
 }
 
 async function modifyMeeting(req, res) {
-    const {
-        meetingId,
-        meetingCategory,
-        meetingLocation,
-        meetingIntro,
-    } = req.body;
+    const { meetingId, meetingCategory, meetingLocation, meetingIntro } =
+        req.body;
     const { userId } = res.locals.user;
 
     try {
