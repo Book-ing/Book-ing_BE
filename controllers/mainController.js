@@ -36,7 +36,6 @@ async function getSelectMainView(req, res) {
     let response = {};
     let isMeetingMaster = false;
     const codes = await CODE.find({ groupId: { $in: [1, 2] } });
-    
 
     /**===================================================================
      * 내 모임 조회
@@ -48,7 +47,7 @@ async function getSelectMainView(req, res) {
         // 로그인 한 경우, 해당 사용자가 가입한 모임이 있는지 검사한다.
         const userId = res.locals.user.userId;
         const meetings = await MEETINGMEMBER.find({ meetingMemberId: userId });
-        
+
         // 가입한 모임이 없는 경우, 빈 오브젝트를 내려준다.
         if (meetings.length === 0) {
             response.myMeeting = {};
@@ -59,7 +58,11 @@ async function getSelectMainView(req, res) {
             });
 
             // 본인이 만든 모임을 가지고 있다면 true 아니면 false를 내려준다.
-            isMeetingMaster = meetings.map((val, i) => { return val.isMeetingMaster; }).includes(true);
+            isMeetingMaster = meetings
+                .map((val, i) => {
+                    return val.isMeetingMaster;
+                })
+                .includes(true);
             if (isMeetingMaster) {
                 // 내 모임을 가지고 있는 경우라면,
                 // 내 모임이 가장 앞으로 나오게 먼저 결과데이터에 넣어주고, 나머지 데이터를 뒤로 넣어준다.
@@ -75,14 +78,14 @@ async function getSelectMainView(req, res) {
                         meetingIntro: true,
                     }
                 );
-                
+
                 response.myMeeting = myMetting.map((val, i) => {
                     const categoryName = codes.find((element) => {
-                        if(element.codeId === val.meetingCategory) return true;
+                        if (element.codeId === val.meetingCategory) return true;
                     });
 
                     const locationName = codes.find((element) => {
-                        if(element.codeId === val.meetingLocation) return true;
+                        if (element.codeId === val.meetingLocation) return true;
                     });
 
                     return {
@@ -96,7 +99,10 @@ async function getSelectMainView(req, res) {
                 });
 
                 const myMettingList = await MEETING.find(
-                    { meetingId: { $in: myMeetingIdList }, meetingMasterId: { $ne: userId} },
+                    {
+                        meetingId: { $in: myMeetingIdList },
+                        meetingMasterId: { $ne: userId },
+                    },
                     {
                         _id: false,
                         meetingId: true,
@@ -110,11 +116,11 @@ async function getSelectMainView(req, res) {
 
                 const arrMyMettingList = myMettingList.map((val) => {
                     const categoryName = codes.find((element) => {
-                        if(element.codeId === val.meetingCategory) return true;
+                        if (element.codeId === val.meetingCategory) return true;
                     });
 
                     const locationName = codes.find((element) => {
-                        if(element.codeId === val.meetingLocation) return true;
+                        if (element.codeId === val.meetingLocation) return true;
                     });
 
                     return {
@@ -127,7 +133,8 @@ async function getSelectMainView(req, res) {
                     };
                 });
 
-                response.myMeeting = response.myMeeting.concat(arrMyMettingList);
+                response.myMeeting =
+                    response.myMeeting.concat(arrMyMettingList);
             } else {
                 // 내 모임을 가지고 있지 않은 경우라면,
                 const myMettingList = await MEETING.find(
@@ -146,11 +153,11 @@ async function getSelectMainView(req, res) {
                 console.log(myMettingList);
                 response.myMeeting = myMettingList.map((val) => {
                     const categoryName = codes.find((element) => {
-                        if(element.codeId === val.meetingCategory) return true;
+                        if (element.codeId === val.meetingCategory) return true;
                     });
 
                     const locationName = codes.find((element) => {
-                        if(element.codeId === val.meetingLocation) return true;
+                        if (element.codeId === val.meetingLocation) return true;
                     });
 
                     return {
@@ -161,7 +168,6 @@ async function getSelectMainView(req, res) {
                         meetingLocation: locationName.codeValue,
                         meetingIntro: val.meetingIntro,
                     };
-
                 });
             }
         }
@@ -213,11 +219,11 @@ async function getSelectMainView(req, res) {
 
     const resultTodayMeetingList = todayMeetingList.map((val) => {
         const categoryName = codes.find((element) => {
-            if(element.codeId === val.meetingCategory) return true;
+            if (element.codeId === val.meetingCategory) return true;
         });
 
         const locationName = codes.find((element) => {
-            if(element.codeId === val.meetingLocation) return true;
+            if (element.codeId === val.meetingLocation) return true;
         });
 
         return {
@@ -227,7 +233,7 @@ async function getSelectMainView(req, res) {
             meetingCategory: categoryName.codeValue,
             meetingLocation: locationName.codeValue,
             meetingIntro: val.meetingIntro,
-        }
+        };
     });
 
     response.todayMeeting = resultTodayMeetingList;
@@ -283,11 +289,11 @@ async function getSelectMainView(req, res) {
 
     const resultReccommendMeetingList = recommendMeetingList.map((val) => {
         const categoryName = codes.find((element) => {
-            if(element.codeId === val.meetingCategory) return true;
+            if (element.codeId === val.meetingCategory) return true;
         });
 
         const locationName = codes.find((element) => {
-            if(element.codeId === val.meetingLocation) return true;
+            if (element.codeId === val.meetingLocation) return true;
         });
 
         return {
@@ -297,8 +303,8 @@ async function getSelectMainView(req, res) {
             meetingCategory: categoryName.codeValue,
             meetingLocation: locationName.codeValue,
             meetingIntro: val.meetingIntro,
-        }
-    })
+        };
+    });
     response.recommendMeeting = resultReccommendMeetingList;
 
     /**===================================================================
@@ -324,11 +330,11 @@ async function getSelectMainView(req, res) {
 
     const resultNewMettingList = newMettingList.map((val) => {
         const categoryName = codes.find((element) => {
-            if(element.codeId === val.meetingCategory) return true;
+            if (element.codeId === val.meetingCategory) return true;
         });
 
         const locationName = codes.find((element) => {
-            if(element.codeId === val.meetingLocation) return true;
+            if (element.codeId === val.meetingLocation) return true;
         });
 
         return {
@@ -338,8 +344,8 @@ async function getSelectMainView(req, res) {
             meetingCategory: categoryName.codeValue,
             meetingLocation: locationName.codeValue,
             meetingIntro: val.meetingIntro,
-        }
-    })
+        };
+    });
     response.newMeeting = resultNewMettingList;
 
     res.status(200).json({

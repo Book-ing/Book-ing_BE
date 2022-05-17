@@ -31,17 +31,23 @@ async function getSelectMyProfile(req, res) {
         }
     );
 
-    if(!existUser)
-        return res.status(400).json({ result: true, message: '존재하지 않는 사용자입니다.' });
+    if (!existUser)
+        return res
+            .status(400)
+            .json({ result: true, message: '존재하지 않는 사용자입니다.' });
 
     let resultdata = {
         userId: existUser.userId,
         profileImage: existUser.profileImage,
         statusMessage: existUser.statusMessage,
-        isStatusMessage: existUser.statusMessage === '' ? false : true
+        isStatusMessage: existUser.statusMessage === '' ? false : true,
     };
 
-    res.json({ result: true, message: '마이페이지 프로필 조회 성공', data: resultdata });
+    res.json({
+        result: true,
+        message: '마이페이지 프로필 조회 성공',
+        data: resultdata,
+    });
 }
 
 /**
@@ -97,12 +103,20 @@ async function getSelectMyMeeting(req, res) {
     const myMeeting = await MEETING.findOne({ meetingMasterId: userId });
 
     // 내가 만든 모임이 없다면, 빈 오브젝트를 내려준다.
-    if(!myMeeting)
-        return res.json({ result: true, message: '마이페이지 내가 만든 모임 조회 성공', data: resultData });
+    if (!myMeeting)
+        return res.json({
+            result: true,
+            message: '마이페이지 내가 만든 모임 조회 성공',
+            data: resultData,
+        });
 
     // 내가 만든 모임이 존재한다면, 해당 모임의 가입인원 수, 스터디 발제 수를 구한다.
-    const joinedCnt = await MEETINGMEMBER.countDocuments({meetingId: myMeeting.meetingId}); // 가입 인원 수
-    const studyCnt = await STUDY.countDocuments({ meetingId: myMeeting.meetingId });        // 스터디 발제 수
+    const joinedCnt = await MEETINGMEMBER.countDocuments({
+        meetingId: myMeeting.meetingId,
+    }); // 가입 인원 수
+    const studyCnt = await STUDY.countDocuments({
+        meetingId: myMeeting.meetingId,
+    }); // 스터디 발제 수
 
     // 결과데이터 생성
     resultData.myMeeting = {
@@ -111,13 +125,13 @@ async function getSelectMyMeeting(req, res) {
         meetingImage: myMeeting.meetingImage,
         meetingJoinedCnt: joinedCnt,
         meetingStudyCnt: studyCnt,
-        meetingIntro: myMeeting.meetingIntro
+        meetingIntro: myMeeting.meetingIntro,
     };
 
     res.json({
         result: true,
         message: '마이페이지 내가 만든 모임 조회 성공',
-        data: resultData
+        data: resultData,
     });
 }
 
@@ -129,7 +143,7 @@ async function getSelectMyMeeting(req, res) {
  *      1-2. 사용자정보가 있다면 2번 진행
  *  2. 사용자가 가입되어있는 모임을 조회 후 meetingId로 배열 생성
  *  3. 생성한 배열로 해당 사용자가 가입되어있는 모임리스트 조회
- *  4. 미팅 별 가입자 수, 스터디 발제 수 데이터를 조회하고, 조회한 
+ *  4. 미팅 별 가입자 수, 스터디 발제 수 데이터를 조회하고, 조회한
  *      모임리스트로 새로운 오브젝트 데이터 생성 후 성공처리하여 데이터를 내려준다.
  * FIXME:
  *  1. valid check
@@ -139,38 +153,47 @@ async function getSelectJoinedMeeting(req, res) {
 
     // 요청한 사용자가 있는지 검사한다.
     const existUser = await USER.find({ userId: userId });
-    if(!existUser) res.status(400).json({ result: false, message: '존재하지 않는 사용자입니다.' });
+    if (!existUser)
+        res.status(400).json({
+            result: false,
+            message: '존재하지 않는 사용자입니다.',
+        });
 
     // 결과데이터 오브젝트 선언
     let resultData = {};
 
     // 해당 사용자가 가입되어있는 모임을 조회 후 meetingId로 이루어진 배열로 만든다.
-    const arrResultMeeting = await MEETINGMEMBER.find({ meetingMemberId: userId}, { _id: false, meetingId: true });
+    const arrResultMeeting = await MEETINGMEMBER.find(
+        { meetingMemberId: userId },
+        { _id: false, meetingId: true }
+    );
     const arrJoinedMeetingId = arrResultMeeting.map((val, i) => {
-        return val.meetingId
-    })
-    
+        return val.meetingId;
+    });
+
     // 해당 사용자가 가입되어있는 모임의 정보를 조회한다.
-    const arrJoinedMeetingList = await MEETING.find({ meetingId: arrJoinedMeetingId });
-    if(arrJoinedMeetingList === 0){
+    const arrJoinedMeetingList = await MEETING.find({
+        meetingId: arrJoinedMeetingId,
+    });
+    if (arrJoinedMeetingList === 0) {
         resultData.joinedMeeting = {};
-    }else{
+    } else {
         // 미팅 별 가입자 수
         const meetingByJoindedCnt = await MEETINGMEMBER.aggregate([
-            {"$group" : {_id:"$meetingId", count:{$sum:1}}}
+            { $group: { _id: '$meetingId', count: { $sum: 1 } } },
         ]);
 
         // 미팅 별 스터디 수
         const meetingByStudyCnt = await STUDY.aggregate([
-            {"$group" : {_id:"$meetingId", count:{$sum:1}}}
+            { $group: { _id: '$meetingId', count: { $sum: 1 } } },
         ]);
 
         resultData.joinedMeeting = arrJoinedMeetingList.map((val, i) => {
             const joinedCnt = meetingByJoindedCnt.find((element) => {
-                if(element._id === val.meetingId) return true;
+                if (element._id === val.meetingId) return true;
             });
             const studyCnt = meetingByStudyCnt.find((element) => {
-                if(element._id === val.meetingId) return true;
+                if (element._id === val.meetingId) return true;
             });
 
             return {
@@ -180,11 +203,15 @@ async function getSelectJoinedMeeting(req, res) {
                 meetingJoinedCnt: joinedCnt.count,
                 meetingStudyCnt: studyCnt.count,
                 meetingIntro: val.meetingIntro,
-            }
-        })
+            };
+        });
     }
 
-    res.json({ result: true, message: '마이페이지 내가 가입된 모임 조회 성공', data: resultData });
+    res.json({
+        result: true,
+        message: '마이페이지 내가 가입된 모임 조회 성공',
+        data: resultData,
+    });
 }
 
 /**
@@ -205,7 +232,11 @@ async function getSelectMyStudy(req, res) {
 
     // 유저 존재여부 검사
     const existUser = await USER.findOne({ userId: userId });
-    if(!existUser) return res.json({ result: false, message: '존재하지 않는 사용자입니다.' });
+    if (!existUser)
+        return res.json({
+            result: false,
+            message: '존재하지 않는 사용자입니다.',
+        });
 
     // 결과데이터 오브젝트 선언
     let resultData = {};
@@ -219,18 +250,21 @@ async function getSelectMyStudy(req, res) {
             studyAddr: true,
             studyAddrDetail: true,
             studyNotice: true,
-            studyPrice: true
+            studyPrice: true,
         }
     );
 
-    if(arrMyStudy.length === 0)
+    if (arrMyStudy.length === 0)
         // 해당 사용자가 발제한 스터디가 없다면 성공처리하여 빈 오브젝트를 내려준다.
         return res.json({ result: true, message: '', data: resultData });
-    else
-        // 발제한 스터디 결과 배열을 결과데이터에 초기화
-        resultData.myStudy = arrMyStudy;
+    // 발제한 스터디 결과 배열을 결과데이터에 초기화
+    else resultData.myStudy = arrMyStudy;
 
-    res.json({ result: true, message: '마이페이지 내가 만든 스터디 조회 성공', data: resultData });
+    res.json({
+        result: true,
+        message: '마이페이지 내가 만든 스터디 조회 성공',
+        data: resultData,
+    });
 }
 
 /**
@@ -251,7 +285,11 @@ async function getSelectJoinedStudy(req, res) {
 
     // 사용자 존재여부 검사
     const existUser = await USER.findOne({ userId: userId });
-    if(!existUser) return res.json({ result: false, message: '존재하지 않는 사용자입니다.' });
+    if (!existUser)
+        return res.json({
+            result: false,
+            message: '존재하지 않는 사용자입니다.',
+        });
 
     // 결과데이터 오브젝트 선언
     let resultData = {};
@@ -264,24 +302,31 @@ async function getSelectJoinedStudy(req, res) {
     const arrStudyList = await STUDY.find(
         { studyId: arrStudyIdList },
         {
-            _id: false,             // mongoDB 내 ID
-            studyId: true,          // 스터디 ID
-            studyTitle: true,       // 스터디 제목
-            studyDateTime: true,    // 스터디 날짜
-            studyAddr: true,        // 스터디 주소
-            studyAddrDetail: true,  // 스터디 상세주소
-            studyNotice: true,      // 스터디 공지
-            studyPrice: true        // 스터디 비용
+            _id: false, // mongoDB 내 ID
+            studyId: true, // 스터디 ID
+            studyTitle: true, // 스터디 제목
+            studyDateTime: true, // 스터디 날짜
+            studyAddr: true, // 스터디 주소
+            studyAddrDetail: true, // 스터디 상세주소
+            studyNotice: true, // 스터디 공지
+            studyPrice: true, // 스터디 비용
         }
     );
-    if(arrStudyList.length === 0)
+    if (arrStudyList.length === 0)
         // 내가 참여한 스터디가 없다면, 성공으로 처리하여, 빈 오브젝트를 내려준다.
-        return res.json({ resultData: true, message: '마이페이지 내가 참여한 스터디 조회 성공', data: resultData});
-    else
-        // 내가 참여한 스터디리스트 배열을 결과데이터에 초기화
-        resultData.joinedStudy = arrStudyList;
+        return res.json({
+            resultData: true,
+            message: '마이페이지 내가 참여한 스터디 조회 성공',
+            data: resultData,
+        });
+    // 내가 참여한 스터디리스트 배열을 결과데이터에 초기화
+    else resultData.joinedStudy = arrStudyList;
 
-    res.json({ result: true, message: '마이페이지 내가 참여한 스터디 조회 성공', data: resultData });
+    res.json({
+        result: true,
+        message: '마이페이지 내가 참여한 스터디 조회 성공',
+        data: resultData,
+    });
 }
 
 module.exports = {
