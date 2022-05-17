@@ -1127,8 +1127,8 @@ async function deleteStudy(req, res) {
     const { userId } = res.locals.user;
     const { studyId, meetingId } = req.params;
     try {
-        console.log("스터디 아이디,", studyId)
-        console.log("미팅 아이디", meetingId)
+        console.log("스터디 아이디,", studyId, "스터디 아이디 타입", typeof (studyId))
+        console.log("미팅 아이디", meetingId, "미팅 아이디 타입", typeof (meetingId))
         const targetStudy = await STUDY.findOne({ studyId });
 
         if (!targetStudy) {
