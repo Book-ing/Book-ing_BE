@@ -48,7 +48,7 @@ async function postNote(req, res) {
         for (let i = 0; i < studyMembers.length; i++) {
             validStudyMembers.push(studyMembers[i].studyMemberId);
         }
-
+        console.log(`${studyId}의 멤버들`, validStudyMembers)
         //받은 스터디의 모임 찾음
         if (!validStudyMembers.includes(Number(userId))) {
             return res.status(403).json({
