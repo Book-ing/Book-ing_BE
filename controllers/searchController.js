@@ -5,19 +5,18 @@ const CODE = require('../schemas/codes');
 /**
  * 2022. 05. 06. HSYOO.
  * TODO:
- *  1. 
+ *  1.
  * FIXME:
- *  1. 
+ *  1.
  */
-async function getSelectSearchMeeting(req, res){
-
+async function getSelectSearchMeeting(req, res) {
     let location = '';
     let keyword = '';
     let category = '';
 
-    !req.query.location ? location = '' : location = req.query.location;
-    !req.query.keyword ? keyword = '' : keyword = req.query.keyword;
-    !req.query.category ? category = '' : category = req.query.category;
+    !req.query.location ? (location = '') : (location = req.query.location);
+    !req.query.keyword ? (keyword = '') : (keyword = req.query.keyword);
+    !req.query.category ? (category = '') : (category = req.query.category);
 
     /**
      * location > 값이 없으면 '' 있으면 코드를 받음.
@@ -30,38 +29,45 @@ async function getSelectSearchMeeting(req, res){
 
     const regex = (pattern) => {
         return new RegExp(`.*${pattern}.*`);
-    }
+    };
     const keywordRegex = regex(keyword);
 
-    const arrSearchMeetingList = await MEETING.find(
-        { meetingName: { $regex: keywordRegex} }
-    );
+    const arrSearchMeetingList = await MEETING.find({
+        meetingName: { $regex: keywordRegex },
+    });
 
     searchData = arrSearchMeetingList;
 
     // 사용자가 선택한 지역을 검색한다.
-    if(location !== ''){
+    if (location !== '') {
         searchData = searchData.filter((val, i) => {
-            if(String(val.meetingLocation) === String(location)) return true;
+            if (String(val.meetingLocation) === String(location)) return true;
             else return false;
-        })
+        });
     }
 
     // 사용자가 선택한 카테고리를 검색한다.
-    if(category !== ''){
+    if (category !== '') {
         const arrSplitCategory = category.split(',');
         searchData = searchData.filter((val, i) => {
-            for(let ii = 0; ii < arrSplitCategory.length; ii++){
-                if(String(val.meetingCategory) === String(arrSplitCategory[ii])) return true;
+            for (let ii = 0; ii < arrSplitCategory.length; ii++) {
+                if (
+                    String(val.meetingCategory) === String(arrSplitCategory[ii])
+                )
+                    return true;
             }
             return false;
-        })
+        });
     }
-    
+
     // 검색을 끝냈으나, 검색한 결과가 없다면 빈 오브젝트를 생성하여 내려준다.
-    if(searchData.length === 0){
+    if (searchData.length === 0) {
         resultData.searchResult = {};
-        return res.json({ result: true, message: '검색 성공', data: resultData });
+        return res.json({
+            result: true,
+            message: '검색 성공',
+            data: resultData,
+        });
     }
 
     // 검색이 끝난 결과데이터를 최종정리한다.
@@ -72,7 +78,7 @@ async function getSelectSearchMeeting(req, res){
 
     // 미팅 별 가입자 수
     const meetingByJoindedCnt = await MEETINGMEMBER.aggregate([
-        {"$group" : {_id:"$meetingId", count:{$sum:1}}}
+        { $group: { _id: '$meetingId', count: { $sum: 1 } } },
     ]);
 
     // 지역 코드 조회
@@ -81,18 +87,19 @@ async function getSelectSearchMeeting(req, res){
     const codeByCategoryName = await CODE.find({ groupId: 2 });
 
     resultData.searchResult = searchData.map((val, i) => {
-
         const joinedCnt = meetingByJoindedCnt.find((element) => {
-            if(element._id === val.meetingId) return true;
+            if (element._id === val.meetingId) return true;
         });
 
         const locationName = codeByLotationName.find((element) => {
-            if(String(element.codeId) === String(val.meetingLocation)) return true;
+            if (String(element.codeId) === String(val.meetingLocation))
+                return true;
         });
         console.log('locationName', locationName);
 
         const CategoryName = codeByCategoryName.find((element) => {
-            if(String(element.codeId) === String(val.meetingCategory)) return true;
+            if (String(element.codeId) === String(val.meetingCategory))
+                return true;
         });
         console.log('CategoryName', CategoryName);
 
@@ -100,15 +107,16 @@ async function getSelectSearchMeeting(req, res){
             meetingId: val.meetingId,
             meetingName: val.meetingName,
             meetingIntro: val.meetingIntro,
-            meetingJoinedCnt: '('+joinedCnt.count+'/'+val.meetingLimitCnt+')',
+            meetingJoinedCnt:
+                '(' + joinedCnt.count + '/' + val.meetingLimitCnt + ')',
             meetingLocation: locationName.codeValue,
-            meetingCategory: CategoryName.codeValue
-        }
+            meetingCategory: CategoryName.codeValue,
+        };
     });
 
     res.json({ result: true, message: '검색 성공', data: resultData });
 }
 
 module.exports = {
-    getSelectSearchMeeting
-}
+    getSelectSearchMeeting,
+};

@@ -1,11 +1,10 @@
-const CHAT = require("../schemas/chats");
+const CHAT = require('../schemas/chats');
 
 async function getChat(req, res) {
     const { meetingId } = req.params;
     // const { userId } = res.locals.user;
 
     try {
-
         const chatList = await CHAT.find({ meetingId }).sort({ chatId: 1 });
         console.log(chatList);
 
@@ -17,5 +16,5 @@ async function getChat(req, res) {
 }
 
 module.exports = {
-    getChat
+    getChat,
 };

@@ -27,7 +27,10 @@ io.on('connection', (socket) => {
 
     socket.on('joinMeetingRoom', async (meetingId, userId) => {
         try {
-            const existMember = await MEETINGMEMBER.findOne({ meetingId, meetingMemberId: userId });
+            const existMember = await MEETINGMEMBER.findOne({
+                meetingId,
+                meetingMemberId: userId,
+            });
             if (existMember) {
                 socket.join('meeting', meetingId);
                 io.to(meetingId).emit('joinMeetingRoom', userId);

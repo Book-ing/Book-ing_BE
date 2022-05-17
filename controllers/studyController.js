@@ -16,37 +16,12 @@ const NodeGeocoder = require('node-geocoder');
  * //200 == 요청이 성공적으로 전달
  * //201 == 요청이 성공적이었으며 그 결과로 새로운 리소스가 생성되었습니다. 이 응답은 일반적으로 POST 요청 또는 일부 PUT 요청 이후에 따라옵니다.
  * 
- *  1. 여러 유효성 검사 함수로 만들어 반복 줄이기 
- *  const validStudy = await STUDY.findOne({ studyId })
-        if (!validStudy) {
-            return res.status(403).json({
-                result: 'false',
-                message: '유효하지 않은 스터디 입니다.'
-            })
-        }
-        const validUser = await USER.findOne({ userId })
-        if (!validUser) {
-            return res.status(403).json({
-                result: 'false',
-                message: '유효하지 않은 유저입니다! '
-            })
-        }
-        let validMeeting = await MEETING.findOne({ meetingId })
-        if (!validMeeting) {
-            return res.status(403).json({
-                result: 'false',
-                message: '유효하지 않은 모임입니다.'
-            })
-        }
-        ==> 이 부분 service로 만들 필요가 있나..?
- *  2. 더 꼼꼼히 보기 
  * 
  *
  */
 
 //여기는 모임 안에 들어온 상태다
 //스터디 목록 조회💡
-
 /**
  *
  * 2022. 05. 03. HOJIN
@@ -57,22 +32,27 @@ const NodeGeocoder = require('node-geocoder');
  *
  */
 async function getStudyLists(req, res) {
+    /*========================================================================================================
+        #swagger.tags = ['STUDY']
+        #swagger.summary = '스터디 조회 API'
+        #swagger.description = '스터디 조회 API'
+    ========================================================================================================*/
     const { meetingId } = req.params;
-
-    /**===================================================================
-  * 각 모임id별로 있는 스터디 존재 
-  ===================================================================*/
 
     try {
         //해당 모임id 에 있는 전체 스터디 목록 찾기
-
         //유저가 유효한 유저인지 체크
-
-
         const validMeeting = await MEETING.findOne({ meetingId });
 
         //조회하고자 하는 모임이 존재하는 지 체크
         if (!validMeeting) {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '받은 모임 id가 유효하지 않을 때 이 응답이 갑니다.',
+                   schema: { "result": false, 'message':'해당 모임이 존재하지 않습니다.', }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message: '존재하지 않는 모임입니다.',
@@ -80,7 +60,6 @@ async function getStudyLists(req, res) {
         }
 
         const data = await STUDY.find({ meetingId });
-        // data.sort((a, b) => b.regDate - a.regDate);
         let studyList = [];
 
         //해당 모임에 존재하는 전체 스터디들의 데이터를 가지고 온다.
@@ -102,12 +81,12 @@ async function getStudyLists(req, res) {
             const studyNote = data[i].studyNote;
             const regDate = data[i].regDate;
 
-
             const options = {
                 provider: 'google',
                 apiKey: process.env.GOOGLE_GEOCODING_APIKEY,
             };
             const geocoder = NodeGeocoder(options);
+
             const regionResult = await geocoder.geocode(data[i].studyAddr);
             const Lat = regionResult[0].latitude; //위도
             const Long = regionResult[0].longitude; //경도
@@ -117,10 +96,9 @@ async function getStudyLists(req, res) {
             let studyUserCnt = 0;
             let isStudyJoined = false;
 
-
-            //유저가 로그인하지 않아도 내용을 볼 수 있도록 
+            //유저가 로그인하지 않아도 내용을 볼 수 있도록
             if (res.locals.user) {
-                const { userId } = res.locals.user
+                const { userId } = res.locals.user;
 
                 for (let k = 0; k < people.length; k++) {
                     if (people[k].studyMemberId === Number(userId)) {
@@ -129,6 +107,13 @@ async function getStudyLists(req, res) {
                 }
                 const validUser = await USER.findOne({ userId });
                 if (!validUser) {
+
+                    /*=====================================================================================
+                       #swagger.responses[403] = {
+                           description: '로그인한 유저가 유효하지 않은 유저일 때 이 응답이 갑니다.',
+                           schema: { "result": false, 'message':'유효하지 않은 유저입니다! ', }
+                       }
+                       =====================================================================================*/
                     return res.status(403).json({
                         result: false,
                         message: '유효하지 않은 유저입니다.',
@@ -145,7 +130,7 @@ async function getStudyLists(req, res) {
           ===================================================================*/
             //각 스터디에 참여한 멤버들을 유저에서 찾아 유저 아이디와 프로필을 가져오기 위한 것
             //각 스터디에 참여한 멤버들이 마스터인지 아닌지 판단 여부 넣어줌
-            //people===스터디에 참여한 사람들 
+            //people===스터디에 참여한 사람들
             const studyMasterProfile = {};
 
             for (let j = 0; j < people.length; j++) {
@@ -157,10 +142,17 @@ async function getStudyLists(req, res) {
                     joinedUser[0] === null ||
                     joinedUser[0] === undefined
                 ) {
+
+                    /*=====================================================================================
+                       #swagger.responses[400] = {
+                           description: '유저가 존재하지 않을 때 이 응답을 준다.',
+                           schema: { "result": false, 'message':'유저가 존재하지 않아요', }
+                       }
+                       =====================================================================================*/
                     return res.status(400).json({
                         result: false,
                         message:
-                            '존재하지 않은 유저때문에 오류가 발생했습니다. 관리자에게 문의하세요',
+                            '유저가 존재하지 않아요',
                     });
                 }
                 const userId = joinedUser[0].userId;
@@ -168,9 +160,9 @@ async function getStudyLists(req, res) {
                 studyUserCnt = people.length;
                 isStudyMaster = people[j].isStudyMaster;
                 if (isStudyMaster) {
-                    studyMasterProfile.userId = userId
-                    studyMasterProfile.profileImage = profileImage
-                    studyMasterProfile.isStudyMaster = isStudyMaster
+                    studyMasterProfile.userId = userId;
+                    studyMasterProfile.profileImage = profileImage;
+                    studyMasterProfile.isStudyMaster = isStudyMaster;
                 } else {
                     together.push({
                         userId,
@@ -212,9 +204,22 @@ async function getStudyLists(req, res) {
             return a > b ? -1 : a < b ? 1 : 0;
         });
 
+        /*=====================================================================================
+           #swagger.responses[200] = {
+               description: '스터디 조회 성공',
+               schema: { "result": true, stidyList}
+           }
+           =====================================================================================*/
         return res.status(200).json({ result: true, studyList });
     } catch (err) {
         console.log(err);
+
+        /*=====================================================================================
+           #swagger.responses[400] = {
+               description: '모든 예외처리를 빗나간 경우 이 응답을 준다.',
+               schema: { "result": false, 'message':'스터디 목록 조회 실패', }
+           }
+           =====================================================================================*/
         return res.status(400).json({
             result: false,
             message: '스터디 목록 조회 실패!',
@@ -222,7 +227,7 @@ async function getStudyLists(req, res) {
     }
 }
 
-//스터디 등록
+//스터디 생성
 /**
  * 2022. 05. 03. HOJIN
  * TODO: 💡
@@ -233,11 +238,16 @@ async function getStudyLists(req, res) {
  *
  */
 async function postStudy(req, res) {
+
+    /*========================================================================================================
+        #swagger.tags = ['STUDY']
+        #swagger.summary = '스터디 생성 API'
+        #swagger.description = '스터디 생성 API'
+    ========================================================================================================*/
     const { userId } = res.locals.user;
 
     //스터디 만들때 모임에 가입된 여부 확인로직
     //없는 미팅에 스터디 만들때 체크
-
     let {
         meetingId,
         studyTitle,
@@ -254,13 +264,17 @@ async function postStudy(req, res) {
         studyBookPurblisher,
     } = req.body;
 
-
-
     //스터디를 만든 사람이 방장이 된다.
     try {
-
         const validUser = await USER.findOne({ userId });
         if (!validUser) {
+
+            /*=====================================================================================
+                 #swagger.responses[403] = {
+                 description: '로그인한 유저가 유효하지 않은 유저일 때 이 응답이 갑니다.',
+                schema: { "result": false, 'message':'유효하지 않은 유저입니다! ', }
+                }
+            =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message: '유효하지 않은 유저입니다.',
@@ -268,24 +282,30 @@ async function postStudy(req, res) {
         }
         let validMeeting = await MEETING.findOne({ meetingId });
         if (!validMeeting) {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '받은 모임 id가 유효하지 않을 때 이 응답이 갑니다.',
+                   schema: { "result": false, 'message':'해당 모임이 존재하지 않습니다.', }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: false,
-                message: '유효하지 않은 모임입니다.'
-            })
+                message: '유효하지 않은 모임입니다.',
+            });
         }
-
 
         let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
         let meetingMemberId = [];
-        //스터디를 만들때 모임이 존재한다면
 
+        //스터디를 만들때 모임이 존재한다면
         for (let i = 0; i < meetingMembers.length; i++) {
             meetingMemberId.push(meetingMembers[i].meetingMemberId);
         }
 
         //로그인한 유저가 모임에 가입되었는지 아닌지 여부 체크
         if (meetingMemberId.includes(Number(userId))) {
-            // 책에 이미지를 넣지 않았다면
+            // 책에 이미지를 넣지 않았다면 기본 이미지를 넣어준다. 
             if (studyBookImg === '' || studyBookImg === null) {
                 studyBookImg =
                     'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
@@ -317,21 +337,39 @@ async function postStudy(req, res) {
                     })
             );
 
+            /*=====================================================================================
+               #swagger.responses[201] = {
+                   description: '스터디 생성에 성공했을 때 이 응답을 준다.',
+                   schema: { "result": true, 'message':'스터디 생성 성공', }
+               }
+               =====================================================================================*/
             return res.status(201).json({
                 result: true,
-                message: '스터디 등록 성공',
+                message: '스터디 생성 성공',
             });
-
         } else {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '모임에 가입하지 않은 유저가 스터디 생성하려고 할 때 이 응답을 준다..',
+                   schema: { "result": false, 'message':'모임에 가입되지 않은 사용자입니다. ', }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message:
                     '모임에 가입하지 않으셨습니다 먼저 모임에 가입해주세요!',
             });
         }
-
     } catch (err) {
         console.log(err);
+
+        /*=====================================================================================
+           #swagger.responses[403] = {
+               description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
+               schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
+           }
+           =====================================================================================*/
         return res.status(400).json({
             result: false,
             message: '스터디 등록 실패!',
@@ -352,8 +390,13 @@ async function postStudy(req, res) {
  *
  */
 async function updateStudy(req, res) {
-    const { userId } = res.locals.user;
 
+    /*========================================================================================================
+        #swagger.tags = ['STUDY']
+        #swagger.summary = '스터디 정보 수정 API'
+        #swagger.description = '스터디 정보 수정 API'
+    ========================================================================================================*/
+    const { userId } = res.locals.user;
 
     let {
         studyId,
@@ -371,22 +414,35 @@ async function updateStudy(req, res) {
         studyBookPurblisher,
     } = req.body;
 
-
     try {
-
         const validUser = await USER.findOne({ userId });
         if (!validUser) {
+
+            /*=====================================================================================
+            #swagger.responses[403] = {
+                description: '로그인한 유저가 유효하지 않은 유저일 때 이 응답이 갑니다.',
+                schema: { "result": false, 'message':'유효하지 않은 유저입니다! ', }
+            }
+            =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message: '유효하지 않은 유저입니다.',
             });
         }
         if (studyBookImg === '' || studyBookImg === null) {
-            studyBookImg = 'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
+            studyBookImg =
+                'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
         }
 
         const targetStudy = await STUDY.findOne({ studyId });
         if (!targetStudy) {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
+                   schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
+               }
+               =====================================================================================*/
             return res.status(400).json({
                 result: false,
                 message: '해당 스터디가 존재하지 않습니다! ',
@@ -397,6 +453,13 @@ async function updateStudy(req, res) {
         let meetingMemberId = [];
         //해당 모임에 가입되어 있는 사람들 찾음
         if (!validMeeting) {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '받은 모임 id가 유효하지 않을 때 이 응답이 갑니다.',
+                   schema: { "result": false, 'message':'해당 모임이 존재하지 않습니다.', }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message: '모임이 존재하지 않습니다.',
@@ -412,6 +475,13 @@ async function updateStudy(req, res) {
         }
 
         if (!checkStudyId.includes(Number(studyId))) {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '받은 스터디 id가 해당 모임에 없을 때 이 응답을 준다.',
+                   schema: { "result": false, 'message':'해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다!', }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message:
@@ -425,8 +495,10 @@ async function updateStudy(req, res) {
         if (meetingMemberId.includes(Number(userId))) {
             // 수정하고자 하는 스터디가 존재한다면
             if (updateStudy) {
-
-                if (updateStudy.studyMasterId === Number(userId) || validMeeting.meetingMasterId === Number(userId)) {
+                if (
+                    updateStudy.studyMasterId === Number(userId) ||
+                    validMeeting.meetingMasterId === Number(userId)
+                ) {
                     await STUDY.updateOne(
                         { studyId },
                         {
@@ -445,6 +517,13 @@ async function updateStudy(req, res) {
                             },
                         }
                     );
+
+                    /*=====================================================================================
+                       #swagger.responses[201] = {
+                           description: '스터디 정보 수정이 완료되면 이 응답을 준다.',
+                           schema: { "result": true, 'message':'스터디 정보 수정 완료!', }
+                       }
+                       =====================================================================================*/
                     return res.status(201).json({
                         result: true,
                         message: '스터디 정보 수정 완료!',
@@ -457,21 +536,41 @@ async function updateStudy(req, res) {
                     });
                 }
             } else {
+
+                /*=====================================================================================
+                   #swagger.responses[403] = {
+                       description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
+                       schema: { "result": false, 'message':'존재하지 않은 스터디에 접근하려고 합니다.', }
+                   }
+                   =====================================================================================*/
                 return res.status(403).json({
                     result: false,
                     message: '존재하지 않은 스터디에 접근하려고 합니다.',
                 });
             }
         } else {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '모입에 가입하지 않은 사용자가 스터디를 수정하려고 할 때 이 응답을 준다.',
+                   schema: { "result": false, 'message':'해당 모임에 가입되지 않은 유저이다.', }
+               }
+               =====================================================================================*/
             res.status(403).json({
                 result: false,
                 message:
-                    '해당 모임에 가입되어 있지 않습니다! 모임에 먼저 가입하세요!',
+                    '해당 모임에 가입되지 않은 유저이다.',
             });
         }
-    }
-    catch (err) {
+    } catch (err) {
         console.log(err);
+
+        /*=====================================================================================
+           #swagger.responses[400] = {
+               description: '모든 예외처리를 빗나간 에러는 이 응답을 준다.',
+               schema: { "result": false, 'message':'스터디를 수정할 수 없습니다.', }
+           }
+           =====================================================================================*/
         res.status(400).json({
             result: false,
             message: '스터디를 수정할 수 없습니다!',
@@ -490,6 +589,12 @@ async function updateStudy(req, res) {
  *
  */
 async function inoutStudy(req, res) {
+
+    /*========================================================================================================
+        #swagger.tags = ['STUDY']
+        #swagger.summary = '스터디 참가 및 취소 API'
+        #swagger.description = '스터디 참가 및 취소 API'
+    ========================================================================================================*/
     const { userId } = res.locals.user;
     const { studyId, meetingId } = req.body;
 
@@ -497,6 +602,13 @@ async function inoutStudy(req, res) {
         //받은 모임이 존재하는 지 체크
         const validMeeting = await MEETING.findOne({ meetingId });
         if (!validMeeting) {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '받은 모임 id가 유효하지 않을 때 이 응답이 갑니다.',
+                   schema: { "result": false, 'message':'해당 모임이 존재하지 않습니다.', }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message: '존재하지 않은 모임입니다. ',
@@ -504,6 +616,13 @@ async function inoutStudy(req, res) {
         }
         const validStudy = await STUDY.findOne({ studyId });
         if (!validStudy) {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
+                   schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message: '유효하지 않은 스터디입니다',
@@ -516,6 +635,13 @@ async function inoutStudy(req, res) {
             targetStudyId.push(targetStudy[i].studyId);
         }
         if (!targetStudyId.includes(Number(studyId))) {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '받은 스터디 id가 모임에 존재하지 않을 때 이 응답을 준다.',
+                   schema: { "result": false, 'message':'해당 모임에 존재하지 않는 스터디이다.', }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message: '해당 모임에 존재하지 않는 스터디입니다',
@@ -534,6 +660,13 @@ async function inoutStudy(req, res) {
             // 로그인한 유저가 유효한 유저인지 체크
             const validUser = await USER.findOne({ userId });
             if (!validUser) {
+
+                /*=====================================================================================
+                     #swagger.responses[403] = {
+                     description: '로그인한 유저가 유효하지 않은 유저일 때 이 응답이 갑니다.',
+                    schema: { "result": false, 'message':'유효하지 않은 유저입니다! ', }
+                     }
+                =====================================================================================*/
                 return res.status(403).json({
                     result: false,
                     message: '존재하지 않은 유저입니다.',
@@ -542,6 +675,13 @@ async function inoutStudy(req, res) {
 
             if (bannedUser) {
                 if (bannedUser.userId === Number(userId)) {
+
+                    /*=====================================================================================
+                       #swagger.responses[403] = {
+                           description: '강퇴당한 유저가 다시 스터디에 참가하려고 할 때 이 응답을 준다.',
+                           schema: { "result": false, 'message':'강퇴 당하야 해당 스터디에 참가불가능', }
+                       }
+                       =====================================================================================*/
                     return res.status(403).json({
                         result: false,
                         message:
@@ -552,6 +692,13 @@ async function inoutStudy(req, res) {
             //참가할 스터디 찾기
             let study = await STUDY.findOne({ studyId });
             if (!study) {
+
+                /*=====================================================================================
+                   #swagger.responses[403] = {
+                       description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
+                       schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
+                   }
+                   =====================================================================================*/
                 return res.status(403).json({
                     result: false,
                     message: '존재하지 않은 스터디 입니다! ',
@@ -566,6 +713,13 @@ async function inoutStudy(req, res) {
                 //만약 로그인한 유저가 이미 해당 스터디에 있다면 취소로 받아들인다.
                 if (people[i].studyMemberId === Number(userId)) {
                     if (study.studyMasterId === Number(userId)) {
+
+                        /*=====================================================================================
+                       #swagger.responses[403] = {
+                           description: '스터디장이 스터디에서 나가려고 할 때 이 응답을 준다.',
+                           schema: { "result": false, 'message':'스터디장은 나갈 수 없습니다.', }
+                       }
+                       =====================================================================================*/
                         return res.status(403).json({
                             result: false,
                             message: '스터디장은 나갈 수 없습니다.',
@@ -576,6 +730,13 @@ async function inoutStudy(req, res) {
                         studyId: studyId,
                         studyMemberId: userId,
                     });
+
+                    /*=====================================================================================
+                   #swagger.responses[201] = {
+                       description: '스터디 취소에 성공했을 때 이 응답을 준다.',
+                       schema: { "result": true, 'message':'스터디 취소 성공', }
+                   }
+                   =====================================================================================*/
                     return res.status(201).json({
                         result: true,
                         message: '스터디 취소 성공!',
@@ -586,6 +747,13 @@ async function inoutStudy(req, res) {
                 study.studyLimitCnt === people.length ||
                 study.studyLimitCnt < people.length
             ) {
+
+                /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '정원이 초과했을 때 이 응답을 준다.',
+                   schema: { "result": false, 'message':'정원초과라 해당 스터디에 참가할 수 없습니다.', }
+               }
+               =====================================================================================*/
                 return res.status(403).json({
                     resutl: false,
                     message: '정원 초과라 해당 스터디에 참가할 수 없습니다!',
@@ -603,18 +771,36 @@ async function inoutStudy(req, res) {
                 regDate: getDate(),
             });
 
+            /*=====================================================================================
+           #swagger.responses[201] = {
+               description: '스터디 참가에 성공했을 때 이 응답을 준다.',
+               schema: { "result": true, 'message':'스터디 참가 성공', }
+           }
+           =====================================================================================*/
             return res.status(201).json({
                 result: true,
                 message: '스터디 참가 성공!',
             });
         } else {
+            /*=====================================================================================
+           #swagger.responses[403] = {
+               description: '모임에 가입하지 않은 유저가 스터디에 참가하려고 할 때 이 응답을 줍니다.',
+               schema: { "result": false, 'message':'해당 모임에 먼저 가입하고 스터디에 참가가능', }
+           }
+           =====================================================================================*/
             return res.status(403).json({
                 result: false,
-                message: '해당 모임에 먼저 가입하시고 스터디에 참가하세요!',
+                message: '해당 모임에 먼저 가입하고 스터디에 참가가능',
             });
         }
     } catch (err) {
         console.log(err);
+        /*=====================================================================================
+           #swagger.responses[403] = {
+               description: '모든 예외처리를 빗나간 에러는 이 응답을 줍니다.',
+               schema: { "result": false, 'message':'스터디 참가 실패!', }
+           }
+           =====================================================================================*/
         return res.status(403).json({
             result: true,
             message: '스터디 참가 실패!',
@@ -624,6 +810,8 @@ async function inoutStudy(req, res) {
 
 //스터디 멤버 팝업 조회💡
 /**===================================================================
+ * 2022. 05. 17. HOJIN
+ * TODO:
  * 1. 스터디 멤버 팝업 조회 
  * 2. 조회를 눌러 팝업이 뜨면, 스터디장과 로그인한 유저가 가장 위로 오게 된다. 
  * 3. 하지만 만약 로그인한 유저가 참가하지 않은 스터디의 멤버를 조회한다면
@@ -631,12 +819,23 @@ async function inoutStudy(req, res) {
  ===================================================================*/
 
 async function getStudyMembers(req, res) {
+    /*========================================================================================================
+        #swagger.tags = ['STUDY']
+        #swagger.summary = '스터디 멤버 팝업 조회 API'
+        #swagger.description = '스터디 멤버 팝업 조회 API'
+    ========================================================================================================*/
     // const { userId } = req.query;//임시로 로그인한 유저로 친다.
     const { userId } = res.locals.user;
     const { studyId } = req.params;
     try {
         const validStudy = await STUDY.findOne({ studyId });
         if (!validStudy) {
+            /*=====================================================================================
+           #swagger.responses[403] = {
+               description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
+               schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
+           }
+           =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message: '유효하지 않은 스터디 입니다.',
@@ -644,12 +843,17 @@ async function getStudyMembers(req, res) {
         }
         const validUser = await USER.findOne({ userId });
         if (!validUser) {
+            /*=====================================================================================
+         #swagger.responses[403] = {
+             description: '로그인한 유저가 유효하지 않은 유저일 때 이 응답이 갑니다.',
+             schema: { "result": false, 'message':'유효하지 않은 유저입니다! ', }
+         }
+         =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message: '유효하지 않은 유저입니다! ',
             });
         }
-
 
         let studyUsers = [];
         let myProfileData = {};
@@ -741,6 +945,17 @@ async function getStudyMembers(req, res) {
             }
         }
 
+        /*=====================================================================================
+           #swagger.responses[200] = {
+               description: '스터디 멤버를 조회하는 api ',
+               schema: { "result": true, 스터디 멤버들 데이터
+               (
+                myProfile,
+                studyMasterProfile,
+                studyUsers
+                )
+           }
+           =====================================================================================*/
         return res.status(200).json({
             result: true,
             myProfile,
@@ -749,6 +964,13 @@ async function getStudyMembers(req, res) {
         });
     } catch (err) {
         console.log(err);
+
+        /*=====================================================================================
+           #swagger.responses[400] = {
+               description: '모든 예외처리를 빗나간 에러는 이 응답을 줍니다.',
+               schema: { "result": false, 'message':'스터디 멤버들 조회 실패', }
+           }
+           =====================================================================================*/
         return res.status(400).json({
             result: false,
             message: '스터디 멤버들 조회 실패!',
@@ -758,6 +980,8 @@ async function getStudyMembers(req, res) {
 
 //스터디 참여인원 내보내기(강퇴)💡
 /**===================================================================
+ * 2022. 05. 17. HOJIN
+ * TODO:
  * 1. 유저가 유효한지 체크
  * 2. 스터디가 유효한지 체크
  * 3. 모임이 유효한지 체크 
@@ -766,6 +990,11 @@ async function getStudyMembers(req, res) {
  * 
  ===================================================================*/
 async function kickUser(req, res) {
+    /*========================================================================================================
+        #swagger.tags = ['STUDY']
+        #swagger.summary = '스터디 강퇴 API'
+        #swagger.description = '스터디 강퇴 API'
+    ========================================================================================================*/
     const { userId } = res.locals.user;
 
     //targetId ==강퇴시킬 유저
@@ -773,6 +1002,13 @@ async function kickUser(req, res) {
     try {
         const validStudy = await STUDY.findOne({ studyId });
         if (!validStudy) {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
+                   schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message: '유효하지 않은 스터디 입니다.',
@@ -780,6 +1016,13 @@ async function kickUser(req, res) {
         }
         const validUser = await USER.findOne({ userId });
         if (!validUser) {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '스터디장, 모임장이 아닌 사람이 유저를 강퇴하려고 할 때 이 응답을 줍니다.',
+                   schema: { "result": false, 'message': '유저 강퇴는 스터디장 또는 모임장만 가능합니다.', }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message: '유효하지 않은 유저입니다! ',
@@ -787,6 +1030,13 @@ async function kickUser(req, res) {
         }
         let validMeeting = await MEETING.findOne({ meetingId });
         if (!validMeeting) {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '받은 모임id가 유효하지 않은 모임 id일 때 이 응답을 줍니다.',
+                   schema: { "result": false, 'message': '유효하지 않은 모잉입니다.', }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message: '유효하지 않은 모임입니다.',
@@ -801,7 +1051,6 @@ async function kickUser(req, res) {
                 meetingMaster = meetingMembers[i].meetingMemberId;
             }
         }
-
 
         //삭제할 유저가 있는 모임 (모임장을 뽑기 위해)
         validMeeting = await MEETING.findOne({ meetingId });
@@ -820,30 +1069,64 @@ async function kickUser(req, res) {
                         studyId: targetStudy.studyId,
                         studyMemberId: targetId,
                     });
+                    /*=====================================================================================
+                       #swagger.responses[201] = {
+                           description: '유저 강퇴를 성공할 경우 이 응답을 준다.',
+                           schema: { "result": true, 'message': '유저 강퇴', }
+                       }
+                       =====================================================================================*/
                     return res.status(201).json({
                         result: true,
                         message: '유저 강퇴',
                     });
                 } else {
+
+                    /*=====================================================================================
+                       #swagger.responses[403] = {
+                           description: '스터디장, 모임장이 아닌 사람이 유저를 강퇴하려고 할 때 이 응답을 줍니다.',
+                           schema: { "result": false, 'message': '유저 강퇴는 스터디장 또는 모임장만 가능합니다.', }
+                       }
+                       =====================================================================================*/
                     return res.status(403).json({
                         result: false,
                         message:
-                            '유저 강퇴는 스터디 장 또는 모임장만 가능합니다.',
+                            '유저 강퇴는 스터디장 또는 모임장만 가능합니다.',
                     });
                 }
             }
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '예외처리를 모두 빗난 간 에러가 발생 했을 때 이 응답을 줍니다.',
+                   schema: { "result": false, 'message': '유저 강퇴 실패!, }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message: '입력하신 스터디가 존재하지 않습니다.',
             });
         } else {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '모임에 가입하지 않은 유저가 어떤 유저를 강퇴하려고 할 때 이 응답을 보냅니다.',
+                   schema: { "result": false, 'message': '모임에 가입되지 않은 사용자입니다.', }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: false,
-                message: '모임에 가입되지 않았습니다. 먼저 모임에 가입하세요!',
+                message: '모임에 가입되지 않은 사용자입니다.',
             });
         }
     } catch (err) {
         console.log(err);
+
+        /*=====================================================================================
+           #swagger.responses[400] = {
+               description: '예외처리를 모두 빗난 간 에러가 발생 했을 때 이 응답을 줍니다.',
+               schema: { "result": false, 'message': '유저 강퇴 실패!, }
+           }
+           =====================================================================================*/
         return res.status(400).json({
             result: false,
             message: '유저 강퇴 실패!',
@@ -853,6 +1136,8 @@ async function kickUser(req, res) {
 
 //스터디 삭제💡
 /**===================================================================
+ * 2022. 05. 17. HOJIN
+ * TODO:
  * 1. 받은 스터디가 유효한지 체크
  * 2. 삭제하려고 하는 유저가 해당 모임에 가입되어 있는 지 체크
  * 3. 삭제는 스터디 장과 모임장만이 가능하다.
@@ -861,19 +1146,42 @@ async function kickUser(req, res) {
  * 6. 삭제하려는 스터디가 모임에 종속되어 있는 지 체크 
  ===================================================================*/
 async function deleteStudy(req, res) {
+
+    /*========================================================================================================
+        #swagger.tags = ['STUDY']
+        #swagger.summary = '스터디 삭제 API'
+        #swagger.description = '스터디 삭제 API'
+    ========================================================================================================*/
+
+
+
     const { userId } = res.locals.user;
     const { studyId, meetingId } = req.params;
 
     try {
         const targetStudy = await STUDY.findOne({ studyId });
         if (!targetStudy) {
-            return res.status(400).json({
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
+                   schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
+               }
+               =====================================================================================*/
+            return res.status(403).json({
                 result: false,
                 message: '해당 스터디가 존재하지 않습니다! ',
             });
         }
         const validMeeting = await MEETING.findOne({ meetingId });
         if (!validMeeting) {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '받은 모임 id가 유효하지 않을 때 이 응답이 갑니다.',
+                   schema: { "result": false, 'message':'해당 모임이 존재하지 않습니다.', }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message: '해당 모임이 존재하지 않습니다.',
@@ -881,6 +1189,13 @@ async function deleteStudy(req, res) {
         }
         const validUser = await USER.findOne({ userId });
         if (!validUser) {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '로그인한 유저가 유효하지 않은 유저일 때 이 응답이 갑니다.',
+                   schema: { "result": false, 'message':'유효하지 않은 유저입니다! ', }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message: '유효하지 않은 유저입니다! ',
@@ -892,6 +1207,13 @@ async function deleteStudy(req, res) {
             deleteStudyId.push(deleteStudy[i].studyId);
         }
         if (!deleteStudyId.includes(Number(studyId))) {
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '식제하고자 하는 스터디가 해당 모임에 없을 때 이 응답이 넘어갑니다.',
+                   schema: { "result": false, 'message:'삭제하고자 하는 스터디는 현재 모임에 없습니다!', }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: fasle,
                 message: '삭제하고자 하는 스터디는 현재 모임에 없습니다! ',
@@ -918,17 +1240,37 @@ async function deleteStudy(req, res) {
                 for (let i = 0; i < targetStudyMember.length; i++) {
                     await STUDYMEMBERS.findOneAndDelete({ studyId });
                 }
+
+                /*=====================================================================================
+                   #swagger.responses[200] = {
+                       description: '스터디 삭제가 성공했음을 응답으로 넘겨줍니다.',
+                       schema: { "result": true, 'message:'스터디 삭제 성공', }
+                   }
+                   =====================================================================================*/
                 return res.status(200).json({
                     result: true,
                     message: '스터디 삭제 성공!',
                 });
             } else {
+
+                /*=====================================================================================
+                #swagger.responses[400] = {
+                    description: '스터디장, 모임장이 아닌 사람이 삭제하려고 했을 때 이 응답이 갑니다',
+                    schema: { "result": false, 'message': '스터디장 또는 모임장만 삭제 가능합니다.', }
+                }
+                =====================================================================================*/
                 return res.status(400).json({
                     result: false,
                     message: '스터디장 또는 모임장만 삭제 가능합니다!',
                 });
             }
         } else {
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '해당 모임에 가입하지 않은 사용자가 스터디를 삭제하고자 할 때 이 응답이 갑니다',
+                   schema: { "result": false, 'message:'해당 모임에 먼저 가입하세요', }
+               }
+               =====================================================================================*/
             return res.status(403).json({
                 result: false,
                 message: '해당 모임에 먼저 가입하세요!',
@@ -936,6 +1278,12 @@ async function deleteStudy(req, res) {
         }
     } catch (err) {
         console.log(err);
+        /*=====================================================================================
+           #swagger.responses[400] = {
+               description: '모든 예외처리를 빗나간 에러가 발생했을 때 이 응답이 갑니다.',
+               schema: { "result": false, 'message:'스터디 삭제 실패', }
+           }
+           =====================================================================================*/
         return res.status(400).json({
             result: false,
             message: '스터디 삭제 실패!',

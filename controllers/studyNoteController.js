@@ -2,6 +2,8 @@ const STUDY = require('../schemas/studys');
 const STUDYMEMBERS = require('../schemas/studyMembers');
 const MEETING = require('../schemas/meeting');
 const USER = require('../schemas/user');
+const Buffer = require('buffer').Buffer;
+const fs = require('fs');
 
 //💡
 //스터디 노트 작성
@@ -12,7 +14,12 @@ const USER = require('../schemas/user');
  * 3. 스터디 발제자(장)과 모임장만 노트 작성가능한지 체크
  ===================================================================*/
 async function postNote(req, res) {
-    // const { userId } = req.query;//임시 로그인 유저
+
+    /*================================================
+        #swagger.tags = ['STUDYNOTE']
+        #swagger.summary = '스터디 노트 작성  API'
+        #swagger.description = '스터디 노트 작성  API'
+    ==================================================*/
     const { userId } = res.locals.user;
     const { studyId, studyNote } = req.body;
 
@@ -35,16 +42,19 @@ async function postNote(req, res) {
 
         //스터디 노트 작성 가능한 자
         let editMaster = [];
-        // let studyMemberId = [];
         //받은 스터디 아이디의 멤버들 찾음
+        let validStudyMembers = [];
         let studyMembers = await STUDYMEMBERS.find({ studyId });
-        // console.log(`${studyId}에 참여한 사람들`, studyMembers)
+        for (let i = 0; i < studyMembers.length; i++) {
+            validStudyMembers.push(studyMembers[i].studyMemberId);
+        }
+        console.log(`${studyId}의 멤버들`, validStudyMembers)
         //받은 스터디의 모임 찾음
-        if (!studyMembers.includes(Number(userId))) {
+        if (!validStudyMembers.includes(Number(userId))) {
             return res.status(403).json({
                 result: 'false',
-                message: '해당 스터디 참여 멤버가 아닙니다'
-            })
+                message: '해당 스터디 참여 멤버가 아닙니다',
+            });
         }
         let targetMeeting = await MEETING.findOne({
             meetingId: validStudy.meetingId,
@@ -62,6 +72,13 @@ async function postNote(req, res) {
         // console.log('스터디 노트 작성 가능한 자', editMaster);
         if (editMaster.includes(Number(userId))) {
             await STUDY.updateOne({ studyId }, { $set: { studyNote } });
+
+            /*=====================================================================================
+               #swagger.responses[201] = {
+                   description: '스터디 노트 작성 완료하면 이 응답을 준다.',
+                   schema: { "result": true, 'message':'스터디 노트 작성 완료', }
+               }
+               =====================================================================================*/
             return res
                 .status(201)
                 .json({ result: true, message: '스터디 노트 작성 완료!' });
@@ -73,6 +90,13 @@ async function postNote(req, res) {
         }
     } catch (err) {
         console.log(err);
+
+        /*=====================================================================================
+           #swagger.responses[400] = {
+               description: '모든 예외처리를 빗나간 경우 이 응답을 준다.',
+               schema: { "result": false, 'message':'스터디 노트 작성 실패', }
+           }
+           =====================================================================================*/
         return res.status(400).json({
             result: true,
             message: '스터디 노트 작성 실패!!',
@@ -88,8 +112,13 @@ async function postNote(req, res) {
  * 3. 스터디장(발제자)과 모임장만 스터디 노트 삭제 가능 
  ===================================================================*/
 async function deleteNote(req, res) {
-    //임시 로그인유저
-    // const { userId } = req.query;
+
+    /*================================================
+        #swagger.tags = ['STUDYNOTE']
+        #swagger.summary = '스터디 삭제 API'
+        #swagger.description = '스터디 삭제 API'
+    ==================================================*/
+
     const { userId } = res.locals.user;
     const { studyId } = req.body;
 
@@ -130,9 +159,16 @@ async function deleteNote(req, res) {
         }
         if (editMaster.includes(Number(userId))) {
             await STUDY.updateOne({ studyId }, { $set: { studyNote: '' } });
+
+            /*=====================================================================================
+               #swagger.responses[201] = {
+                   description: '스터디 노트 삭제완료하면 이 응답을 준다.',
+                   schema: { "result": true, 'message':'스터디 노트 삭제 완료', }
+               }
+               =====================================================================================*/
             return res
                 .status(201)
-                .json({ result: true, message: '스터디 삭제 작성 완료!' });
+                .json({ result: true, message: '스터디 노트 삭제 완료!' });
         } else {
             return res.status(400).json({
                 result: false,
@@ -141,6 +177,13 @@ async function deleteNote(req, res) {
         }
     } catch (err) {
         console.log(err);
+
+        /*=====================================================================================
+           #swagger.responses[400] = {
+               description: '모든 예외처리를 빗나간 경우 이 응답을 준다.',
+               schema: { "result": false, 'message':'스터디 노트 삭제 실패', }
+           }
+           =====================================================================================*/
         return res.status(400).json({
             result: true,
             message: '스터디 노트 삭제 실패!!',
@@ -155,7 +198,13 @@ async function deleteNote(req, res) {
  * 3. 스터디장(발제자)과 모임장만 스터디 노트 수정 가능 
  ===================================================================*/
 async function updateNote(req, res) {
-    // const { userId } = req.query;//임시 로그인 유저
+
+    /*================================================
+        #swagger.tags = ['STUDYNOTE']
+        #swagger.summary = '스터디 수정 API'
+        #swagger.description = '스터디 수정 API'
+    ==================================================*/
+
     const { userId } = res.locals.user;
     const { studyId, studyNote } = req.body;
 
@@ -195,9 +244,16 @@ async function updateNote(req, res) {
         // console.log('WWWw', editMaster);
         if (editMaster.includes(Number(userId))) {
             await STUDY.updateOne({ studyId }, { $set: { studyNote } });
+
+            /*=====================================================================================
+               #swagger.responses[201] = {
+                   description: '스터디 수정을 완료하면 이 응답을 준다.',
+                   schema: { "result": true, 'message':'스터디 노트 수정 완료!, }
+               }
+               =====================================================================================*/
             return res
                 .status(201)
-                .json({ result: true, message: '스터디 수정 작성 완료!' });
+                .json({ result: true, message: '스터디 노트 수정 완료!' });
         } else {
             return res.status(400).json({
                 result: false,
@@ -207,6 +263,13 @@ async function updateNote(req, res) {
     } catch (err) {
         console.log(err);
         return res.status(400).json({
+
+            /*=====================================================================================
+               #swagger.responses[400] = {
+                   description: '모든 예외처리를 빗나간 경우 이 응답을 준다.',
+                   schema: { "result": false, 'message':'스터디 노트 수정 실패', }
+               }
+               =====================================================================================*/
             result: true,
             message: '스터디 노트 수정 실패!!',
         });
