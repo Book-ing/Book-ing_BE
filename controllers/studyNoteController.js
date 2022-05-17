@@ -14,7 +14,6 @@ const fs = require('fs');
  * 3. 스터디 발제자(장)과 모임장만 노트 작성가능한지 체크
  ===================================================================*/
 async function postNote(req, res) {
-
     /*================================================
         #swagger.tags = ['STUDYNOTE']
         #swagger.summary = '스터디 노트 작성  API'
@@ -48,7 +47,7 @@ async function postNote(req, res) {
         for (let i = 0; i < studyMembers.length; i++) {
             validStudyMembers.push(studyMembers[i].studyMemberId);
         }
-        console.log(`${studyId}의 멤버들`, validStudyMembers)
+        console.log(`${studyId}의 멤버들`, validStudyMembers);
         //받은 스터디의 모임 찾음
         if (!validStudyMembers.includes(Number(userId))) {
             return res.status(403).json({
@@ -112,7 +111,6 @@ async function postNote(req, res) {
  * 3. 스터디장(발제자)과 모임장만 스터디 노트 삭제 가능 
  ===================================================================*/
 async function deleteNote(req, res) {
-
     /*================================================
         #swagger.tags = ['STUDYNOTE']
         #swagger.summary = '스터디 삭제 API'
@@ -198,7 +196,6 @@ async function deleteNote(req, res) {
  * 3. 스터디장(발제자)과 모임장만 스터디 노트 수정 가능 
  ===================================================================*/
 async function updateNote(req, res) {
-
     /*================================================
         #swagger.tags = ['STUDYNOTE']
         #swagger.summary = '스터디 수정 API'
@@ -263,7 +260,6 @@ async function updateNote(req, res) {
     } catch (err) {
         console.log(err);
         return res.status(400).json({
-
             /*=====================================================================================
                #swagger.responses[400] = {
                    description: '모든 예외처리를 빗나간 경우 이 응답을 준다.',
