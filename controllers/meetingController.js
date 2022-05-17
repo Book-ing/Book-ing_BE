@@ -276,7 +276,7 @@ async function getMeetingUsers(req, res) {
             const profileImage = meetingUsersProfile[i].profileImage;
             const statusMessage = meetingUsersProfile[i].statusMessage;
 
-            isMeetingMaster = false;
+            // isMeetingMaster = false;
             if (userId === meetingInfo.meetingMasterId) {
                 isMeetingMaster = true;
             }
