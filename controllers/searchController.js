@@ -4,12 +4,26 @@ const CODE = require('../schemas/codes');
 
 /**
  * 2022. 05. 06. HSYOO.
- * TODO:
- *  1.
  * FIXME:
- *  1.
+ *  1. valid check
+ *  2. code 내려오는 방법 개선필요
  */
 async function getSelectSearchMeeting(req, res) {
+    /*========================================================================================================
+    #swagger.tags = ['SEARCH']
+    #swagger.summary = '검색페이지 조회 API'
+    #swagger.description = '사용자가 입력한 키워드와 일치하는 모임을 조회'
+
+    #swagger.responses[200] = {
+        description: '정상적인 값을 응답받았을 때, 아래 예제와 같은 형태로 응답받습니다. 데이터가 존재하지 않는 경우 data는 빈 오브젝트로 응답합니다.',
+        schema: { "result": 'Boolean', 'message': 'Text', 'data': 'Array' }
+    }
+    #swagger.responses[401] = {
+        description: '권한이 올바르지 않은 경우 아래와 같은 형태로 응답받습니다.',
+        schema: { "result": 'Boolean', 'message': 'Text' }
+    }
+    ========================================================================================================*/
+
     let location = '';
     let keyword = '';
     let category = '';
@@ -18,12 +32,9 @@ async function getSelectSearchMeeting(req, res) {
     !req.query.keyword ? (keyword = '') : (keyword = req.query.keyword);
     !req.query.category ? (category = '') : (category = req.query.category);
 
-    /**
-     * location > 값이 없으면 '' 있으면 코드를 받음.
-     * keyword > 값이 없으면 '' 있으면 문자열을 받음.
-     * category > 값이 없으면 '' 있으면 1,2,3,4,5와 같이 문자열을 받음
-     */
-
+    // location > 값이 없으면 '' 있으면 코드를 받음.
+    // keyword > 값이 없으면 '' 있으면 문자열을 받음.
+    // category > 값이 없으면 '' 있으면 1,2,3,4,5와 같이 문자열을 받음
     let searchData = {};
     let resultData = {};
 

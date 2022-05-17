@@ -8,18 +8,29 @@ const STUDYMEMBER = require('../schemas/studyMembers');
 
 /**
  * 2022. 05. 04. HSYOO.
- * TODO:
- *  1. 클라이언트에서 받은 userId로 사용자를 검색한다.
- *      1-1. 사용자가 존재하지 않는다면 실패로 처리하여 내려준다.
- *      1-2. 사용자가 존재한다면 2번 진행
- *  2. 조회한 데이터로 오브젝트 데이터를 생성한다.
- *      2-1. 해당 사용자의 상태메시지가 입력되어있다면 isStatusMessage를 true로, 아니면 false로 설정
- *  3. 위 사항을 모두 처리했다면 성공처리하여 오브젝트 데이터를 내려준다.
  * FIXME:
  *  1. valid check
  */
 async function getSelectMyProfile(req, res) {
-    const { userId } = req.params;
+    /*========================================================================================================
+    #swagger.tags = ['MYPAGE']
+    #swagger.summary = '내 프로필 조회 API'
+    #swagger.description = '내 프로필사진, 상태메시지 조회'
+
+    #swagger.responses[200] = {
+        description: '정상적인 값을 응답받았을 때, 아래 예제와 같은 형태로 응답받습니다.',
+        schema: { "result": 'Boolean', 'message': 'Text', 'data': 'Object' }
+    }
+    #swagger.responses[400] = {
+        description: '존재하지 않는 사용자의 경우 아래와 같은 형태로 응답받습니다.',
+        schema: { "result": 'Boolean', 'message': 'Text' }
+    }
+    #swagger.responses[401] = {
+        description: '권한이 올바르지 않은 경우 아래와 같은 형태로 응답받습니다.',
+        schema: { "result": 'Boolean', 'message': 'Text' }
+    }
+    ========================================================================================================*/
+    const { userId } = req.params; 
 
     const existUser = await USER.findOne(
         { userId: userId },
@@ -52,14 +63,29 @@ async function getSelectMyProfile(req, res) {
 
 /**
  * 2022. 05. 05. HSYOO.
- * TODO:
- *  1. 클라이언트에서 userId, statusMessage를 받는다.
- *  2. 해당 값이 정상적으로 들어왔는지 검사한다.
- *  3. 값이 정상적으로 들어왔다면, 해당 유저의 상태메시지를 업데이트 후 성공처리하여 내려준다.
  * FIXME:
  *  1. valid check
  */
 async function putUpdateMyIntro(req, res) {
+    /*========================================================================================================
+    #swagger.tags = ['MYPAGE']
+    #swagger.summary = '상태메시지 수정 API'
+    #swagger.description = '마이페이지 내 상태메시지 수정'
+
+    #swagger.responses[201] = {
+        description: '정상적인 값을 응답받았을 때, 아래 예제와 같은 형태로 응답받습니다.',
+        schema: { "result": 'Boolean', 'message': 'Text' }
+    }
+    #swagger.responses[400] = {
+        description: '존재하지 않는 사용자의 경우 아래와 같은 형태로 응답받습니다.',
+        schema: { "result": 'Boolean', 'message': 'Text' }
+    }
+    #swagger.responses[401] = {
+        description: '권한이 올바르지 않은 경우 아래와 같은 형태로 응답받습니다.',
+        schema: { "result": 'Boolean', 'message': 'Text' }
+    }
+    ========================================================================================================*/
+
     const { userId, statusMessage } = req.body;
 
     const updateResult = await USER.updateOne(
@@ -84,18 +110,26 @@ async function putUpdateMyIntro(req, res) {
 
 /**
  * 2022. 05. 05. HSYOO.
- * TODO:
- *  1. 내가 만든 모임을 조회한다.
- *      1-1. 모임이 존재하면 2번 진행
- *      1-2. 모임이 존재하지 않는다면 빈 오브젝트를 내려준다.
- *  2. 내가 만든 모임의 가입인원 수, 스터디 발제 수를 구한다.
- *  3. 조회한 데이터를 취합하여 결과데이터를 만든 뒤 클라이언트에 내려준다.
  * FIXME:
  *  1. valid check(userId:int)
  */
 async function getSelectMyMeeting(req, res) {
+    /*========================================================================================================
+    #swagger.tags = ['MYPAGE']
+    #swagger.summary = '내 모임 조회 API'
+    #swagger.description = '마이페이지 내 내 모임 조회'
+
+    #swagger.responses[200] = {
+        description: '정상적인 값을 응답받았을 때, 아래 예제와 같은 형태로 응답받습니다. 데이터가 존재하지 않는 경우 data는 빈 오브젝트로 응답합니다.',
+        schema: { "result": 'Boolean', 'message': 'Text', 'data': 'Object' }
+    }
+    #swagger.responses[401] = {
+        description: '권한이 올바르지 않은 경우 아래와 같은 형태로 응답받습니다.',
+        schema: { "result": 'Boolean', 'message': 'Text' }
+    }
+    ========================================================================================================*/
     const { userId } = req.params;
-    console.log(userId);
+
     // 결과데이터 오브젝트 선언
     let resultData = {};
 
@@ -137,18 +171,28 @@ async function getSelectMyMeeting(req, res) {
 
 /**
  * 2022. 05. 05. HSYOO.
- * TODO:
- *  1. 클라이언트에서 요청한 사용자정보에 대해 DB 내 존재여부 검사
- *      1-1. 사용자정보가 없다면 실패처리하여 내려준다.
- *      1-2. 사용자정보가 있다면 2번 진행
- *  2. 사용자가 가입되어있는 모임을 조회 후 meetingId로 배열 생성
- *  3. 생성한 배열로 해당 사용자가 가입되어있는 모임리스트 조회
- *  4. 미팅 별 가입자 수, 스터디 발제 수 데이터를 조회하고, 조회한
- *      모임리스트로 새로운 오브젝트 데이터 생성 후 성공처리하여 데이터를 내려준다.
  * FIXME:
  *  1. valid check
  */
 async function getSelectJoinedMeeting(req, res) {
+    /*========================================================================================================
+    #swagger.tags = ['MYPAGE']
+    #swagger.summary = '내가 가입한 모임 조회 API'
+    #swagger.description = '마이페이지 내 내가 가입한 모임 조회'
+
+    #swagger.responses[200] = {
+        description: '정상적인 값을 응답받았을 때, 아래 예제와 같은 형태로 응답받습니다. 데이터가 존재하지 않는 경우 data는 빈 오브젝트로 응답합니다.',
+        schema: { "result": 'Boolean', 'message': 'Text', 'data': 'Array' }
+    }
+    #swagger.responses[400] = {
+        description: '존재하지 않는 사용자의 경우 아래와 같은 형태로 응답받습니다.',
+        schema: { "result": 'Boolean', 'message': 'Text' }
+    }
+    #swagger.responses[401] = {
+        description: '권한이 올바르지 않은 경우 아래와 같은 형태로 응답받습니다.',
+        schema: { "result": 'Boolean', 'message': 'Text' }
+    }
+    ========================================================================================================*/
     const { userId } = req.params;
 
     // 요청한 사용자가 있는지 검사한다.
@@ -216,18 +260,24 @@ async function getSelectJoinedMeeting(req, res) {
 
 /**
  * 2022. 05. 06. HSYOO.
- * TODO:
- *  1. 클라이언트에서 받아온 사용자 존재여부를 검사한다.
- *      1-1. 사용자가 존재하지 않는다면 실패로 처리하여 내려준다.
- *      1-2. 사용자가 존재한다면 2번 진행
- *  2. 내가 만든 스터디를 조회한다.
- *      2-1. 내가 만든 스터디가 존재하지 않는다면 성공으로 처리하여 빈 오브젝트를 내려준다.
- *      2-2. 사용자가 만든 스터디가 존재한다면 3번 진행
- *  3. 조회한 결과데이터를 성공으로 처리하여 데이터가 담긴 오브젝트를 내려준다.
  * FIXME:
  *  1. valid check
  */
 async function getSelectMyStudy(req, res) {
+    /*========================================================================================================
+    #swagger.tags = ['MYPAGE']
+    #swagger.summary = '내 스터디 조회 API'
+    #swagger.description = '마이페이지 내 내 스터디 조회'
+
+    #swagger.responses[200] = {
+        description: '정상적인 값을 응답받았을 때, 아래 예제와 같은 형태로 응답받습니다. 데이터가 존재하지 않는 경우 data는 빈 오브젝트로 응답합니다.',
+        schema: { "result": 'Boolean', 'message': 'Text', 'data': 'Object' }
+    }
+    #swagger.responses[401] = {
+        description: '권한이 올바르지 않은 경우 아래와 같은 형태로 응답받습니다.',
+        schema: { "result": 'Boolean', 'message': 'Text' }
+    }
+    ========================================================================================================*/
     const { userId } = req.params;
 
     // 유저 존재여부 검사
@@ -269,18 +319,28 @@ async function getSelectMyStudy(req, res) {
 
 /**
  * 2022. 05. 06. HSYOO.
- * TODO:
- *  1. 클라이언트에서 받아온 사용자 존재여부를 검사한다.
- *      1-1. 사용자가 존재하지 않는다면 실패로 처리하여 내려준다.
- *      1-2. 사용자가 존재한다면 2번 진행
- *  2. 내가 참여한 스터디를 조회한다.
- *      2-1. 내가 참여한 스터디가 존재하지 않는다면 성공으로 처리하여 빈 오브젝트를 내려준다.
- *      2-2. 내가 참여한 스터디가 존재한다면 3번 진행
- *  3. 조회한 결과데이터를 성공으로 처리하여 데이터가 담긴 오브젝트를 내려준다.
  * FIXME:
  *  1. valid check
  */
 async function getSelectJoinedStudy(req, res) {
+    /*========================================================================================================
+    #swagger.tags = ['MYPAGE']
+    #swagger.summary = '내가 참여한 스터디 조회 API'
+    #swagger.description = '마이페이지 내 내가 참여한 스터디 조회'
+
+    #swagger.responses[200] = {
+        description: '정상적인 값을 응답받았을 때, 아래 예제와 같은 형태로 응답받습니다. 데이터가 존재하지 않는 경우 data는 빈 오브젝트로 응답합니다.',
+        schema: { "result": 'Boolean', 'message': 'Text', 'data': 'Array' }
+    }
+    #swagger.responses[400] = {
+        description: '존재하지 않는 사용자의 경우 아래와 같은 형태로 응답받습니다.',
+        schema: { "result": 'Boolean', 'message': 'Text' }
+    }
+    #swagger.responses[401] = {
+        description: '권한이 올바르지 않은 경우 아래와 같은 형태로 응답받습니다.',
+        schema: { "result": 'Boolean', 'message': 'Text' }
+    }
+    ========================================================================================================*/
     const { userId } = req.params;
 
     // 사용자 존재여부 검사
