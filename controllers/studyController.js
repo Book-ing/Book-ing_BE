@@ -1168,23 +1168,24 @@ async function deleteStudy(req, res) {
         // }
         const deleteStudy = await STUDY.find({ meetingId: Number(meetingId) });
         let deleteStudyId = [];
-        for (let i = 0; i < deleteStudy.length; i++) {
-            deleteStudyId.push(deleteStudy[i].studyId);
-        }
-        if (!deleteStudyId.includes(Number(studyId))) {
-            /*=====================================================================================
-               #swagger.responses[403] = {
-                   description: '식제하고자 하는 스터디가 해당 모임에 없을 때 이 응답이 넘어갑니다.',
-                   schema: { "result": false, 'message:'삭제하고자 하는 스터디는 현재 모임에 없습니다!', }
-               }
-               =====================================================================================*/
-            return res.status(403).json({
-                result: false,
-                message: '삭제하고자 하는 스터디는 현재 모임에 없습니다! ',
-            });
-        }
+        // for (let i = 0; i < deleteStudy.length; i++) {
+        //     deleteStudyId.push(deleteStudy[i].studyId);
+        // }
+        // if (!deleteStudyId.includes(Number(studyId))) {
+        //     /*=====================================================================================
+        //        #swagger.responses[403] = {
+        //            description: '식제하고자 하는 스터디가 해당 모임에 없을 때 이 응답이 넘어갑니다.',
+        //            schema: { "result": false, 'message:'삭제하고자 하는 스터디는 현재 모임에 없습니다!', }
+        //        }
+        //        =====================================================================================*/
+        //     return res.status(403).json({
+        //         result: false,
+        //         message: '삭제하고자 하는 스터디는 현재 모임에 없습니다! ',
+        //     });
+        // }
         let meetingMemberId = [];
         let meetingMembers = await MEETINGMEMBERS.find({ meetingId: Number(meetingId) });
+
         let meetingMaster;
         for (let i = 0; i < meetingMembers.length; i++) {
             meetingMemberId.push(meetingMembers[i].meetingMemberId);
