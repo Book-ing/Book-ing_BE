@@ -1,6 +1,7 @@
 const app = require('./app');
 const http = require('http');
 const https = require('https');
+const USER = require('./schemas/user');
 const MEETINGMEMBER = require('./schemas/meetingMember');
 const CHAT = require('./schemas/chats');
 const lib = require('./lib/util');
@@ -30,7 +31,7 @@ io.on('connection', (socket) => {
             const existMember = await MEETINGMEMBER.findOne({ meetingId, meetingMemberId: userId });
             if (existMember) {
                 socket.join('meeting', meetingId);
-                io.to(meetingId).emit('joinMeetingRoom', userId);
+                io.to('meeting', meetingId).emit('joinMeetingRoom', userId);
                 console.log(`${userId} join a ${meetingId} Room`);
             }
         } catch (error) {
@@ -55,13 +56,21 @@ io.on('connection', (socket) => {
                 ' message : ',
                 message
             );
-            io.to(meetingId).emit('chat message', userId, message);
-            // await CHAT.create({
-            //     meetingId,
-            //     userId,
-            //     message,
-            //     regDate: lib.getDate(),
-            // });
+            const userProfile = await USER.findOne({ userId });
+            const chatMessage = {
+                userId,
+                username: userProfile.username,
+                profileImage: userProfile.profileImage,
+                message,
+                regDate: lib.getDate(),
+            };
+            io.to('meeting', meetingId).emit('chat message', chatMessage);
+            await CHAT.create({
+                meetingId,
+                userId,
+                message,
+                regDate: lib.getDate(),
+            });
         } catch (error) {
             console.log(error);
         }
