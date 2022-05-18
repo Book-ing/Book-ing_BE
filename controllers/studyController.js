@@ -6,6 +6,7 @@ const MEETING = require('../schemas/meeting');
 const BANNEDUSERS = require('../schemas/bannedUsers');
 const MEETINGMEMBERS = require('../schemas/meetingMember');
 const NodeGeocoder = require('node-geocoder');
+const moment=require('moment')
 /**
  * 2022. 05. 03. HOJIN
  * TODO:
@@ -67,9 +68,12 @@ async function getStudyLists(req, res) {
         const data = await STUDY.find({ meetingId });
         let studyList = [];
 
+// studyStatus a == 스터디 일시 전, b== 스터디 시작 후 24시간 이내 c == 시작부터 24시간 후 
 
         //해당 모임에 존재하는 전체 스터디들의 데이터를 가지고 온다.
         //한 번 돌 때 하나의 스터디 이다.
+       
+      
         for (let i = 0; i < data.length; i++) {
             const studyId = data[i].studyId;
             const studyTitle = data[i].studyTitle;
@@ -91,6 +95,35 @@ async function getStudyLists(req, res) {
             const Lat = regionResult[0].latitude; //위도
             const Long = regionResult[0].longitude; //경도
 
+            // 스터디 일시에 따라 status 내려주는 파트
+            // studyStatus a == 스터디 일시 전, b== 스터디 시작 후 24시간 이내 c == 시작부터 24시간 후 
+            
+            //지금 시간
+            let studyStaus;
+            let rightNow=getDate();
+            // 스터디 시작시간 
+            let studyTime=moment(studyDateTime,'YYYY-MM-DD HH:mm:ss')
+            
+            // console.log('시간 차이: ', moment.duration(studyTime.diff(rightNow)).asHours());
+            if(moment.duration(studyTime.diff(rightNow)).asHours()<=-24){
+                return res.status(400).json({
+                    result:false,
+                    message:'스터디 노트 작성은 스터디 시작 이후 24시간이 지나면 작성이 불가능합니다.'
+                })
+            }
+       
+            if(studyDateTime<rightNow){
+                studyStaus=A;
+            }else if(moment.duration(studyTime.diff(rightNow)).asHours()<-24){
+                studyStaus=B;
+            }else{
+                studyStaus=C;
+            }
+    
+            //만약 오늘 날짜가 스터디 일시보다 하루가 늦으면 노트 작성 불가
+            // let studyTime=new Date(validStudy.studyDateTime)
+            // console.log('@@@',typeof(studyTime))
+            
 
             //모임에 있는 각!! 스터디 아이디에 참여한 멤버들을 가지고 온다.
             people = await STUDYMEMBERS.find({ studyId });
@@ -191,6 +224,7 @@ async function getStudyLists(req, res) {
                 regDate,
                 Lat,
                 Long,
+                studyStaus,
                 together,
             });
         }
