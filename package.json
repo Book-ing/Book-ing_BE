@@ -4,7 +4,7 @@
   "description": "항해99 6기 A 1조 실전 프로젝트 Book-ing",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "prettify": "prettier --write *.js **/*.js **/**/*.js",
     "nodemon": "nodemon server.js",
     "start:all": "run-s prettify nodemon"
@@ -51,9 +51,12 @@
   },
   "devDependencies": {
     "jest": "^28.0.0",
-    "nodemon": "^2.0.15",
+    "mock-aws-s3": "^4.0.2",
+    "node-mocks-http": "^1.11.0",
+    "nodemon": "^2.0.16",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.6.2",
+    "supertest": "^6.2.3",
     "swagger-autogen": "^2.21.1",
     "swagger-ui-express": "^4.3.0"
   }
