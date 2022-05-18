@@ -83,7 +83,7 @@ async function getStudyLists(req, res) {
             const studyBookImg = data[i].studyBookImg;
             const studyBookInfo = data[i].studyBookInfo;
             const studyBookWriter = data[i].studyBookWriter;
-            const studyBookPurblisher = data[i].studyBookPurblisher;
+            const studyBookPublisher = data[i].studyBookPublisher;
             const studyNote = data[i].studyNote;
             const regDate = data[i].regDate;
 
@@ -185,13 +185,12 @@ async function getStudyLists(req, res) {
                 studyBookImg,
                 studyBookInfo,
                 studyBookWriter,
-                studyBookPurblisher,
+                studyBookPublisher,
                 studyNote,
                 studyMasterProfile,
                 regDate,
                 Lat,
                 Long,
-                studyMasterProfile,
                 together,
             });
         }
