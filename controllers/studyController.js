@@ -257,7 +257,7 @@ async function postStudy(req, res) {
         studyBookImg,
         studyBookInfo,
         studyBookWriter,
-        studyBookPurblisher,
+        studyBookPublisher,
     } = req.body;
 
     //스터디를 만든 사람이 방장이 된다.
@@ -319,7 +319,7 @@ async function postStudy(req, res) {
                 studyBookTitle,
                 studyBookInfo,
                 studyBookWriter,
-                studyBookPurblisher,
+                studyBookPublisher,
                 regDate: getDate(),
             }).then(
                 async (study) =>
@@ -403,7 +403,7 @@ async function updateStudy(req, res) {
         studyBookImg,
         studyBookInfo,
         studyBookWriter,
-        studyBookPurblisher,
+        studyBookPublisher,
     } = req.body;
 
     try {
@@ -501,7 +501,7 @@ async function updateStudy(req, res) {
                                 studyBookImg,
                                 studyBookInfo,
                                 studyBookWriter,
-                                studyBookPurblisher,
+                                studyBookPublisher,
                             },
                         }
                     );
