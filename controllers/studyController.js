@@ -90,9 +90,8 @@ async function getStudyLists(req, res) {
             const Long = data[i].Long; //경도
 
             // 스터디 일시에 따라 status 내려주는 파트
-            // studyStatus A == 스터디 일시 전, B== 스터디 시작 후 24시간 이내 C == 시작부터 24시간 후 
-            //A랑 C는 작성 불가
-            //B만 작성 가능
+            // studyStatus A== 24시간이내기 때문에 생성 가능한거고
+            //B==24시간 지나서 불가
 
             //지금 시간
             let studyStatus;
@@ -101,12 +100,12 @@ async function getStudyLists(req, res) {
             let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
 
 
-            if (studyDateTime > rightNow) {
+            //아직 24시간이 지나기 전이라 작성 가능
+            if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
                 studyStatus = 'A';
-            } else if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
+                //24시간이 지나서 작성 불가
+            } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
                 studyStatus = 'B';
-            } else {
-                studyStatus = 'C';
             }
 
 
@@ -472,7 +471,7 @@ async function updateStudy(req, res) {
         //스터디 시작시간이 지나면 정보수정은 불가능하다
 
         // let rightNow = getDate();
-        // const updateStudy = await STUDY.findOne({ studyId });
+        const updateStudy = await STUDY.findOne({ studyId });
 
         // if (updateStudy.studyDateTime < rightNow) {
         //     return res.status(400).json({
