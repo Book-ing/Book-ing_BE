@@ -2,8 +2,8 @@ const STUDY = require('../schemas/studys');
 const STUDYMEMBERS = require('../schemas/studyMembers');
 const MEETING = require('../schemas/meeting');
 const USER = require('../schemas/user');
-const Buffer = require('buffer').Buffer;
-const fs = require('fs');
+const { getDate } = require('../lib/util');
+const moment=require('moment')
 
 //💡
 //스터디 노트 작성
@@ -21,8 +21,10 @@ async function postNote(req, res) {
     ==================================================*/
     const { userId } = res.locals.user;
     const { studyId, studyNote } = req.body;
-
+    
+// studyStatus a == 스터디 일시 전, b== 스터디 시작 후 24시간 이내 c == 시작부터 24시간 후 
     try {
+        
         let validStudy = await STUDY.findOne({ studyId });
         if (!validStudy) {
             return res.status(403).json({
@@ -39,6 +41,28 @@ async function postNote(req, res) {
             });
         }
 
+        let rightNow=getDate();
+       
+        if(validStudy.studyDateTime>rightNow){
+            return res.status(400).json({
+                result:false,
+                message:'스터디 전이라 노트 작성이 불가합니다'
+            })
+        }
+
+        //만약 오늘 날짜가 스터디 일시보다 하루가 늦으면 노트 작성 불가
+        // let studyTime=new Date(validStudy.studyDateTime)
+        // console.log('@@@',typeof(studyTime))
+        let studyTime=moment(validStudy.studyDateTime,'YYYY-MM-DD HH:mm:ss')
+        
+        // console.log('시간 차이: ', moment.duration(studyTime.diff(rightNow)).asHours());
+        if(moment.duration(studyTime.diff(rightNow)).asHours()<=-24){
+            return res.status(400).json({
+                result:false,
+                message:'스터디 노트 작성은 스터디 시작 이후 24시간이 지나면 작성이 불가능합니다.'
+            })
+        }
+    
         //스터디 노트 작성 가능한 자
         let editMaster = [];
         //받은 스터디 아이디의 멤버들 찾음
@@ -47,7 +71,8 @@ async function postNote(req, res) {
         for (let i = 0; i < studyMembers.length; i++) {
             validStudyMembers.push(studyMembers[i].studyMemberId);
         }
-        console.log(`${studyId}의 멤버들`, validStudyMembers);
+        
+
         //받은 스터디의 모임 찾음
         if (!validStudyMembers.includes(Number(userId))) {
             return res.status(403).json({
