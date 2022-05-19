@@ -24,7 +24,7 @@ router.put(
     studyController.updateStudy
 );
 router.post('/inout', authMiddleware, studyController.inoutStudy);
-router.get('/:studyId/user', studyController.getStudyMembers);
+router.get('/:studyId/user', authMiddleware, studyController.getStudyMembers);
 router.post('/kickuser', authMiddleware, studyController.kickUser);
 router.delete(
     '/:studyId/:meetingId',
