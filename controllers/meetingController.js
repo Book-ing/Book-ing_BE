@@ -126,6 +126,7 @@ async function getMeetingInfo(req, res) {
         const meetingLocation = await CODE.findOne({
             codeId: meetingInfo.meetingLocation,
         });
+        const meetingStudyCnt = await STUDY.find({ meetingId }).count();
 
         // 모임 마스터의 프로필 정보
         const meetingMasterProfile = await USER.findOne({
@@ -135,7 +136,7 @@ async function getMeetingInfo(req, res) {
         const meetingUserList = await MEETINGMEMBER.find({ meetingId, isMeetingMaster: false });
         // 모임에 가입된 유저들 고유 id
         const meetingUsersId = meetingUserList.map(
-            (result) => result.meetingMemberId
+            (result) => result.meetingMemberId,
         );
         // 모임에 가입된 유저들 정보
         const meetingUsersProfile = await USER.find(
@@ -146,7 +147,7 @@ async function getMeetingInfo(req, res) {
                 profileImage: true,
                 statusMessage: true,
                 _id: false,
-            }
+            },
         ).limit(3);
 
         const meetingUsersProfileArr = [];
@@ -184,6 +185,7 @@ async function getMeetingInfo(req, res) {
                 meetingIntro: meetingInfo.meetingIntro,
                 meetingUserCnt: meetingUserList.length + 1,
                 meetingLimitCnt: meetingInfo.meetingLimitCnt,
+                meetingStudyCnt,
                 isMeetingJoined,
                 meetingMasterProfile: {
                     userId: meetingMasterProfile.userId,
