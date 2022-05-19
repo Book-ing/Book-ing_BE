@@ -7,6 +7,8 @@ const studySchema = new mongoose.Schema({
     studyTitle: { type: String, required: true },
     studyDateTime: { type: String, required: true },
     studyAddr: { type: String, required: true },
+    Lat: { type: Number, required: true },
+    Long: { type: Number, required: true },
     studyAddrDetail: { type: String, required: true },
     studyLimitCnt: { type: Number, required: true },
     studyPrice: { type: Number },

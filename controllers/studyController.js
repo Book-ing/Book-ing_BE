@@ -5,8 +5,8 @@ const { getDate } = require('../lib/util');
 const MEETING = require('../schemas/meeting');
 const BANNEDUSERS = require('../schemas/bannedUsers');
 const MEETINGMEMBERS = require('../schemas/meetingMember');
-const NodeGeocoder = require('node-geocoder');
-const moment=require('moment')
+const moment = require('moment')
+const axios = require('axios')
 /**
  * 2022. 05. 03. HOJIN
  * TODO:
@@ -45,11 +45,6 @@ async function getStudyLists(req, res) {
         //유저가 유효한 유저인지 체크
         const validMeeting = await MEETING.findOne({ meetingId });
 
-        const options = {
-            provider: 'google',
-            apiKey: process.env.GOOGLE_GEOCODING_APIKEY,
-        };
-        const geocoder = NodeGeocoder(options);
 
         //조회하고자 하는 모임이 존재하는 지 체크
         if (!validMeeting) {
@@ -68,12 +63,12 @@ async function getStudyLists(req, res) {
         const data = await STUDY.find({ meetingId });
         let studyList = [];
 
-// studyStatus a == 스터디 일시 전, b== 스터디 시작 후 24시간 이내 c == 시작부터 24시간 후 
+        // studyStatus a == 스터디 일시 전, b== 스터디 시작 후 24시간 이내 c == 시작부터 24시간 후 
 
         //해당 모임에 존재하는 전체 스터디들의 데이터를 가지고 온다.
         //한 번 돌 때 하나의 스터디 이다.
-       
-      
+
+
         for (let i = 0; i < data.length; i++) {
             const studyId = data[i].studyId;
             const studyTitle = data[i].studyTitle;
@@ -90,40 +85,30 @@ async function getStudyLists(req, res) {
             const studyBookPublisher = data[i].studyBookPublisher;
             const studyNote = data[i].studyNote;
             const regDate = data[i].regDate;
-
-            const regionResult = await geocoder.geocode(data[i].studyAddr);
-            const Lat = regionResult[0].latitude; //위도
-            const Long = regionResult[0].longitude; //경도
+            const Lat = data[i].Lat; //위도
+            const Long = data[i].Long; //경도
 
             // 스터디 일시에 따라 status 내려주는 파트
-            // studyStatus a == 스터디 일시 전, b== 스터디 시작 후 24시간 이내 c == 시작부터 24시간 후 
-            
+            // studyStatus A == 스터디 일시 전, B== 스터디 시작 후 24시간 이내 C == 시작부터 24시간 후 
+            //A랑 C는 작성 불가
+            //B만 작성 가능
+
             //지금 시간
-            let studyStaus;
-            let rightNow=getDate();
+            let studyStatus;
+            let rightNow = getDate();
             // 스터디 시작시간 
-            let studyTime=moment(studyDateTime,'YYYY-MM-DD HH:mm:ss')
-            
-            // console.log('시간 차이: ', moment.duration(studyTime.diff(rightNow)).asHours());
-            if(moment.duration(studyTime.diff(rightNow)).asHours()<=-24){
-                return res.status(400).json({
-                    result:false,
-                    message:'스터디 노트 작성은 스터디 시작 이후 24시간이 지나면 작성이 불가능합니다.'
-                })
+            let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
+
+
+            if (studyDateTime > rightNow) {
+                studyStatus = 'A';
+            } else if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
+                studyStatus = 'B';
+            } else {
+                studyStatus = 'C';
             }
-       
-            if(studyDateTime<rightNow){
-                studyStaus=A;
-            }else if(moment.duration(studyTime.diff(rightNow)).asHours()<-24){
-                studyStaus=B;
-            }else{
-                studyStaus=C;
-            }
-    
-            //만약 오늘 날짜가 스터디 일시보다 하루가 늦으면 노트 작성 불가
-            // let studyTime=new Date(validStudy.studyDateTime)
-            // console.log('@@@',typeof(studyTime))
-            
+
+
 
             //모임에 있는 각!! 스터디 아이디에 참여한 멤버들을 가지고 온다.
             people = await STUDYMEMBERS.find({ studyId });
@@ -224,7 +209,7 @@ async function getStudyLists(req, res) {
                 regDate,
                 Lat,
                 Long,
-                studyStaus,
+                studyStatus,
                 together,
             });
         }
@@ -339,11 +324,29 @@ async function postStudy(req, res) {
                     'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
             }
 
+            // axios
+            console.time('geocoder');
+            const result = await axios({
+                method: 'GET',
+                url: 'https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=' + encodeURI(studyAddr),
+                headers: {
+                    'X-NCP-APIGW-API-KEY-ID': process.env.NAVER_API_KEY_ID, //앱 등록 시 발급받은 Client ID
+                    'X-NCP-APIGW-API-KEY': process.env.NAVER_API_KEY, //앱 등록 시 발급받은 Client Secret
+                },
+            });
+            const Lat = result.data.addresses[0].y;  //위도
+            const Long = result.data.addresses[0].x; //경도
+            console.log(Lat, Long);
+            console.timeEnd('geocoder');
+
+
             await STUDY.create({
                 meetingId,
                 studyMasterId: userId,
                 studyTitle,
                 studyDateTime,
+                Lat,
+                Long,
                 studyAddr,
                 studyAddrDetail,
                 studyLimitCnt,
@@ -510,9 +513,24 @@ async function updateStudy(req, res) {
                     '해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다!',
             });
         }
+
         const updateStudy = await STUDY.findOne({ studyId });
 
         //로그인한 유저가 해당 모임에 가입되어 있다면
+        console.time('geocoder');
+        const result = await axios({
+            method: 'GET',
+            url: 'https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=' + encodeURI(updateStudy.studyAddr),
+            headers: {
+                'X-NCP-APIGW-API-KEY-ID': process.env.NAVER_API_KEY_ID, //앱 등록 시 발급받은 Client ID
+                'X-NCP-APIGW-API-KEY': process.env.NAVER_API_KEY, //앱 등록 시 발급받은 Client Secret
+            },
+        });
+        const Lat = result.data.addresses[0].y; //위도
+        const Long = result.data.addresses[0].x; //경도
+        console.log(Lat, Long);
+        console.timeEnd('geocoder');
+
 
         if (meetingMemberId.includes(Number(userId))) {
             // 수정하고자 하는 스터디가 존재한다면
@@ -528,6 +546,8 @@ async function updateStudy(req, res) {
                                 studyTitle,
                                 studyDateTime,
                                 studyAddr,
+                                Lat,
+                                Long,
                                 studyAddrDetail,
                                 studyPrice,
                                 studyNotice,
@@ -1311,6 +1331,32 @@ async function deleteStudy(req, res) {
     }
 }
 
+//스터디 목록 검색 
+async function searchStudy(req, res) {
+
+    const { meetingId } = req.params;
+    const { keyword } = req.query
+
+    const regex = (pattern) => {
+        return new RegExp(`.*${pattern}.*`);
+    };
+
+    const keywordReg = regex(keyword);
+    const searchData = await STUDY.where({ meetingId }).find({
+        $or: [
+            { studyTitle: { $regex: keywordReg, $options: 'i' } },
+            { studyAddr: { $regex: keywordReg, $options: 'i' } },
+            { studyBookTitle: { $regex: keywordReg, $options: 'i' } },
+        ]
+    })
+
+    return res.status(200).json({
+        result: true,
+        searchData,
+        message: '검색 성공!'
+    })
+}
+
 module.exports = {
     postStudy,
     updateStudy,
@@ -1319,4 +1365,5 @@ module.exports = {
     getStudyMembers,
     kickUser,
     deleteStudy,
+    searchStudy
 };
