@@ -32,12 +32,11 @@ router.delete(
     studyController.deleteStudy
 );
 
-router.get('/:meetingId/search', studyController.searchStudy);
+router.get('/:meetingId/search', authMiddleware, studyController.searchStudy);
 
 
 //스터디 노트
 router.post('/note', authMiddleware, studyNoteController.postNote);
-router.put('/note/delete', authMiddleware, studyNoteController.deleteNote);
 router.put('/note', authMiddleware, studyNoteController.updateNote);
 
 module.exports = router;
