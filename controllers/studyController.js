@@ -6,7 +6,8 @@ const MEETING = require('../schemas/meeting');
 const BANNEDUSERS = require('../schemas/bannedUsers');
 const MEETINGMEMBERS = require('../schemas/meetingMember');
 const moment = require('moment')
-const axios = require('axios')
+const axios = require('axios');
+const { update } = require('../schemas/studys');
 /**
  * 2022. 05. 03. HOJIN
  * TODO:
@@ -454,7 +455,6 @@ async function updateStudy(req, res) {
         for (let i = 0; i < checkStudy.length; i++) {
             checkStudyId.push(checkStudy[i].studyId);
         }
-
         if (!checkStudyId.includes(Number(studyId))) {
             /*=====================================================================================
                #swagger.responses[403] = {
@@ -469,7 +469,19 @@ async function updateStudy(req, res) {
             });
         }
 
-        const updateStudy = await STUDY.findOne({ studyId });
+        //스터디 시작시간이 지나면 정보수정은 불가능하다
+
+        // let rightNow = getDate();
+        // const updateStudy = await STUDY.findOne({ studyId });
+
+        // if (updateStudy.studyDateTime < rightNow) {
+        //     return res.status(400).json({
+        //         result: false,
+        //         message: '스터디 정보수정이 가능한 시간이 지났습니다'
+        //     })
+        // }
+
+
 
         //로그인한 유저가 해당 모임에 가입되어 있다면
         console.time('geocoder');
