@@ -124,19 +124,8 @@ async function getStudyLists(req, res) {
                         isStudyJoined = true;
                     }
                 }
-                const validUser = await USER.findOne({ userId });
-                if (!validUser) {
-                    /*=====================================================================================
-                       #swagger.responses[403] = {
-                           description: '로그인한 유저가 유효하지 않은 유저일 때 이 응답이 갑니다.',
-                           schema: { "result": false, 'message':'유효하지 않은 유저입니다! ', }
-                       }
-                       =====================================================================================*/
-                    return res.status(400).json({
-                        result: false,
-                        message: '유효하지 않은 유저입니다.',
-                    });
-                }
+
+
             }
             //지금 로그인한 유저가 이 스터디에 참가 했는지 안했는지 판단
 
@@ -152,36 +141,26 @@ async function getStudyLists(req, res) {
             const studyMasterProfile = {};
 
             for (let j = 0; j < people.length; j++) {
+
                 let joinedUser = await USER.find({
                     userId: people[j].studyMemberId,
                 });
-                if (
-                    !joinedUser[0] ||
-                    joinedUser[0] === null ||
-                    joinedUser[0] === undefined
-                ) {
-                    /*=====================================================================================
-                       #swagger.responses[400] = {
-                           description: '유저가 존재하지 않을 때 이 응답을 준다.',
-                           schema: { "result": false, 'message':'유저가 존재하지 않아요', }
-                       }
-                       =====================================================================================*/
-                    return res.status(400).json({
-                        result: false,
-                        message: '유저가 존재하지 않아요',
-                    });
-                }
+
                 const userId = joinedUser[0].userId;
                 const profileImage = joinedUser[0].profileImage;
+                const username = joinedUser[0].username;
                 studyUserCnt = people.length;
                 isStudyMaster = people[j].isStudyMaster;
+
                 if (isStudyMaster) {
                     studyMasterProfile.userId = userId;
                     studyMasterProfile.profileImage = profileImage;
                     studyMasterProfile.isStudyMaster = isStudyMaster;
+                    studyMasterProfile.username = username
                 } else {
                     together.push({
                         userId,
+                        username,
                         isStudyMaster,
                         profileImage,
                     });
@@ -281,19 +260,7 @@ async function postStudy(req, res) {
 
     //스터디를 만든 사람이 방장이 된다.
     try {
-        const validUser = await USER.findOne({ userId });
-        if (!validUser) {
-            /*=====================================================================================
-                 #swagger.responses[403] = {
-                 description: '로그인한 유저가 유효하지 않은 유저일 때 이 응답이 갑니다.',
-                schema: { "result": false, 'message':'유효하지 않은 유저입니다! ', }
-                }
-            =====================================================================================*/
-            return res.status(400).json({
-                result: false,
-                message: '유효하지 않은 유저입니다.',
-            });
-        }
+
         let validMeeting = await MEETING.findOne({ meetingId });
         if (!validMeeting) {
             /*=====================================================================================
@@ -444,19 +411,7 @@ async function updateStudy(req, res) {
     } = req.body;
 
     try {
-        const validUser = await USER.findOne({ userId });
-        if (!validUser) {
-            /*=====================================================================================
-            #swagger.responses[403] = {
-                description: '로그인한 유저가 유효하지 않은 유저일 때 이 응답이 갑니다.',
-                schema: { "result": false, 'message':'유효하지 않은 유저입니다! ', }
-            }
-            =====================================================================================*/
-            return res.status(400).json({
-                result: false,
-                message: '유효하지 않은 유저입니다.',
-            });
-        }
+
         if (studyBookImg === '' || studyBookImg === null) {
             studyBookImg =
                 'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
@@ -634,6 +589,7 @@ async function inoutStudy(req, res) {
         #swagger.description = '스터디 참가 및 취소 API'
     ========================================================================================================*/
     const { userId } = res.locals.user;
+    // const { userId } = req.query;
     const { studyId, meetingId } = req.body;
 
 
@@ -694,20 +650,6 @@ async function inoutStudy(req, res) {
             //모임에서 강퇴당한 유저 찾기
             let bannedUser = await BANNEDUSERS.findOne({ meetingId });
             // 로그인한 유저가 유효한 유저인지 체크
-            const validUser = await USER.findOne({ userId });
-            if (!validUser) {
-                /*=====================================================================================
-                     #swagger.responses[403] = {
-                     description: '로그인한 유저가 유효하지 않은 유저일 때 이 응답이 갑니다.',
-                    schema: { "result": false, 'message':'유효하지 않은 유저입니다! ', }
-                     }
-                =====================================================================================*/
-                return res.status(400).json({
-                    result: false,
-                    message: '존재하지 않은 유저입니다.',
-                });
-            }
-
             if (bannedUser) {
                 if (bannedUser.userId === Number(userId)) {
                     /*=====================================================================================
@@ -891,20 +833,6 @@ async function getStudyMembers(req, res) {
                 message: '유효하지 않은 스터디 입니다.',
             });
         }
-        const validUser = await USER.findOne({ userId: Number(userId) });
-        if (!validUser) {
-            /*=====================================================================================
-         #swagger.responses[403] = {
-             description: '로그인한 유저가 유효하지 않은 유저일 때 이 응답이 갑니다.',
-             schema: { "result": false, 'message':'유효하지 않은 유저입니다! ', }
-         }
-         =====================================================================================*/
-            return res.status(400).json({
-                result: false,
-                message: '유효하지 않은 유저입니다! ',
-            });
-        }
-
         let studyUsers = [];
         let myProfileData = {};
         let masterProfileData = {};
@@ -1063,19 +991,7 @@ async function kickUser(req, res) {
                 message: '유효하지 않은 스터디 입니다.',
             });
         }
-        const validUser = await USER.findOne({ userId });
-        if (!validUser) {
-            /*=====================================================================================
-               #swagger.responses[403] = {
-                   description: '스터디장, 모임장이 아닌 사람이 유저를 강퇴하려고 할 때 이 응답을 줍니다.',
-                   schema: { "result": false, 'message': '유저 강퇴는 스터디장 또는 모임장만 가능합니다.', }
-               }
-               =====================================================================================*/
-            return res.status(403).json({
-                result: false,
-                message: '유효하지 않은 유저입니다! ',
-            });
-        }
+
         let validMeeting = await MEETING.findOne({ meetingId });
         if (!validMeeting) {
             /*=====================================================================================
@@ -1229,19 +1145,7 @@ async function deleteStudy(req, res) {
                 message: '해당 모임이 존재하지 않습니다.',
             });
         }
-        const validUser = await USER.findOne({ userId: Number(userId) });
-        if (!validUser) {
-            /*=====================================================================================
-               #swagger.responses[403] = {
-                   description: '로그인한 유저가 유효하지 않은 유저일 때 이 응답이 갑니다.',
-                   schema: { "result": false, 'message':'유효하지 않은 유저입니다! ', }
-               }
-               =====================================================================================*/
-            return res.status(400).json({
-                result: false,
-                message: '유효하지 않은 유저입니다! ',
-            });
-        }
+
         const deleteStudy = await STUDY.find({ meetingId: Number(meetingId) });
         let deleteStudyId = [];
         for (let i = 0; i < deleteStudy.length; i++) {
