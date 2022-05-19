@@ -36,19 +36,19 @@ async function postNote(req, res) {
 
         let rightNow = getDate();
 
-        if (validStudy.studyDateTime > rightNow) {
-            return res.status(400).json({
-                result: false,
-                message: '스터디 전이라 노트 작성이 불가합니다'
-            })
-        }
+        // if (validStudy.studyDateTime > rightNow) {
+        //     return res.status(400).json({
+        //         result: false,
+        //         message: '스터디 전이라 노트 작성이 불가합니다'
+        //     })
+        // }
 
         //만약 오늘 날짜가 스터디 일시보다 하루가 늦으면 노트 작성 불가
         // let studyTime=new Date(validStudy.studyDateTime)
         // console.log('@@@',typeof(studyTime))
         let studyTime = moment(validStudy.studyDateTime, 'YYYY-MM-DD HH:mm:ss')
 
-        // console.log('시간 차이: ', moment.duration(studyTime.diff(rightNow)).asHours());
+
         if (moment.duration(studyTime.diff(rightNow)).asHours() <= -24) {
             return res.status(400).json({
                 result: false,
