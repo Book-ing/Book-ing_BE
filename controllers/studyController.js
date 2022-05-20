@@ -7,7 +7,7 @@ const BANNEDUSERS = require('../schemas/bannedUsers');
 const MEETINGMEMBERS = require('../schemas/meetingMember');
 const moment = require('moment')
 const axios = require('axios');
-const { update } = require('../schemas/studys');
+
 /**
  * 2022. 05. 03. HOJIN
  * TODO:
@@ -1257,6 +1257,8 @@ async function searchStudy(req, res) {
     };
 
     const keywordReg = regex(keyword);
+    let searchedDataId = [];
+    let studyList = [];
     const searchData = await STUDY.where({ meetingId }).find({
         $or: [
             { studyTitle: { $regex: keywordReg, $options: 'i' } },
@@ -1264,10 +1266,127 @@ async function searchStudy(req, res) {
             { studyBookTitle: { $regex: keywordReg, $options: 'i' } },
         ]
     })
+    for (let i = 0; i < searchData.length; i++) {
+        searchedDataId.push(searchData[i].studyId)
+    }
+
+
+    for (let i = 0; i < searchData.length; i++) {
+        const studyId = searchData[i].studyId;
+        const studyTitle = searchData[i].studyTitle;
+        const studyPrice = searchData[i].studyPrice;
+        const studyDateTime = searchData[i].studyDateTime;
+        const studyAddr = searchData[i].studyAddr;
+        const studyAddrDetail = searchData[i].studyAddrDetail;
+        const studyNotice = searchData[i].studyNotice;
+        const studyLimitCnt = searchData[i].studyLimitCnt;
+        const studyBookTitle = searchData[i].studyBookTitle;
+        const studyBookImg = searchData[i].studyBookImg;
+        const studyBookInfo = searchData[i].studyBookInfo;
+        const studyBookWriter = searchData[i].studyBookWriter;
+        const studyBookPublisher = searchData[i].studyBookPublisher;
+        const studyNote = searchData[i].studyNote;
+        const regDate = searchData[i].regDate;
+        const Lat = searchData[i].Lat; //위도
+        const Long = searchData[i].Long; //경도
+
+        let studyStatus;
+        let rightNow = getDate();
+        // 스터디 시작시간 
+        let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
+
+
+        //아직 24시간이 지나기 전이라 작성 가능
+        if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
+            studyStatus = 'A';
+            //24시간이 지나서 작성 불가
+        } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
+            studyStatus = 'B';
+        }
+
+
+        people = await STUDYMEMBERS.find({ studyId });
+        let studyUserCnt = 0;
+        let isStudyJoined = false;
+
+        //유저가 로그인하지 않아도 내용을 볼 수 있도록
+        if (res.locals.user) {
+            const { userId } = res.locals.user;
+
+            for (let k = 0; k < people.length; k++) {
+                if (people[k].studyMemberId === Number(userId)) {
+                    isStudyJoined = true;
+                }
+            }
+        }
+
+        const together = [];
+        let isStudyMaster;
+        const studyMasterProfile = {};
+
+
+        for (let j = 0; j < people.length; j++) {
+
+            let joinedUser = await USER.find({
+                userId: people[j].studyMemberId,
+            });
+
+            const userId = joinedUser[0].userId;
+            const profileImage = joinedUser[0].profileImage;
+            const username = joinedUser[0].username;
+            studyUserCnt = people.length;
+            isStudyMaster = people[j].isStudyMaster;
+
+            if (isStudyMaster) {
+                studyMasterProfile.userId = userId;
+                studyMasterProfile.profileImage = profileImage;
+                studyMasterProfile.isStudyMaster = isStudyMaster;
+                studyMasterProfile.username = username
+            } else {
+                together.push({
+                    userId,
+                    username,
+                    isStudyMaster,
+                    profileImage,
+                });
+            }
+        }
+        studyList.push({
+            studyId,
+            studyTitle,
+            studyPrice,
+            studyDateTime,
+            studyAddr,
+            isStudyJoined,
+            studyAddrDetail,
+            studyNotice,
+            studyLimitCnt,
+            studyUserCnt,
+            studyBookTitle,
+            studyBookImg,
+            studyBookInfo,
+            studyBookWriter,
+            studyBookPublisher,
+            studyNote,
+            studyMasterProfile,
+            regDate,
+            Lat,
+            Long,
+            studyStatus,
+            together,
+        });
+
+        studyList.sort(function (a, b) {
+            a = a.regDate;
+            b = b.regDate;
+            return a > b ? -1 : a < b ? 1 : 0;
+        });
+    }
+
 
     return res.status(200).json({
         result: true,
-        searchData,
+        studyList,
         message: '검색 성공!'
     })
 }
