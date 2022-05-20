@@ -95,6 +95,7 @@ async function getStudyLists(req, res) {
 
             //지금 시간
             let studyStatus;
+            let possibleJoinStudy = true;
             let rightNow = getDate();
             // 스터디 시작시간 
             let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
@@ -108,6 +109,10 @@ async function getStudyLists(req, res) {
                 studyStatus = 'B';
             }
 
+            //스터디 시작 지나면 참가 못하게 하기 
+            // if (studyDateTime < rightNow) {
+            //     possibleJoinStudy = false
+            // }
 
 
             //모임에 있는 각!! 스터디 아이디에 참여한 멤버들을 가지고 온다.
@@ -124,8 +129,6 @@ async function getStudyLists(req, res) {
                         isStudyJoined = true;
                     }
                 }
-
-
             }
             //지금 로그인한 유저가 이 스터디에 참가 했는지 안했는지 판단
 
@@ -689,6 +692,14 @@ async function inoutStudy(req, res) {
                     result: false,
                     message: '존재하지 않은 스터디 입니다! ',
                 });
+            }
+            let rightNow = getDate()
+            console.log("참가하려고 했던 스터디", study)
+            if (study.studyDateTime < rightNow) {
+                return res.status(400).json({
+                    result: false,
+                    message: '이미 시작된  혹은 지난 스터디라 참가 불가능합니다.'
+                })
             }
 
             //참가할 스터디의 멤버들 찾기

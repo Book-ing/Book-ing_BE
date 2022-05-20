@@ -19,12 +19,12 @@ router.get(
     mypageController.getSelectJoinedMeeting
 ); // 마이페이지 내가 가입된 모임 조회
 router.get(
-    '/:userId/mystudy',
+    '/mystudy',
     authMiddelware,
     mypageController.getSelectMyStudy
 ); // 마이페이지 내가 만든 스터디 조회
 router.get(
-    '/:userId/joinedstudy',
+    '/joinedstudy',
     authMiddelware,
     mypageController.getSelectJoinedStudy
 ); // 마이페이지 내가 참여한 스터디 조회

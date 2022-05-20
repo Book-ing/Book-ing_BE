@@ -1,11 +1,11 @@
 const lib = require('../lib/util');
-
+const { getDate } = require('../lib/util');
 const USER = require('../schemas/user');
 const MEETING = require('../schemas/meeting');
 const MEETINGMEMBER = require('../schemas/meetingMember');
 const STUDY = require('../schemas/studys');
 const STUDYMEMBER = require('../schemas/studyMembers');
-
+const moment = require('moment')
 /**
  * 2022. 05. 04. HSYOO.
  * FIXME:
@@ -30,7 +30,7 @@ async function getSelectMyProfile(req, res) {
         schema: { "result": 'Boolean', 'message': 'Text' }
     }
     ========================================================================================================*/
-    const { userId } = req.params; 
+    const { userId } = req.params;
 
     const existUser = await USER.findOne(
         { userId: userId },
@@ -277,44 +277,174 @@ async function getSelectMyStudy(req, res) {
         description: '권한이 올바르지 않은 경우 아래와 같은 형태로 응답받습니다.',
         schema: { "result": 'Boolean', 'message': 'Text' }
     }
-    ========================================================================================================*/
-    const { userId } = req.params;
+    ============================================= ===========================================================*/
 
-    // 유저 존재여부 검사
-    const existUser = await USER.findOne({ userId: userId });
-    if (!existUser)
-        return res.json({
-            result: false,
-            message: '존재하지 않는 사용자입니다.',
+    const { userId } = res.locals.user;
+
+    const myStudyList = [];
+
+    try {
+        const arrMyStudy = await STUDY.find({ studyMasterId: userId })
+
+        for (let i = 0; i < arrMyStudy.length; i++) {
+            const studyId = arrMyStudy[i].studyId;
+            const studyTitle = arrMyStudy[i].studyTitle;
+            const studyPrice = arrMyStudy[i].studyPrice;
+            const studyDateTime = arrMyStudy[i].studyDateTime;
+            const studyAddr = arrMyStudy[i].studyAddr;
+            const studyAddrDetail = arrMyStudy[i].studyAddrDetail;
+            const studyNotice = arrMyStudy[i].studyNotice;
+            const studyLimitCnt = arrMyStudy[i].studyLimitCnt;
+            const studyBookTitle = arrMyStudy[i].studyBookTitle;
+            const studyBookImg = arrMyStudy[i].studyBookImg;
+            const studyBookInfo = arrMyStudy[i].studyBookInfo;
+            const studyBookWriter = arrMyStudy[i].studyBookWriter;
+            const studyBookPublisher = arrMyStudy[i].studyBookPublisher;
+            const studyNote = arrMyStudy[i].studyNote;
+            const regDate = arrMyStudy[i].regDate;
+            const Lat = arrMyStudy[i].Lat; //위도
+            const Long = arrMyStudy[i].Long; //경도
+
+            let studyStatus;
+            let possibleJoinStudy = true;
+            let rightNow = getDate();
+            // 스터디 시작시간 
+            let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
+
+            if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
+                studyStatus = 'A';
+                //24시간이 지나서 작성 불가
+            } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
+                studyStatus = 'B';
+            }
+
+            people = await STUDYMEMBER.find({ studyId });
+            let studyUserCnt = 0;
+            let isStudyJoined = false;
+
+            //유저가 로그인하지 않아도 내용을 볼 수 있도록
+            if (res.locals.user) {
+                const { userId } = res.locals.user;
+
+                for (let k = 0; k < people.length; k++) {
+                    if (people[k].studyMemberId === Number(userId)) {
+                        isStudyJoined = true;
+                    }
+                }
+            }
+
+            const together = [];
+            let isStudyMaster;
+            const studyMasterProfile = {};
+
+            for (let j = 0; j < people.length; j++) {
+
+                let joinedUser = await USER.find({
+                    userId: people[j].studyMemberId,
+                });
+
+                const userId = joinedUser[0].userId;
+                const profileImage = joinedUser[0].profileImage;
+                const username = joinedUser[0].username;
+                studyUserCnt = people.length;
+                isStudyMaster = people[j].isStudyMaster;
+
+                if (isStudyMaster) {
+                    studyMasterProfile.userId = userId;
+                    studyMasterProfile.profileImage = profileImage;
+                    studyMasterProfile.isStudyMaster = isStudyMaster;
+                    studyMasterProfile.username = username
+                } else {
+                    together.push({
+                        userId,
+                        username,
+                        isStudyMaster,
+                        profileImage,
+                    });
+                }
+
+                myStudyList.push({
+                    studyId,
+                    studyTitle,
+                    studyPrice,
+                    studyDateTime,
+                    studyAddr,
+                    isStudyJoined,
+                    studyAddrDetail,
+                    studyNotice,
+                    studyLimitCnt,
+                    studyUserCnt,
+                    studyBookTitle,
+                    studyBookImg,
+                    studyBookInfo,
+                    studyBookWriter,
+                    studyBookPublisher,
+                    studyNote,
+                    studyMasterProfile,
+                    regDate,
+                    Lat,
+                    Long,
+                    studyStatus,
+                    together,
+                });
+            }
+        }
+        myStudyList.sort(function (a, b) {
+            a = a.regDate;
+            b = b.regDate;
+            return a > b ? -1 : a < b ? 1 : 0;
         });
 
-    // 결과데이터 오브젝트 선언
-    let resultData = {};
-    const arrMyStudy = await STUDY.find(
-        { studyMasterId: userId },
-        {
-            _id: false,
-            studyId: true,
-            studyTitle: true,
-            studyDateTime: true,
-            studyAddr: true,
-            studyAddrDetail: true,
-            studyNotice: true,
-            studyPrice: true,
-        }
-    );
+        return res.status(200).json({
+            result: true,
+            myStudyList,
+            message: '내가 만든 스터디 조회 성공'
+        })
+    } catch (err) {
+        console.log(err)
 
-    if (arrMyStudy.length === 0)
-        // 해당 사용자가 발제한 스터디가 없다면 성공처리하여 빈 오브젝트를 내려준다.
-        return res.json({ result: true, message: '', data: resultData });
-    // 발제한 스터디 결과 배열을 결과데이터에 초기화
-    else resultData.myStudy = arrMyStudy;
+        return res.status(400).json({
+            result: false,
+            message: '내가 만든 스터디 조회 실패'
+        })
+    }
+    // const { userId } = req.params;
 
-    res.json({
-        result: true,
-        message: '마이페이지 내가 만든 스터디 조회 성공',
-        data: resultData,
-    });
+    // // 유저 존재여부 검사
+    // const existUser = await USER.findOne({ userId: userId });
+    // if (!existUser)
+    //     return res.json({
+    //         result: false,
+    //         message: '존재하지 않는 사용자입니다.',
+    //     });
+
+    // // 결과데이터 오브젝트 선언
+    // let resultData = {};
+    // const arrMyStudy = await STUDY.find(
+    //     { studyMasterId: userId },
+    //     {
+    //         _id: false,
+    //         studyId: true,
+    //         studyTitle: true,
+    //         studyDateTime: true,
+    //         studyAddr: true,
+    //         studyAddrDetail: true,
+    //         studyNotice: true,
+    //         studyPrice: true,
+    //     }
+    // );
+
+    // if (arrMyStudy.length === 0)
+    //     // 해당 사용자가 발제한 스터디가 없다면 성공처리하여 빈 오브젝트를 내려준다.
+    //     return res.json({ result: true, message: '', data: resultData });
+    // // 발제한 스터디 결과 배열을 결과데이터에 초기화
+    // else resultData.myStudy = arrMyStudy;
+
+    // res.json({
+    //     result: true,
+    //     message: '마이페이지 내가 만든 스터디 조회 성공',
+    //     data: resultData,
+    // });
 }
 
 /**
@@ -341,52 +471,190 @@ async function getSelectJoinedStudy(req, res) {
         schema: { "result": 'Boolean', 'message': 'Text' }
     }
     ========================================================================================================*/
-    const { userId } = req.params;
 
-    // 사용자 존재여부 검사
-    const existUser = await USER.findOne({ userId: userId });
-    if (!existUser)
-        return res.json({
-            result: false,
-            message: '존재하지 않는 사용자입니다.',
-        });
+    const { userId } = res.locals.user;
+    try {
 
-    // 결과데이터 오브젝트 선언
-    let resultData = {};
-    const arrMyStudy = await STUDYMEMBER.find({ studyMemberId: userId });
-    const arrStudyIdList = arrMyStudy.map((val, i) => {
-        // 내가 참여한 스터디 목록 내 스터디 ID를 배열로 생성
-        return val.studyId;
-    });
 
-    const arrStudyList = await STUDY.find(
-        { studyId: arrStudyIdList },
-        {
-            _id: false, // mongoDB 내 ID
-            studyId: true, // 스터디 ID
-            studyTitle: true, // 스터디 제목
-            studyDateTime: true, // 스터디 날짜
-            studyAddr: true, // 스터디 주소
-            studyAddrDetail: true, // 스터디 상세주소
-            studyNotice: true, // 스터디 공지
-            studyPrice: true, // 스터디 비용
+        const arrMyStudy = await STUDYMEMBER.find({ studyMemberId: userId });
+        const arrStudyList = arrMyStudy.map((val, i) => {
+            return val.studyId;
+        })
+        let myJoinedStudy = [];
+
+        for (let i = 0; i < arrStudyList.length; i++) {
+            const data = await STUDY.find({ studyId: arrStudyList[i] })
+            for (let j = 0; j < data.length; j++) {
+                const studyId = data[j].studyId;
+                const studyTitle = data[j].studyTitle;
+                const studyPrice = data[j].studyPrice;
+                const studyDateTime = data[j].studyDateTime;
+                const studyAddr = data[j].studyAddr;
+                const studyAddrDetail = data[j].studyAddrDetail;
+                const studyNotice = data[j].studyNotice;
+                const studyLimitCnt = data[j].studyLimitCnt;
+                const studyBookTitle = data[j].studyBookTitle;
+                const studyBookImg = data[j].studyBookImg;
+                const studyBookInfo = data[j].studyBookInfo;
+                const studyBookWriter = data[j].studyBookWriter;
+                const studyBookPublisher = data[j].studyBookPublisher;
+                const studyNote = data[j].studyNote;
+                const regDate = data[j].regDate;
+                const Lat = data[j].Lat; //위도
+                const Long = data[j].Long; //경도
+
+
+                let studyStatus;
+                let possibleJoinStudy = true;
+                let rightNow = getDate();
+                let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
+
+
+                //아직 24시간이 지나기 전이라 작성 가능
+                if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
+                    studyStatus = 'A';
+                    //24시간이 지나서 작성 불가
+                } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
+                    studyStatus = 'B';
+                }
+
+
+                people = await STUDYMEMBER.find({ studyId });
+                let studyUserCnt = 0;
+                let isStudyJoined = false;
+
+                //유저가 로그인하지 않아도 내용을 볼 수 있도록
+                if (res.locals.user) {
+                    const { userId } = res.locals.user;
+
+                    for (let k = 0; k < people.length; k++) {
+                        if (people[k].studyMemberId === Number(userId)) {
+                            isStudyJoined = true;
+                        }
+                    }
+                }
+
+                const together = [];
+                let isStudyMaster;
+                const studyMasterProfile = {};
+
+                for (let j = 0; j < people.length; j++) {
+
+                    let joinedUser = await USER.find({
+                        userId: people[j].studyMemberId,
+                    });
+
+                    const userId = joinedUser[0].userId;
+                    const profileImage = joinedUser[0].profileImage;
+                    const username = joinedUser[0].username;
+                    studyUserCnt = people.length;
+                    isStudyMaster = people[j].isStudyMaster;
+
+                    if (isStudyMaster) {
+                        studyMasterProfile.userId = userId;
+                        studyMasterProfile.profileImage = profileImage;
+                        studyMasterProfile.isStudyMaster = isStudyMaster;
+                        studyMasterProfile.username = username
+                    } else {
+                        together.push({
+                            userId,
+                            username,
+                            isStudyMaster,
+                            profileImage,
+                        });
+                    }
+                }
+                if (!isStudyMaster) {
+                    myJoinedStudy.push({
+                        studyId,
+                        studyTitle,
+                        studyPrice,
+                        studyDateTime,
+                        studyAddr,
+                        isStudyJoined,
+                        studyAddrDetail,
+                        studyNotice,
+                        studyLimitCnt,
+                        studyUserCnt,
+                        studyBookTitle,
+                        studyBookImg,
+                        studyBookInfo,
+                        studyBookWriter,
+                        studyBookPublisher,
+                        studyNote,
+                        studyMasterProfile,
+                        regDate,
+                        Lat,
+                        Long,
+                        studyStatus,
+                        together,
+                    });
+
+                }
+
+            }
+
         }
-    );
-    if (arrStudyList.length === 0)
-        // 내가 참여한 스터디가 없다면, 성공으로 처리하여, 빈 오브젝트를 내려준다.
-        return res.json({
-            resultData: true,
-            message: '마이페이지 내가 참여한 스터디 조회 성공',
-            data: resultData,
-        });
-    // 내가 참여한 스터디리스트 배열을 결과데이터에 초기화
-    else resultData.joinedStudy = arrStudyList;
 
-    res.json({
-        result: true,
-        message: '마이페이지 내가 참여한 스터디 조회 성공',
-        data: resultData,
-    });
+        return res.status(200).json({
+            result: true,
+            myJoinedStudy,
+            message: '내가 참가한 스터디 조회 성공'
+        })
+    } catch (err) {
+        console.log(err)
+        return res.status(400).json({
+            result: false,
+            message: '내가 참가한 스터디 조회 실패!'
+        })
+    }
+
+    // const { userId } = req.params;
+
+    // // 사용자 존재여부 검사
+    // const existUser = await USER.findOne({ userId: userId });
+    // if (!existUser)
+    //     return res.json({
+    //         result: false,
+    //         message: '존재하지 않는 사용자입니다.',
+    //     });
+
+    // // 결과데이터 오브젝트 선언
+    // let resultData = {};
+    // const arrMyStudy = await STUDYMEMBER.find({ studyMemberId: userId });
+    // const arrStudyIdList = arrMyStudy.map((val, i) => {
+    //     // 내가 참여한 스터디 목록 내 스터디 ID를 배열로 생성
+    //     return val.studyId;
+    // });
+
+    // const arrStudyList = await STUDY.find(
+    //     { studyId: arrStudyIdList },
+    //     {
+    //         _id: false, // mongoDB 내 ID
+    //         studyId: true, // 스터디 ID
+    //         studyTitle: true, // 스터디 제목
+    //         studyDateTime: true, // 스터디 날짜
+    //         studyAddr: true, // 스터디 주소
+    //         studyAddrDetail: true, // 스터디 상세주소
+    //         studyNotice: true, // 스터디 공지
+    //         studyPrice: true, // 스터디 비용
+    //     }
+    // );
+    // if (arrStudyList.length === 0)
+    //     // 내가 참여한 스터디가 없다면, 성공으로 처리하여, 빈 오브젝트를 내려준다.
+    //     return res.json({
+    //         resultData: true,
+    //         message: '마이페이지 내가 참여한 스터디 조회 성공',
+    //         data: resultData,
+    //     });
+    // // 내가 참여한 스터디리스트 배열을 결과데이터에 초기화
+    // else resultData.joinedStudy = arrStudyList;
+
+    // res.json({
+    //     result: true,
+    //     message: '마이페이지 내가 참여한 스터디 조회 성공',
+    //     data: resultData,
+    // });
 }
 
 module.exports = {
