@@ -34,9 +34,9 @@ io.on('connection', (socket) => {
         if (existMember) {
             socket.join('meeting', meetingId);
             const chats = await CHAT.find({ meetingId })
-                                    .limit(50)
-                                    .sort({ chatId: -1 })
-                                    .then(result => result.sort((a, b) => a.chatId - b.chatId));
+                .limit(50)
+                .sort({ chatId: -1 })
+                .then(result => result.sort((a, b) => a.chatId - b.chatId));
             const chatsUserId = chats.map(result => result.userId);
             const usersProfile = await USER.find({ userId: chatsUserId });
 
@@ -64,13 +64,13 @@ io.on('connection', (socket) => {
                 }
             }
             io.to('meeting', meetingId).emit('getMessages', Messages); // db에 저장된 메세지를 보내준다.
-            console.log(`${ userId } join a ${ meetingId } Room`);
+            console.log(`${userId} join a ${meetingId} Room`);
         }
     });
 
     socket.on('leaveMeetingRoom', (meetingId, userId) => {
         socket.leave('meeting', meetingId);
-        console.log(`${ userId } leave a ${ meetingId } Room`);
+        console.log(`${userId} leave a ${meetingId} Room`);
     });
 
     socket.on('chat message', async (meetingId, userId, message) => {
