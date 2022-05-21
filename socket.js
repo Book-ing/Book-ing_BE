@@ -27,6 +27,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('joinMeetingRoom', async (meetingId, userId) => {
+        if (!meetingId || !userId) return;
         const existMember = await MEETINGMEMBER.findOne({
             meetingId,
             meetingMemberId: userId,
@@ -74,6 +75,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('chat message', async (meetingId, userId, message) => {
+        if (!meetingId || !userId) return;
         try {
             console.log(
                 'meetingId: ',
@@ -83,21 +85,27 @@ io.on('connection', (socket) => {
                 ' message : ',
                 message,
             );
-            const userProfile = await USER.findOne({ userId });
-            const chatMessage = {
-                userId,
-                username: userProfile.username,
-                profileImage: userProfile.profileImage,
-                message,
-                regDate: lib.getDate(),
-            };
-            io.to('meeting', meetingId).emit('chat message', chatMessage);
-            await CHAT.create({
+            const existMember = await MEETINGMEMBER.findOne({
                 meetingId,
-                userId,
-                message,
-                regDate: lib.getDate(),
+                meetingMemberId: userId,
             });
+            if (existMember) {
+                const userProfile = await USER.findOne({ userId });
+                const chatMessage = {
+                    userId,
+                    username: userProfile.username,
+                    profileImage: userProfile.profileImage,
+                    message,
+                    regDate: lib.getDate(),
+                };
+                io.to('meeting', meetingId).emit('chat message', chatMessage);
+                await CHAT.create({
+                    meetingId,
+                    userId,
+                    message,
+                    regDate: lib.getDate(),
+                });
+            }
         } catch (error) {
             console.log(error);
         }
