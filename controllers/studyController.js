@@ -693,14 +693,14 @@ async function inoutStudy(req, res) {
                     message: '존재하지 않은 스터디 입니다! ',
                 });
             }
-            let rightNow = getDate()
-            console.log("참가하려고 했던 스터디", study)
-            if (study.studyDateTime < rightNow) {
-                return res.status(400).json({
-                    result: false,
-                    message: '이미 시작된  혹은 지난 스터디라 참가 불가능합니다.'
-                })
-            }
+            // let rightNow = getDate()
+            // console.log("참가하려고 했던 스터디", study)
+            // if (study.studyDateTime < rightNow) {
+            //     return res.status(400).json({
+            //         result: false,
+            //         message: '이미 시작된  혹은 지난 스터디라 참가 불가능합니다.'
+            //     })
+            // }
 
             //참가할 스터디의 멤버들 찾기
             people = await STUDYMEMBERS.find({ studyId });
