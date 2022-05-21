@@ -263,6 +263,9 @@ async function getSelectJoinedMeeting(req, res) {
  * FIXME:
  *  1. valid check
  */
+
+//내가 만든 스터디 마이페이지
+//api/mypage/mystudy
 async function getSelectMyStudy(req, res) {
     /*========================================================================================================
     #swagger.tags = ['MYPAGE']
@@ -285,6 +288,7 @@ async function getSelectMyStudy(req, res) {
 
     try {
         const arrMyStudy = await STUDY.find({ studyMasterId: userId })
+        // console.log("내가 마스터인 스터디", arrMyStudy)
 
         for (let i = 0; i < arrMyStudy.length; i++) {
             const studyId = arrMyStudy[i].studyId;
@@ -362,33 +366,33 @@ async function getSelectMyStudy(req, res) {
                         profileImage,
                     });
                 }
-
-                myStudyList.push({
-                    studyId,
-                    studyTitle,
-                    studyPrice,
-                    studyDateTime,
-                    studyAddr,
-                    isStudyJoined,
-                    studyAddrDetail,
-                    studyNotice,
-                    studyLimitCnt,
-                    studyUserCnt,
-                    studyBookTitle,
-                    studyBookImg,
-                    studyBookInfo,
-                    studyBookWriter,
-                    studyBookPublisher,
-                    studyNote,
-                    studyMasterProfile,
-                    regDate,
-                    Lat,
-                    Long,
-                    studyStatus,
-                    together,
-                });
             }
+            myStudyList.push({
+                studyId,
+                studyTitle,
+                studyPrice,
+                studyDateTime,
+                studyAddr,
+                isStudyJoined,
+                studyAddrDetail,
+                studyNotice,
+                studyLimitCnt,
+                studyUserCnt,
+                studyBookTitle,
+                studyBookImg,
+                studyBookInfo,
+                studyBookWriter,
+                studyBookPublisher,
+                studyNote,
+                studyMasterProfile,
+                regDate,
+                Lat,
+                Long,
+                studyStatus,
+                together,
+            });
         }
+
         myStudyList.sort(function (a, b) {
             a = a.regDate;
             b = b.regDate;
@@ -452,6 +456,8 @@ async function getSelectMyStudy(req, res) {
  * FIXME:
  *  1. valid check
  */
+
+//내가 참석한 스터디 조회
 async function getSelectJoinedStudy(req, res) {
     /*========================================================================================================
     #swagger.tags = ['MYPAGE']
@@ -570,7 +576,6 @@ async function getSelectJoinedStudy(req, res) {
                         });
                     }
                 }
-
                 myJoinedStudy.push({
                     studyId,
                     studyTitle,
@@ -595,10 +600,8 @@ async function getSelectJoinedStudy(req, res) {
                     studyStatus,
                     together,
                 });
-
-
-
             }
+
 
         }
 
