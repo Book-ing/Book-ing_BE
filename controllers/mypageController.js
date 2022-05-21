@@ -475,11 +475,17 @@ async function getSelectJoinedStudy(req, res) {
     const { userId } = res.locals.user;
     try {
 
-
         const arrMyStudy = await STUDYMEMBER.find({ studyMemberId: userId });
-        const arrStudyList = arrMyStudy.map((val, i) => {
-            return val.studyId;
-        })
+
+
+        const arrStudyList = arrMyStudy.filter((val, i) => {
+            if (!val.isStudyMaster) {
+                return val.studyId
+            }
+        }).map((val, i) => { return val.studyId })
+
+
+        console.log("@@@2", arrStudyList)
         let myJoinedStudy = [];
 
         for (let i = 0; i < arrStudyList.length; i++) {
@@ -564,33 +570,33 @@ async function getSelectJoinedStudy(req, res) {
                         });
                     }
                 }
-                if (!isStudyMaster) {
-                    myJoinedStudy.push({
-                        studyId,
-                        studyTitle,
-                        studyPrice,
-                        studyDateTime,
-                        studyAddr,
-                        isStudyJoined,
-                        studyAddrDetail,
-                        studyNotice,
-                        studyLimitCnt,
-                        studyUserCnt,
-                        studyBookTitle,
-                        studyBookImg,
-                        studyBookInfo,
-                        studyBookWriter,
-                        studyBookPublisher,
-                        studyNote,
-                        studyMasterProfile,
-                        regDate,
-                        Lat,
-                        Long,
-                        studyStatus,
-                        together,
-                    });
 
-                }
+                myJoinedStudy.push({
+                    studyId,
+                    studyTitle,
+                    studyPrice,
+                    studyDateTime,
+                    studyAddr,
+                    isStudyJoined,
+                    studyAddrDetail,
+                    studyNotice,
+                    studyLimitCnt,
+                    studyUserCnt,
+                    studyBookTitle,
+                    studyBookImg,
+                    studyBookInfo,
+                    studyBookWriter,
+                    studyBookPublisher,
+                    studyNote,
+                    studyMasterProfile,
+                    regDate,
+                    Lat,
+                    Long,
+                    studyStatus,
+                    together,
+                });
+
+
 
             }
 
