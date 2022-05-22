@@ -116,7 +116,7 @@ async function getStudyLists(req, res) {
 
 
             //모임에 있는 각!! 스터디 아이디에 참여한 멤버들을 가지고 온다.
-            people = await STUDYMEMBERS.find({ studyId });
+            const people = await STUDYMEMBERS.find({ studyId });
             let studyUserCnt = 0;
             let isStudyJoined = false;
 
