@@ -532,6 +532,7 @@ async function getSelectJoinedStudy(req, res) {
 
                 //25번에 참석한 사람들
                 people = await STUDYMEMBER.find({ studyId });
+                console.log(`${studyId}에 참석한 사람들`, people)
                 let studyUserCnt = 0;
                 let isStudyJoined = false;
 
@@ -551,17 +552,17 @@ async function getSelectJoinedStudy(req, res) {
                 const studyMasterProfile = {};
 
                 console.log("people.length", people.length)
-                for (let j = 0; j < people.length; j++) {
+                for (let k = 0; k < people.length; k++) {
 
-                    let joinedUser = await USER.find({
-                        userId: people[j].studyMemberId,
+                    let joinedUser = await USER.findOne({
+                        userId: people[k].studyMemberId,
                     });
-
-                    const userId = joinedUser[0].userId;
-                    const profileImage = joinedUser[0].profileImage;
-                    const username = joinedUser[0].username;
+                    console.log("@@@", joinedUser)
+                    const userId = joinedUser.userId;
+                    const profileImage = joinedUser.profileImage;
+                    const username = joinedUser.username;
                     studyUserCnt = people.length;
-                    isStudyMaster = people[j].isStudyMaster;
+                    isStudyMaster = people[k].isStudyMaster;
                     console.log("스터디 장이냐?1 ", isStudyMaster)
 
                     if (isStudyMaster) {
