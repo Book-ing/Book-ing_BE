@@ -354,6 +354,7 @@ async function getSelectMyStudy(req, res) {
                 const joinedUser = await USER.findOne({
                     userId: people[j].studyMemberId,
                 });
+                console.log(`for 문 안 ${studyId}에 참여한 사람들 두 번째`, people)
                 console.log(`${studyId}에 참여한 멤버들의 유저아이디`, people[j].studyMemberId)
                 // console.log(`${studyId}에 참여한 한 명의 사람의 데이터를 불러오기`, joinedUser)
                 const userId = joinedUser.userId;
