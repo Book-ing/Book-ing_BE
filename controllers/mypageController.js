@@ -373,6 +373,7 @@ async function getSelectMyStudy(req, res) {
                     });
                 }
             }
+            console.log(`내가 만든 스터디 ${studyId}에 참여한 사람들`, together)
 
             myStudyList.push({
                 studyId,
@@ -404,6 +405,7 @@ async function getSelectMyStudy(req, res) {
             b = b.regDate;
             return a > b ? -1 : a < b ? 1 : 0;
         });
+
 
         return res.status(200).json({
             result: true,
