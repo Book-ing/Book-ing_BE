@@ -287,16 +287,19 @@ async function getSelectMyStudy(req, res) {
     const myStudyList = [];
 
     try {
-        const arrMyStudy = await STUDY.find({ studyMasterId: userId })
-        console.log("내가 마스터인 스터디", arrMyStudy)
+        const arrMyStudy = await STUDY.find({ studyMasterId: Number(userId) })
+        // console.log("내가 마스터인 스터디", arrMyStudy)
 
         for (let i = 0; i < arrMyStudy.length; i++) {
             const together = [];
             let isStudyMaster;
             const studyMasterProfile = {};
 
+            console.log("내가 만든 스터디 아이디들", arrMyStudy[i].studyId)
+            console.log(`${arrMyStudy[i].studyId} 의 스터디 정보`)
             const studyId = arrMyStudy[i].studyId;
             const studyTitle = arrMyStudy[i].studyTitle;
+            console.log(`${arrMyStudy[i].studyId}의 스터디 제목`, studyTitle)
             const studyPrice = arrMyStudy[i].studyPrice;
             const studyDateTime = arrMyStudy[i].studyDateTime;
             const studyAddr = arrMyStudy[i].studyAddr;
@@ -352,19 +355,19 @@ async function getSelectMyStudy(req, res) {
             //         message: '잘못됨'
             //     })
             // }
+
             for (let j = 0; j < people.length; j++) {
 
                 const joinedUser = await USER.findOne({
                     userId: people[j].studyMemberId,
                 });
-                console.log(`${studyId}에 참여한 한 명의 사람의 데이터를 불러오기`, joinedUser)
-
+                // console.log(`${studyId}에 참여한 한 명의 사람의 데이터를 불러오기`, joinedUser)
                 const userId = joinedUser.userId;
                 const profileImage = joinedUser.profileImage;
                 const username = joinedUser.username;
                 studyUserCnt = people.length;
                 isStudyMaster = people[j].isStudyMaster;
-
+                console.log(`${studyId}스터디에서 ${people[j].studyMemberId}의 스터디마스터유무`, isStudyMaster)
                 if (isStudyMaster) {
                     studyMasterProfile.userId = userId;
                     studyMasterProfile.profileImage = profileImage;
