@@ -530,7 +530,7 @@ async function getSelectJoinedStudy(req, res) {
                     studyStatus = 'B';
                 }
 
-
+                //25번에 참석한 사람들
                 people = await STUDYMEMBER.find({ studyId });
                 let studyUserCnt = 0;
                 let isStudyJoined = false;
@@ -550,6 +550,7 @@ async function getSelectJoinedStudy(req, res) {
                 let isStudyMaster;
                 const studyMasterProfile = {};
 
+                console.log("people.length", people.length)
                 for (let j = 0; j < people.length; j++) {
 
                     let joinedUser = await USER.find({
@@ -561,6 +562,7 @@ async function getSelectJoinedStudy(req, res) {
                     const username = joinedUser[0].username;
                     studyUserCnt = people.length;
                     isStudyMaster = people[j].isStudyMaster;
+                    console.log("스터디 장이냐?1 ", isStudyMaster)
 
                     if (isStudyMaster) {
                         studyMasterProfile.userId = userId;
@@ -576,6 +578,7 @@ async function getSelectJoinedStudy(req, res) {
                         });
                     }
                 }
+                console.log("스터디 장이냐?2 ", isStudyMaster)
                 myJoinedStudy.push({
                     studyId,
                     studyTitle,
