@@ -329,7 +329,7 @@ async function getSelectMyStudy(req, res) {
             }
 
             //내가 만든 스터디마다 해당 스터디에 참여한 사람들 가져오기
-            people = await STUDYMEMBER.find({ studyId: arrMyStudy[i].studyId });
+            const people = await STUDYMEMBER.find({ studyId: arrMyStudy[i].studyId });
             console.log(`${studyId}에 참여한 사람들`, people)
             let studyUserCnt = 0;
 
