@@ -295,11 +295,8 @@ async function getSelectMyStudy(req, res) {
             let isStudyMaster = false;
             const studyMasterProfile = {};
 
-            console.log("내가 만든 스터디 아이디들", arrMyStudy[i].studyId)
-            console.log(`${arrMyStudy[i].studyId} 의 스터디 정보`)
             const studyId = arrMyStudy[i].studyId;
             const studyTitle = arrMyStudy[i].studyTitle;
-            console.log(`${arrMyStudy[i].studyId}의 스터디 제목`, studyTitle)
             const studyPrice = arrMyStudy[i].studyPrice;
             const studyDateTime = arrMyStudy[i].studyDateTime;
             const studyAddr = arrMyStudy[i].studyAddr;
@@ -330,7 +327,6 @@ async function getSelectMyStudy(req, res) {
 
             //내가 만든 스터디마다 해당 스터디에 참여한 사람들 가져오기
             const people = await STUDYMEMBER.find({ studyId: arrMyStudy[i].studyId });
-            console.log(`${studyId}에 참여한 사람들`, people)
             let studyUserCnt = 0;
 
             //유저가 로그인하지 않아도 내용을 볼 수 있도록
@@ -350,19 +346,15 @@ async function getSelectMyStudy(req, res) {
             //여기가 문제
             for (let j = 0; j < people.length; j++) {
 
-                console.log(`for 문 안 ${studyId}에 참여한 사람들`, people)
                 const joinedUser = await USER.findOne({
                     userId: people[j].studyMemberId,
                 });
-                console.log(`for 문 안 ${studyId}에 참여한 사람들 두 번째`, people)
-                console.log(`${studyId}에 참여한 멤버들의 유저아이디`, people[j].studyMemberId)
                 // console.log(`${studyId}에 참여한 한 명의 사람의 데이터를 불러오기`, joinedUser)
                 const userId = joinedUser.userId;
                 const profileImage = joinedUser.profileImage;
                 const username = joinedUser.username;
                 studyUserCnt = people.length;
                 isStudyMaster = people[j].isStudyMaster;
-                console.log(`${studyId}스터디에서 ${people[j].studyMemberId}의 스터디마스터유무`, isStudyMaster)
                 if (isStudyMaster) {
                     studyMasterProfile.userId = userId;
                     studyMasterProfile.profileImage = profileImage;
@@ -377,7 +369,6 @@ async function getSelectMyStudy(req, res) {
                     });
                 }
             }
-            console.log(`내가 만든 스터디 ${studyId}에 참여한 사람들`, together)
 
             myStudyList.push({
                 studyId,
@@ -504,7 +495,6 @@ async function getSelectJoinedStudy(req, res) {
         }).map((val, i) => { return val.studyId })
 
         //현재 4개
-        console.log("내가 참여한 스터디 아이디들중에서 스터디장이 아닌 거", arrStudyList)
 
 
         const myJoinedStudy = [];
@@ -548,7 +538,7 @@ async function getSelectJoinedStudy(req, res) {
                 studyStatus = 'B';
             }
 
-            people = await STUDYMEMBER.find({ studyId: data.studyId });
+            const people = await STUDYMEMBER.find({ studyId: data.studyId });
             // console.log(`${studyId}에 참석한 사람들`, people)
             let studyUserCnt = 0;
             let isStudyJoined = false;
