@@ -292,7 +292,7 @@ async function getSelectMyStudy(req, res) {
 
         for (let i = 0; i < arrMyStudy.length; i++) {
             const together = [];
-            let isStudyMaster;
+            let isStudyMaster = false;
             const studyMasterProfile = {};
 
             console.log("내가 만든 스터디 아이디들", arrMyStudy[i].studyId)
@@ -332,18 +332,9 @@ async function getSelectMyStudy(req, res) {
             people = await STUDYMEMBER.find({ studyId: arrMyStudy[i].studyId });
             console.log(`${studyId}에 참여한 사람들`, people)
             let studyUserCnt = 0;
-            let isStudyJoined = false;
 
             //유저가 로그인하지 않아도 내용을 볼 수 있도록
-            if (res.locals.user) {
-                const { userId } = res.locals.user;
 
-                for (let k = 0; k < people.length; k++) {
-                    if (people[k].studyMemberId === Number(userId)) {
-                        isStudyJoined = true;
-                    }
-                }
-            }
             //i=0 studyId===34
 
             //i=0  현재 34번 스터디의 참여인원이 2명이라는 소리 people.length===2
@@ -389,7 +380,6 @@ async function getSelectMyStudy(req, res) {
                 studyPrice,
                 studyDateTime,
                 studyAddr,
-                isStudyJoined,
                 studyAddrDetail,
                 studyNotice,
                 studyLimitCnt,
