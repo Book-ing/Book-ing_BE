@@ -3,7 +3,7 @@ const studyController = require('../controllers/studyController');
 const studyNoteController = require('../controllers/studyNoteController');
 const {
     createOnlineStudyValidation,
-    createStudyValidation,
+    createOfflineStudyValidation,
     updateStudyValidation,
 } = require('../middlewares/studyValidator');
 const authMiddleware = require('../middlewares/auth-middlewares');
@@ -18,10 +18,10 @@ router.post('/online',
     studyController.postOnlineStudy
 );
 router.post(
-    '/',
+    '/offline',
     authMiddleware,
-    createStudyValidation,
-    studyController.postStudy
+    createOfflineStudyValidation,
+    studyController.postOfflineStudy
 );
 router.put(
     '/',

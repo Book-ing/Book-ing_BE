@@ -44,10 +44,10 @@ const createOnlineStudyValidation = [
     error,
 ];
 
-const createStudyValidation = [
+const createOfflineStudyValidation = [
     body('meetingId')
         .notEmpty()
-        .withMessage('스터디는 모임을 만든 후에 만들 수 있습니다'),
+        .withMessage('모임 아이디는 필수값 입니다.'),
     body('studyTitle')
         .notEmpty()
         .withMessage('스터디 제목을 입력해주세요.')
@@ -65,7 +65,7 @@ const createStudyValidation = [
         .notEmpty()
         .withMessage('스터디 정원을 반드시 입력해주세요')
         .custom((value) => {
-            if (value > 300)
+            if (value > 300 || value < 2)
                 throw new Error('스터디 최대 인원수 제한은 300명입니다.');
             return true;
         }),
@@ -94,4 +94,4 @@ const updateStudyValidation = [
     error,
 ];
 
-module.exports = { createOnlineStudyValidation, createStudyValidation, updateStudyValidation };
+module.exports = { createOnlineStudyValidation, createOfflineStudyValidation, updateStudyValidation };
