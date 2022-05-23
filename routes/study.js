@@ -2,6 +2,7 @@ const express = require('express');
 const studyController = require('../controllers/studyController');
 const studyNoteController = require('../controllers/studyNoteController');
 const {
+    createOnlineStudyValidation,
     createStudyValidation,
     updateStudyValidation,
 } = require('../middlewares/studyValidator');
@@ -11,6 +12,11 @@ const router = express.Router();
 //api/study
 
 //스터디
+router.post('/online',
+    authMiddleware,
+    createOnlineStudyValidation,
+    studyController.postOnlineStudy
+);
 router.post(
     '/',
     authMiddleware,
