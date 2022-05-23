@@ -27,8 +27,9 @@ router.put(
     '/',
     authMiddleware,
     updateStudyValidation,
-    studyController.updateStudy
+    studyController.updateOfflineStudy
 );
+router.put('/online', authMiddleware, studyController.updateOnlineStudy)
 router.post('/inout', authMiddleware, studyController.inoutStudy);
 router.get('/:studyId/user', authMiddleware, studyController.getStudyMembers);
 router.post('/kickuser', authMiddleware, studyController.kickUser);
