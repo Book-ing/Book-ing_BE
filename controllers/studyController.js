@@ -99,8 +99,9 @@ async function getStudyLists(req, res) {
             // 스터디 일시에 따라 status 내려주는 파트
             // studyStatus A== 24시간이내기 때문에 생성 가능한거고
             //B==24시간 지나서 불가
-
-            const studyTypeCode = await CODE.findOne({ studyType })
+            console.log("@@@", studyType)
+            const studyTypeCode = await CODE.findOne({ codeId: studyType });
+            console.log("스터디 타입", studyTypeCode)
 
 
             //지금 시간
@@ -225,8 +226,9 @@ async function getStudyLists(req, res) {
             const studyNote = onlineStudys[i].studyNote;
             const regDate = onlineStudys[i].regDate;
 
-
-            const studyTypeCode = await CODE.findOne({ studyType });
+            console.log("@@@", studyType)
+            const studyTypeCode = await CODE.findOne({ codeId: studyType });
+            console.log("스터디 타입", studyTypeCode)
             // 스터디 일시에 따라 status 내려주는 파트
             // studyStatus A== 24시간이내기 때문에 생성 가능한거고
             //B==24시간 지나서 불가
@@ -325,8 +327,6 @@ async function getStudyLists(req, res) {
                 studyNote,
                 studyMasterProfile,
                 regDate,
-                Lat,
-                Long,
                 studyStatus,
                 together,
             });
