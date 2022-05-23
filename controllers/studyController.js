@@ -228,6 +228,93 @@ async function getStudyLists(req, res) {
     }
 }
 
+async function postOnlineStudy(req, res) {
+    const { userId } = res.locals.user;
+    const {
+        meetingId,
+        studyType,
+        studyTitle,
+        studyDateTime,
+        studyLimitCnt,
+        studyNotice,
+        studyBookTitle,
+        studyBookInfo,
+        studyBookWriter,
+        studyBookPublisher,
+    } = req.body;
+
+    try {
+        const existMeeting = await MEETING.findOne({ meetingId });
+        if (!existMeeting) {
+            return res.status(400).json({
+                result: false,
+                message: '유효하지 않은 모임입니다.',
+            });
+        }
+
+        const existMeetingMember = await MEETINGMEMBERS.findOne({ meetingMemberId: userId, meetingId });
+        if (!existMeetingMember) {
+            return res.status(403).json({
+                result: false,
+                message: '유저가 모임에 가입되지 않았습니다.',
+            });
+        }
+
+        const studyTypeCode = await CODE.findOne({ codeValue: studyType });
+        if (studyTypeCode.codeId !== 301) {
+            return res.status(400).json({
+                result: false,
+                message: '스터디 타입 입력 오류',
+            });
+        }
+
+        if (getDate() > studyDateTime) {
+            return res.status(400).json({
+                result: false,
+                message: '스터디는 지난 날짜에 생성 불가',
+            });
+        }
+
+        let studyBookImg;
+        if (!req.body.studyBookImg) {
+            studyBookImg = 'https://cdn.pixabay.com/photo/2017/01/30/10/03/book-2020460_960_720.jpg';
+        } else {
+            studyBookImg = req.body.studyBookImg;
+        }
+
+        const createdStudy = await STUDY.create({ meetingId, studyType: studyTypeCode.codeId });
+
+        await ONLINESTUDY.create({
+            studyId: createdStudy.studyId,
+            studyMasterId: userId,
+            meetingId,
+            studyType: studyTypeCode.codeId,
+            studyTitle,
+            studyDateTime,
+            studyLimitCnt,
+            studyNotice,
+            studyBookImg,
+            studyBookTitle,
+            studyBookInfo,
+            studyBookWriter,
+            studyBookPublisher,
+            regDate: getDate(),
+        }).then(async (result) => {
+            await STUDYMEMBERS.create({
+                studyMemberId: userId,
+                studyId: result.studyId,
+                isStudyMaster: true,
+                regDate: getDate(),
+            });
+        });
+
+        res.status(201).json({ result: true, message: '온라인 스터디 생성 성공' });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ result: false, message: '온라인 스터디 생성 실패' });
+    }
+}
+
 //스터디 생성
 /**
  * 2022. 05. 03. HOJIN
@@ -1406,6 +1493,7 @@ async function searchStudy(req, res) {
 }
 
 module.exports = {
+    postOnlineStudy,
     postStudy,
     updateStudy,
     getStudyLists,

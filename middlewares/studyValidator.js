@@ -10,6 +10,40 @@ const error = (req, res, next) => {
     return res.json({ result: false, message: errors.array()[0].msg });
 };
 
+const createOnlineStudyValidation = [
+    body('meetingId')
+        .notEmpty()
+        .withMessage('모임 아이디는 필수값 입니다.'),
+    body('studyType')
+        .notEmpty()
+        .withMessage('스터디 타입은 필수값 입니다.'),
+    body('studyTitle')
+        .notEmpty()
+        .withMessage('스터디 제목을 입력해주세요.')
+        .isLength({ max: 80 })
+        .withMessage('스터디 이름은 80자 이상 입력할 수 없습니다.'),
+    body('studyDateTime')
+        .notEmpty()
+        .withMessage('스터디 일시를 선택해주세요!'),
+        // .isDate({format: 'YYYY-MM-DD HH:mm'})
+        // .withMessage('스터디 날짜를 날짜 형식으로 입력해주세요'),
+    body('studyNotice')
+        .isLength({ max: 600 })
+        .withMessage('스터디 공지는 최대 600자까지 입력할 수 있습니다'),
+    // body('studyBookImg')
+    //     .isURL()
+    //     .withMessage('책 이미지는 url 형식이여야함'),
+    body('studyLimitCnt')
+        .notEmpty()
+        .withMessage('스터디 정원을 반드시 입력해주세요')
+        .custom((value) => {
+            if (value > 10 || value < 2)
+                throw new Error('스터디 인원수 제한은 2~10명입니다.');
+            return true;
+        }),
+    error,
+];
+
 const createStudyValidation = [
     body('meetingId')
         .notEmpty()
@@ -60,4 +94,4 @@ const updateStudyValidation = [
     error,
 ];
 
-module.exports = { createStudyValidation, updateStudyValidation };
+module.exports = { createOnlineStudyValidation, createStudyValidation, updateStudyValidation };
