@@ -899,19 +899,6 @@ async function updateOnlineStudy(req, res) {
 
 
         //로그인한 유저가 해당 모임에 가입되어 있다면
-        const result = await axios({
-            method: 'GET',
-            url: 'https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=' + encodeURI(updateStudy.studyAddr),
-            headers: {
-                'X-NCP-APIGW-API-KEY-ID': process.env.NAVER_API_KEY_ID, //앱 등록 시 발급받은 Client ID
-                'X-NCP-APIGW-API-KEY': process.env.NAVER_API_KEY, //앱 등록 시 발급받은 Client Secret
-            },
-        });
-        const Lat = result.data.addresses[0].y; //위도
-        const Long = result.data.addresses[0].x; //경도
-        console.log(Lat, Long);
-
-
         if (meetingMemberId.includes(Number(userId))) {
             // 수정하고자 하는 스터디가 존재한다면
             if (updateStudy) {
@@ -1008,8 +995,8 @@ async function inoutStudy(req, res) {
         #swagger.summary = '스터디 참가 및 취소 API'
         #swagger.description = '스터디 참가 및 취소 API'
     ========================================================================================================*/
-    const { userId } = res.locals.user;
-    // const { userId } = req.query;
+    // const { userId } = res.locals.user;
+    const { userId } = req.query;
     const { studyId, meetingId } = req.body;
 
 
@@ -1065,6 +1052,7 @@ async function inoutStudy(req, res) {
         for (let i = 0; i < meetingMembers.length; i++) {
             meetingMemberId.push(meetingMembers[i].meetingMemberId);
         }
+        //모임 멤버라면 
         if (meetingMemberId.includes(Number(userId))) {
             let master = false;
             //모임에서 강퇴당한 유저 찾기
@@ -1110,6 +1098,7 @@ async function inoutStudy(req, res) {
 
             //참가할 스터디의 멤버들 찾기
             const people = await STUDYMEMBERS.find({ studyId });
+            console.log(`${studyId}에 참여한 사람들`, people)
             //스터디에 참가한 멤버 수 만큼 돈다.
             let isStudyJoined;
             for (let i = 0; i < people.length; i++) {
@@ -1139,7 +1128,6 @@ async function inoutStudy(req, res) {
 
                     const joinedUser = [];
                     joinedUser.push(people[i].studyMemberId);
-
                     if (!joinedUser.includes(Number(userId))) {
                         isStudyJoined = false;
                     }
