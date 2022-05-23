@@ -1,4 +1,6 @@
 const STUDY = require('../schemas/studys');
+const ONLINESTUDY = require('../schemas/onlineStudys');
+const OFFLINESTUDY = require('../schemas/offlineStudys');
 const STUDYMEMBERS = require('../schemas/studyMembers');
 const USER = require('../schemas/user');
 const { getDate } = require('../lib/util');
