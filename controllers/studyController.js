@@ -7,6 +7,7 @@ const { getDate } = require('../lib/util');
 const MEETING = require('../schemas/meeting');
 const BANNEDUSERS = require('../schemas/bannedUsers');
 const MEETINGMEMBERS = require('../schemas/meetingMember');
+const CODE = require('../schemas/codes');
 const moment = require('moment')
 const axios = require('axios');
 
