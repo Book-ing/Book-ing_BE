@@ -4,7 +4,7 @@ const onlineStudySchema = new mongoose.Schema({
     studyId: { type: Number, required: true },
     meetingId: { type: Number, required: true },
     studyMasterId: { type: Number, required: true },
-    studyType: { type: String, required: true },
+    studyType: { type: Number, required: true },
     studyTitle: { type: String, required: true },
     studyDateTime: { type: String, required: true },
     studyLimitCnt: { type: Number, required: true },
