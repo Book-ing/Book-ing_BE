@@ -1,4 +1,5 @@
 const STUDY = require('../schemas/studys');
+
 const STUDYMEMBERS = require('../schemas/studyMembers');
 const USER = require('../schemas/user');
 const { getDate } = require('../lib/util');
@@ -33,6 +34,8 @@ const axios = require('axios');
  *
  *
  */
+
+//서호진
 async function getStudyLists(req, res) {
     /*========================================================================================================
         #swagger.tags = ['STUDY']
