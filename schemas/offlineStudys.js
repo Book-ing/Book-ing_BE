@@ -1,9 +1,10 @@
 const mongoose = require('mongoose');
-const autoIdSetter = require('./auto-id-setter');
 
-const studySchema = new mongoose.Schema({
+const offlineStudySchema = new mongoose.Schema({
+    studyId: { type: Number, required: true },
     meetingId: { type: Number, required: true },
     studyMasterId: { type: Number, required: true },
+    studyType: { type: String, required: true },
     studyTitle: { type: String, required: true },
     studyDateTime: { type: String, required: true },
     studyAddr: { type: String, required: true },
@@ -23,6 +24,5 @@ const studySchema = new mongoose.Schema({
     modDate: { type: String },
 });
 
-autoIdSetter(studySchema, mongoose, 'Studys', 'studyId');
-const Studys = mongoose.model('Studys', studySchema);
-module.exports = Studys;
+const OfflineStudys = mongoose.model('OfflineStudys', offlineStudySchema);
+module.exports = OfflineStudys;
