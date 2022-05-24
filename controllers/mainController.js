@@ -34,7 +34,7 @@ async function getSelectMainView(req, res) {
     let response = {};
     let studylist = {};
     const codes = await CODE.find({ groupId: { $in: [1, 2] } });
-
+    
     /**===================================================================
      * 내 모임 조회
      ===================================================================*/
@@ -44,107 +44,114 @@ async function getSelectMainView(req, res) {
     } else {
         // (기준 데이터) 내 모임을 조회
         const myMeeting = await MEETING.findOne({ meetingMasterId: res.locals.user.userId });
-        const myMeetingId = myMeeting.meetingId; // 내 모임 ID
+        console.log('myMeeting', myMeeting);
         
-        // meetingId 별 가장 최근에 있었던 스터디의 studyDateTime을 조회
-        const arrMyCompleteStudyList = await STUDY.aggregate([
-            { $match: { meetingId: myMeetingId } },
-            { $group: { _id: '$meetingId', max:{ $max: '$studyDateTime' } } }
-        ]);
+        if(!myMeeting){
+            response.myMeeting = {};
+        }else{
+            const myMeetingId = myMeeting.meetingId; // 내 모임 ID
+            // meetingId 별 가장 최근에 있었던 스터디의 studyDateTime을 조회
+            const arrMyCompleteStudyList = await STUDY.aggregate([
+                { $match: { meetingId: myMeetingId } },
+                { $group: { _id: '$meetingId', max:{ $max: '$studyDateTime' } } }
+            ]);
 
-        // meetingId 별 스터디 수 조회
-        const arrMyMeetingByStudyCnt = await STUDY.aggregate ([
-            { $match: { meetingId: myMeetingId } },
-            { $group: { _id: '$meetingId', count: { $sum: 1} } }
-        ]);
+            // meetingId 별 스터디 수 조회
+            const arrMyMeetingByStudyCnt = await STUDY.aggregate ([
+                { $match: { meetingId: myMeetingId } },
+                { $group: { _id: '$meetingId', count: { $sum: 1} } }
+            ]);
 
-        // meetingId 별 가입인원 수 조회
-        const arrMyPeopleCnt = await MEETINGMEMBER.aggregate([
-            { $match: { meetingId: myMeetingId } },
-            { $group: { _id: '$meetingId', count: { $sum: 1} } }
-        ]);
+            // meetingId 별 가입인원 수 조회
+            const arrMyPeopleCnt = await MEETINGMEMBER.aggregate([
+                { $match: { meetingId: myMeetingId } },
+                { $group: { _id: '$meetingId', count: { $sum: 1} } }
+            ]);
 
 
-        // 카테고리 코드명 매핑
-        const myCategoryName = codes.find((element) => {
-            if (element.codeId === myMeeting.meetingCategory) return true;
-        });
-        // 지역 코드명 매핑
-        const myLocationName = codes.find((element) => {
-            if (element.codeId === myMeeting.meetingLocation) return true;
-        });
-        // 최근 스터디 일자 매핑
-        const myLastStudyTime = arrMyCompleteStudyList.find((element) => {
-            if (String(element._id) === String(myMeeting.meetingId)) return true;
-        });
-        // 모임 별 스터디 수 매핑
-        const myMeetingByStudyCnt = arrMyMeetingByStudyCnt.find((element) => {
-            if (String(element._id) === String(myMeeting.meetingId)) return true;
-        });
-        // 모임 별 가입인원 수 매핑
-        const myMeetingByPeopleCnt = arrMyPeopleCnt.find((element) => {
-            if (String(element._id) === String(myMeeting.meetingId)) return true;
-        });
-
-        // 내 모임 결과 데이터 생성
-        response.myMeeting = {
-            meetingId: myMeeting.meetingId,
-            meetingName: myMeeting.meetingName,
-            meetingImage: myMeeting.meetingImage,
-            meetingCategory: myCategoryName.codeValue,
-            meetingLocation: myLocationName.codeValue,
-            meetingLastStudyTime: myLastStudyTime === undefined ? '진행된 스터디가 없습니다.' : moment(myLastStudyTime.max).format('YYYY년 MM월 DD일 HH:mm'),
-            meetingStudyCnt: myMeetingByStudyCnt === undefined ? 0 : myMeetingByStudyCnt.count,
-            meetingPeopleCnt: myMeetingByPeopleCnt === undefined ? 0 : myMeetingByPeopleCnt.count,
-            isMeetingRecruit: myMeeting.meetingLimitCnt <= myMeetingByPeopleCnt.count ? '모집 마감' : '모집 중',
-            meetingIntro: myMeeting.meetingIntro,
-        };
-
-        const myStudyList = await STUDY.aggregate([
-            {
-                $project: {
-                    _id: false,
-                    meetingId: true,
-                    studyId: true,
-                    studyTitle: true,
-                    studyPrice: true,
-                    studyDateTime: true,
-                    studyAddr: true,
-                    studyAddrDetail: true,
-                    studyLimitCnt: true,
-                }
-            },
-            {
-                $match: { meetingId: myMeetingId }
-            },
-        ]).sort({ studyDateTime: -1 }).limit(4);
-
-        const myStudyIdList = myStudyList.map(val => {
-            return val.studyId;
-        });
-
-        const arrMyStudyByStudyMemberCntList = await STUDYMEMBER.aggregate([
-            { $match: { studyId: { $in: myStudyIdList } } },
-            { $group: { _id: '$studyId', count: { $sum: 1 } } }
-        ]);
-
-        
-        
-        studylist = myStudyList.map(val => {
-            const MyStudyByStudyMemberCnt = arrMyStudyByStudyMemberCntList.find((element) => {
-                if (String(element._id) === String(val.studyId)) return true;
+            // 카테고리 코드명 매핑
+            const myCategoryName = codes.find((element) => {
+                if (element.codeId === myMeeting.meetingCategory) return true;
+            });
+            // 지역 코드명 매핑
+            const myLocationName = codes.find((element) => {
+                if (element.codeId === myMeeting.meetingLocation) return true;
+            });
+            // 최근 스터디 일자 매핑
+            const myLastStudyTime = arrMyCompleteStudyList.find((element) => {
+                if (String(element._id) === String(myMeeting.meetingId)) return true;
+            });
+            // 모임 별 스터디 수 매핑
+            const myMeetingByStudyCnt = arrMyMeetingByStudyCnt.find((element) => {
+                if (String(element._id) === String(myMeeting.meetingId)) return true;
+            });
+            // 모임 별 가입인원 수 매핑
+            const myMeetingByPeopleCnt = arrMyPeopleCnt.find((element) => {
+                if (String(element._id) === String(myMeeting.meetingId)) return true;
             });
 
-            return {
-                meetingId: val.meetingId,
-                studyId: val.studyId,
-                studyTitle: val.studyTitle,
-                studyPrice: val.studyPrice+'원',
-                studyDateTime: moment(val.studyDateTime).format('YYYY년 MM월 DD일 HH:mm'),
-                studyAddr: val.studyAddr+' '+val.studyAddrDetail,
-                studyLimitCnt: `${MyStudyByStudyMemberCnt === undefined ? 0 : MyStudyByStudyMemberCnt.count}명 / ${val.studyLimitCnt}명`
-            }
-        });
+            // 내 모임 결과 데이터 생성
+            response.myMeeting = {
+                meetingId: myMeeting.meetingId,
+                meetingName: myMeeting.meetingName,
+                meetingImage: myMeeting.meetingImage,
+                meetingCategory: myCategoryName.codeValue,
+                meetingLocation: myLocationName.codeValue,
+                meetingLastStudyTime: myLastStudyTime === undefined ? '진행된 스터디가 없습니다.' : moment(myLastStudyTime.max).format('YYYY년 MM월 DD일 HH:mm'),
+                meetingStudyCnt: myMeetingByStudyCnt === undefined ? 0 : myMeetingByStudyCnt.count,
+                meetingPeopleCnt: myMeetingByPeopleCnt === undefined ? 0 : myMeetingByPeopleCnt.count,
+                isMeetingRecruit: myMeeting.meetingLimitCnt <= myMeetingByPeopleCnt.count ? '모집 마감' : '모집 중',
+                meetingIntro: myMeeting.meetingIntro,
+            };
+
+            const myStudyList = await STUDY.aggregate([
+                {
+                    $project: {
+                        _id: false,
+                        meetingId: true,
+                        studyId: true,
+                        studyTitle: true,
+                        studyPrice: true,
+                        studyDateTime: true,
+                        studyAddr: true,
+                        studyAddrDetail: true,
+                        studyLimitCnt: true,
+                        studyType: true,
+                    }
+                },
+                {
+                    $match: { meetingId: myMeetingId }
+                },
+            ]).sort({ studyDateTime: -1 }).limit(4);
+
+            const myStudyIdList = myStudyList.map(val => {
+                return val.studyId;
+            });
+
+            const arrMyStudyByStudyMemberCntList = await STUDYMEMBER.aggregate([
+                { $match: { studyId: { $in: myStudyIdList } } },
+                { $group: { _id: '$studyId', count: { $sum: 1 } } }
+            ]);
+
+            
+            
+            studylist = myStudyList.map(val => {
+                const MyStudyByStudyMemberCnt = arrMyStudyByStudyMemberCntList.find((element) => {
+                    if (String(element._id) === String(val.studyId)) return true;
+                });
+
+                return {
+                    meetingId: val.meetingId,
+                    studyId: val.studyId,
+                    studyType: val.studyType,
+                    studyTitle: val.studyTitle,
+                    studyPrice: val.studyPrice+'원',
+                    studyDateTime: moment(val.studyDateTime).format('YYYY년 MM월 DD일 HH:mm'),
+                    studyAddr: val.studyAddr+' '+val.studyAddrDetail,
+                    studyLimitCnt: `${MyStudyByStudyMemberCnt === undefined ? 0 : MyStudyByStudyMemberCnt.count}명 / ${val.studyLimitCnt}명`
+                }
+            });
+        }
     }
 
     /**===================================================================
