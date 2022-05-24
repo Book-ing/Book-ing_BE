@@ -69,7 +69,7 @@ async function getStudyLists(req, res) {
         //해당 모임에 존재하는 전체 스터디들의 데이터를 가지고 온다.
         //한 번 돌 때 하나의 스터디 이다.
 
-        if (data.studyType === 'offline') {
+        if (data.studyType === 302) {
             for (let i = 0; i < data.length; i++) {
                 const studyId = data[i].studyId;
                 const studyType = data[i].studyType
@@ -90,6 +90,7 @@ async function getStudyLists(req, res) {
                 const Lat = data[i].Lat; //위도
                 const Long = data[i].Long; //경도
 
+                const studyTypeCode = await CODE.findOne({ codeId: studyType })
                 // 스터디 일시에 따라 status 내려주는 파트
                 // studyStatus A== 24시간이내기 때문에 생성 가능한거고
                 //B==24시간 지나서 불가
@@ -173,7 +174,7 @@ async function getStudyLists(req, res) {
 
                 studyList.push({
                     studyId,
-                    studyType,
+                    studyType: studyTypeCode,
                     studyTitle,
                     studyPrice,
                     studyDateTime,
@@ -197,7 +198,7 @@ async function getStudyLists(req, res) {
                     together,
                 });
             }
-        } else if (data.studyType === 'online') {
+        } else if (data.studyType === 301) {
             for (let i = 0; i < data.length; i++) {
                 const studyId = data[i].studyId;
                 const studyType = data[i].studyType
@@ -212,7 +213,7 @@ async function getStudyLists(req, res) {
                 const studyBookPublisher = data[i].studyBookPublisher;
                 const studyNote = data[i].studyNote;
                 const regDate = data[i].regDate;
-
+                const studyTypeCode = await CODE.findOne({ codeId: studyType })
                 // 스터디 일시에 따라 status 내려주는 파트
                 // studyStatus A== 24시간이내기 때문에 생성 가능한거고
                 //B==24시간 지나서 불가
@@ -296,7 +297,7 @@ async function getStudyLists(req, res) {
 
                 studyList.push({
                     studyId,
-                    studyType,
+                    studyType: studyTypeCode,
                     studyTitle,
                     studyDateTime,
                     isStudyJoined,
@@ -537,11 +538,12 @@ async function updateStudy(req, res) {
 
     try {
 
-        if (studyType === 'offline') {
+        if (studyType === 302) {
             if (studyBookImg === '' || studyBookImg === null) {
                 studyBookImg =
                     'https://cdn.pixabay.com/photo/2017/01/30/10/03/book-2020460_960_720.jpg';
             }
+
 
             const targetStudy = await STUDY.findOne({ studyId });
             if (!targetStudy) {
@@ -695,7 +697,7 @@ async function updateStudy(req, res) {
             }
 
             //온라인 스터디 수정 
-        } else if (studyType === 'online') {
+        } else if (studyType === 301) {
             if (studyBookImg === '' || studyBookImg === null) {
                 studyBookImg =
                     'https://cdn.pixabay.com/photo/2017/01/30/10/03/book-2020460_960_720.jpg';
@@ -865,7 +867,7 @@ async function inoutStudy(req, res) {
     ========================================================================================================*/
     const { userId } = res.locals.user;
     // const { userId } = req.query;
-    const { studyId, meetingId } = req.body;
+    const { studyId, meetingId, studyType } = req.body;
 
 
     try {
