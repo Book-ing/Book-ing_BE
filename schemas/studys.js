@@ -3,13 +3,14 @@ const autoIdSetter = require('./auto-id-setter');
 
 const studySchema = new mongoose.Schema({
     meetingId: { type: Number, required: true },
+    studyType: { type: Number, required: true },
     studyMasterId: { type: Number, required: true },
     studyTitle: { type: String, required: true },
     studyDateTime: { type: String, required: true },
-    studyAddr: { type: String, required: true },
-    Lat: { type: Number, required: true },
-    Long: { type: Number, required: true },
-    studyAddrDetail: { type: String, required: true },
+    studyAddr: { type: String },
+    studyAddrDetail: { type: String },
+    Lat: { type: Number },
+    Long: { type: Number },
     studyLimitCnt: { type: Number, required: true },
     studyPrice: { type: Number },
     studyNotice: { type: String },
