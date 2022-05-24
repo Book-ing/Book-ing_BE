@@ -62,15 +62,20 @@ async function getStudyLists(req, res) {
             });
         }
 
-        const data = await STUDY.find({ meetingId });
+        const data = await STUDY.find({ meetingId, });
+        console.log(`${meetingId}안에 있는 데이터`, data)
+        const studyTypeId = data.map((val) => val.studyType)
+        console.log("@@@", studyTypeId)
         let studyList = [];
         // studyStatus a == 스터디 일시 전, b== 스터디 시작 후 24시간 이내 c == 시작부터 24시간 후 
 
         //해당 모임에 존재하는 전체 스터디들의 데이터를 가지고 온다.
         //한 번 돌 때 하나의 스터디 이다.
 
-        if (data.studyType === 302) {
-            for (let i = 0; i < data.length; i++) {
+
+
+        for (let i = 0; i < data.length; i++) {
+            if (data[i].studyType === 302) {
                 const studyId = data[i].studyId;
                 const studyType = data[i].studyType
                 const studyTitle = data[i].studyTitle;
@@ -174,7 +179,7 @@ async function getStudyLists(req, res) {
 
                 studyList.push({
                     studyId,
-                    studyType: studyTypeCode,
+                    studyType: studyTypeCode.codeValue,
                     studyTitle,
                     studyPrice,
                     studyDateTime,
@@ -197,9 +202,8 @@ async function getStudyLists(req, res) {
                     studyStatus,
                     together,
                 });
-            }
-        } else if (data.studyType === 301) {
-            for (let i = 0; i < data.length; i++) {
+                //온라인 스터디 조회
+            } else if (data[i].studyType === 301) {
                 const studyId = data[i].studyId;
                 const studyType = data[i].studyType
                 const studyTitle = data[i].studyTitle;
@@ -213,6 +217,7 @@ async function getStudyLists(req, res) {
                 const studyBookPublisher = data[i].studyBookPublisher;
                 const studyNote = data[i].studyNote;
                 const regDate = data[i].regDate;
+
                 const studyTypeCode = await CODE.findOne({ codeId: studyType })
                 // 스터디 일시에 따라 status 내려주는 파트
                 // studyStatus A== 24시간이내기 때문에 생성 가능한거고
@@ -270,13 +275,13 @@ async function getStudyLists(req, res) {
 
                 for (let j = 0; j < people.length; j++) {
 
-                    let joinedUser = await USER.findOne({
+                    let joinedUser = await USER.find({
                         userId: people[j].studyMemberId,
                     });
 
-                    const userId = joinedUser.userId;
-                    const profileImage = joinedUser.profileImage;
-                    const username = joinedUser.username;
+                    const userId = joinedUser[0].userId;
+                    const profileImage = joinedUser[0].profileImage;
+                    const username = joinedUser[0].username;
                     studyUserCnt = people.length;
                     isStudyMaster = people[j].isStudyMaster;
 
@@ -297,7 +302,7 @@ async function getStudyLists(req, res) {
 
                 studyList.push({
                     studyId,
-                    studyType: studyTypeCode,
+                    studyType: studyTypeCode.codeValue,
                     studyTitle,
                     studyDateTime,
                     isStudyJoined,
@@ -317,6 +322,8 @@ async function getStudyLists(req, res) {
                 });
             }
         }
+
+
 
         studyList.sort(function (a, b) {
             a = a.regDate;
@@ -528,27 +535,32 @@ async function updateStudy(req, res) {
     } = req.body;
 
     try {
+        const checkStudyType = await CODE.findOne({ codeValue: studyType })
 
-        if (studyType === 302) {
+        const targetStudy = await STUDY.findOne({ studyId });
+        if (!targetStudy) {
+            return res.status(400).json({
+                result: false,
+                message: '해당 스터디가 존재하지 않습니다! ',
+            });
+        }
+        if (targetStudy.studyType !== checkStudyType.codeId) {
+            return res.status(400).json({
+                result: false,
+                message: '수정하려는 스터디의 타입이 기존에 만들었던 타입과 다릅니다'
+            })
+        }
+
+
+
+        if (studyType === "offline") {
             if (studyBookImg === '' || studyBookImg === null) {
                 studyBookImg =
                     'https://cdn.pixabay.com/photo/2017/01/30/10/03/book-2020460_960_720.jpg';
             }
 
 
-            const targetStudy = await STUDY.findOne({ studyId });
-            if (!targetStudy) {
-                /*=====================================================================================
-                   #swagger.responses[403] = {
-                       description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
-                       schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
-                   }
-                   =====================================================================================*/
-                return res.status(400).json({
-                    result: false,
-                    message: '해당 스터디가 존재하지 않습니다! ',
-                });
-            }
+
             let validMeeting = await MEETING.findOne({ meetingId });
             let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
             let meetingMemberId = [];
@@ -589,18 +601,15 @@ async function updateStudy(req, res) {
 
             //스터디 시작시간이 지나면 정보수정은 불가능하다
 
-            // let rightNow = getDate();
+            let rightNow = getDate();
             const updateStudy = await STUDY.findOne({ studyId });
 
-            // if (updateStudy.studyDateTime < rightNow) {
-            //     return res.status(400).json({
-            //         result: false,
-            //         message: '스터디 정보수정이 가능한 시간이 지났습니다'
-            //     })
-            // }
-
-
-
+            if (updateStudy.studyDateTime < rightNow) {
+                return res.status(400).json({
+                    result: false,
+                    message: '스터디 정보수정이 가능한 시간이 지났습니다'
+                })
+            }
             //로그인한 유저가 해당 모임에 가입되어 있다면
             console.time('geocoder');
             const result = await axios({
@@ -687,8 +696,9 @@ async function updateStudy(req, res) {
                 });
             }
 
+
             //온라인 스터디 수정 
-        } else if (studyType === 301) {
+        } else if (studyType === 'online') {
             if (studyBookImg === '' || studyBookImg === null) {
                 studyBookImg =
                     'https://cdn.pixabay.com/photo/2017/01/30/10/03/book-2020460_960_720.jpg';

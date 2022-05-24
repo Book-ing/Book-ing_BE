@@ -20,6 +20,7 @@ router.post(
 router.put(
     '/',
     authMiddleware,
+    updateStudyValidation,
     studyController.updateStudy
 );
 router.post('/inout', authMiddleware, studyController.inoutStudy);
