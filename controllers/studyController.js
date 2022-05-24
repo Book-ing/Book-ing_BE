@@ -2,6 +2,7 @@ const STUDY = require('../schemas/studys');
 const STUDYMEMBERS = require('../schemas/studyMembers');
 const USER = require('../schemas/user');
 const { getDate } = require('../lib/util');
+const CODE = require('../schemas/codes');
 const MEETING = require('../schemas/meeting');
 const BANNEDUSERS = require('../schemas/bannedUsers');
 const MEETINGMEMBERS = require('../schemas/meetingMember');
