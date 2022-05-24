@@ -64,137 +64,257 @@ async function getStudyLists(req, res) {
 
         const data = await STUDY.find({ meetingId });
         let studyList = [];
-
         // studyStatus a == 스터디 일시 전, b== 스터디 시작 후 24시간 이내 c == 시작부터 24시간 후 
 
         //해당 모임에 존재하는 전체 스터디들의 데이터를 가지고 온다.
         //한 번 돌 때 하나의 스터디 이다.
 
+        if (data.studyType === 'offline') {
+            for (let i = 0; i < data.length; i++) {
+                const studyId = data[i].studyId;
+                const studyType = data[i].studyType
+                const studyTitle = data[i].studyTitle;
+                const studyPrice = data[i].studyPrice;
+                const studyDateTime = data[i].studyDateTime;
+                const studyAddr = data[i].studyAddr;
+                const studyAddrDetail = data[i].studyAddrDetail;
+                const studyNotice = data[i].studyNotice;
+                const studyLimitCnt = data[i].studyLimitCnt;
+                const studyBookTitle = data[i].studyBookTitle;
+                const studyBookImg = data[i].studyBookImg;
+                const studyBookInfo = data[i].studyBookInfo;
+                const studyBookWriter = data[i].studyBookWriter;
+                const studyBookPublisher = data[i].studyBookPublisher;
+                const studyNote = data[i].studyNote;
+                const regDate = data[i].regDate;
+                const Lat = data[i].Lat; //위도
+                const Long = data[i].Long; //경도
 
-        for (let i = 0; i < data.length; i++) {
-            const studyId = data[i].studyId;
-            const studyTitle = data[i].studyTitle;
-            const studyPrice = data[i].studyPrice;
-            const studyDateTime = data[i].studyDateTime;
-            const studyAddr = data[i].studyAddr;
-            const studyAddrDetail = data[i].studyAddrDetail;
-            const studyNotice = data[i].studyNotice;
-            const studyLimitCnt = data[i].studyLimitCnt;
-            const studyBookTitle = data[i].studyBookTitle;
-            const studyBookImg = data[i].studyBookImg;
-            const studyBookInfo = data[i].studyBookInfo;
-            const studyBookWriter = data[i].studyBookWriter;
-            const studyBookPublisher = data[i].studyBookPublisher;
-            const studyNote = data[i].studyNote;
-            const regDate = data[i].regDate;
-            const Lat = data[i].Lat; //위도
-            const Long = data[i].Long; //경도
+                // 스터디 일시에 따라 status 내려주는 파트
+                // studyStatus A== 24시간이내기 때문에 생성 가능한거고
+                //B==24시간 지나서 불가
 
-            // 스터디 일시에 따라 status 내려주는 파트
-            // studyStatus A== 24시간이내기 때문에 생성 가능한거고
-            //B==24시간 지나서 불가
-
-            //지금 시간
-            let studyStatus;
-            let possibleJoinStudy = true;
-            let rightNow = getDate();
-            // 스터디 시작시간 
-            let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
-
-
-            //아직 24시간이 지나기 전이라 작성 가능
-            if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
-                studyStatus = 'A';
-                //24시간이 지나서 작성 불가
-            } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
-                studyStatus = 'B';
-            }
-
-            //스터디 시작 지나면 참가 못하게 하기 
-            // if (studyDateTime < rightNow) {
-            //     possibleJoinStudy = false
-            // }
+                //지금 시간
+                let studyStatus;
+                let possibleJoinStudy = true;
+                let rightNow = getDate();
+                // 스터디 시작시간 
+                let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
 
 
-            //모임에 있는 각!! 스터디 아이디에 참여한 멤버들을 가지고 온다.
-            const people = await STUDYMEMBERS.find({ studyId });
-            let studyUserCnt = 0;
-            let isStudyJoined = false;
+                //아직 24시간이 지나기 전이라 작성 가능
+                if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
+                    studyStatus = 'A';
+                    //24시간이 지나서 작성 불가
+                } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
+                    studyStatus = 'B';
+                }
 
-            //유저가 로그인하지 않아도 내용을 볼 수 있도록
-            if (res.locals.user) {
-                const { userId } = res.locals.user;
+                //스터디 시작 지나면 참가 못하게 하기 
+                // if (studyDateTime < rightNow) {
+                //     possibleJoinStudy = false
+                // }
 
-                for (let k = 0; k < people.length; k++) {
-                    if (people[k].studyMemberId === Number(userId)) {
-                        isStudyJoined = true;
+
+                //모임에 있는 각!! 스터디 아이디에 참여한 멤버들을 가지고 온다.
+                const people = await STUDYMEMBERS.find({ studyId });
+                let studyUserCnt = 0;
+                let isStudyJoined = false;
+
+                //유저가 로그인하지 않아도 내용을 볼 수 있도록
+                if (res.locals.user) {
+                    const { userId } = res.locals.user;
+
+                    for (let k = 0; k < people.length; k++) {
+                        if (people[k].studyMemberId === Number(userId)) {
+                            isStudyJoined = true;
+                        }
                     }
                 }
-            }
-            //지금 로그인한 유저가 이 스터디에 참가 했는지 안했는지 판단
+                //지금 로그인한 유저가 이 스터디에 참가 했는지 안했는지 판단
 
-            const together = [];
-            let isStudyMaster;
+                const together = [];
+                let isStudyMaster;
 
-            /**===================================================================
-          * 해당 스터디에 참가하고 있는 멤버들 조회 
-          ===================================================================*/
-            //각 스터디에 참여한 멤버들을 유저에서 찾아 유저 아이디와 프로필을 가져오기 위한 것
-            //각 스터디에 참여한 멤버들이 마스터인지 아닌지 판단 여부 넣어줌
-            //people===스터디에 참여한 사람들
-            const studyMasterProfile = {};
+                /**===================================================================
+              * 해당 스터디에 참가하고 있는 멤버들 조회 
+              ===================================================================*/
+                //각 스터디에 참여한 멤버들을 유저에서 찾아 유저 아이디와 프로필을 가져오기 위한 것
+                //각 스터디에 참여한 멤버들이 마스터인지 아닌지 판단 여부 넣어줌
+                //people===스터디에 참여한 사람들
+                const studyMasterProfile = {};
 
-            for (let j = 0; j < people.length; j++) {
+                for (let j = 0; j < people.length; j++) {
 
-                let joinedUser = await USER.find({
-                    userId: people[j].studyMemberId,
-                });
-
-                const userId = joinedUser[0].userId;
-                const profileImage = joinedUser[0].profileImage;
-                const username = joinedUser[0].username;
-                studyUserCnt = people.length;
-                isStudyMaster = people[j].isStudyMaster;
-
-                if (isStudyMaster) {
-                    studyMasterProfile.userId = userId;
-                    studyMasterProfile.profileImage = profileImage;
-                    studyMasterProfile.isStudyMaster = isStudyMaster;
-                    studyMasterProfile.username = username
-                } else {
-                    together.push({
-                        userId,
-                        username,
-                        isStudyMaster,
-                        profileImage,
+                    let joinedUser = await USER.find({
+                        userId: people[j].studyMemberId,
                     });
-                }
-            }
 
-            studyList.push({
-                studyId,
-                studyTitle,
-                studyPrice,
-                studyDateTime,
-                studyAddr,
-                isStudyJoined,
-                studyAddrDetail,
-                studyNotice,
-                studyLimitCnt,
-                studyUserCnt,
-                studyBookTitle,
-                studyBookImg,
-                studyBookInfo,
-                studyBookWriter,
-                studyBookPublisher,
-                studyNote,
-                studyMasterProfile,
-                regDate,
-                Lat,
-                Long,
-                studyStatus,
-                together,
-            });
+                    const userId = joinedUser[0].userId;
+                    const profileImage = joinedUser[0].profileImage;
+                    const username = joinedUser[0].username;
+                    studyUserCnt = people.length;
+                    isStudyMaster = people[j].isStudyMaster;
+
+                    if (isStudyMaster) {
+                        studyMasterProfile.userId = userId;
+                        studyMasterProfile.profileImage = profileImage;
+                        studyMasterProfile.isStudyMaster = isStudyMaster;
+                        studyMasterProfile.username = username
+                    } else {
+                        together.push({
+                            userId,
+                            username,
+                            isStudyMaster,
+                            profileImage,
+                        });
+                    }
+                }
+
+                studyList.push({
+                    studyId,
+                    studyType,
+                    studyTitle,
+                    studyPrice,
+                    studyDateTime,
+                    studyAddr,
+                    isStudyJoined,
+                    studyAddrDetail,
+                    studyNotice,
+                    studyLimitCnt,
+                    studyUserCnt,
+                    studyBookTitle,
+                    studyBookImg,
+                    studyBookInfo,
+                    studyBookWriter,
+                    studyBookPublisher,
+                    studyNote,
+                    studyMasterProfile,
+                    regDate,
+                    Lat,
+                    Long,
+                    studyStatus,
+                    together,
+                });
+            }
+        } else if (data.studyType === 'online') {
+            for (let i = 0; i < data.length; i++) {
+                const studyId = data[i].studyId;
+                const studyType = data[i].studyType
+                const studyTitle = data[i].studyTitle;
+                const studyDateTime = data[i].studyDateTime;
+                const studyNotice = data[i].studyNotice;
+                const studyLimitCnt = data[i].studyLimitCnt;
+                const studyBookTitle = data[i].studyBookTitle;
+                const studyBookImg = data[i].studyBookImg;
+                const studyBookInfo = data[i].studyBookInfo;
+                const studyBookWriter = data[i].studyBookWriter;
+                const studyBookPublisher = data[i].studyBookPublisher;
+                const studyNote = data[i].studyNote;
+                const regDate = data[i].regDate;
+
+                // 스터디 일시에 따라 status 내려주는 파트
+                // studyStatus A== 24시간이내기 때문에 생성 가능한거고
+                //B==24시간 지나서 불가
+
+                //지금 시간
+                let studyStatus;
+                let possibleJoinStudy = true;
+                let rightNow = getDate();
+                // 스터디 시작시간 
+                let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
+
+
+                //아직 24시간이 지나기 전이라 작성 가능
+                if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
+                    studyStatus = 'A';
+                    //24시간이 지나서 작성 불가
+                } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
+                    studyStatus = 'B';
+                }
+
+                //스터디 시작 지나면 참가 못하게 하기 
+                // if (studyDateTime < rightNow) {
+                //     possibleJoinStudy = false
+                // }
+
+
+                //모임에 있는 각!! 스터디 아이디에 참여한 멤버들을 가지고 온다.
+                const people = await STUDYMEMBERS.find({ studyId });
+                let studyUserCnt = 0;
+                let isStudyJoined = false;
+
+                //유저가 로그인하지 않아도 내용을 볼 수 있도록
+                if (res.locals.user) {
+                    const { userId } = res.locals.user;
+
+                    for (let k = 0; k < people.length; k++) {
+                        if (people[k].studyMemberId === Number(userId)) {
+                            isStudyJoined = true;
+                        }
+                    }
+                }
+                //지금 로그인한 유저가 이 스터디에 참가 했는지 안했는지 판단
+
+                const together = [];
+                let isStudyMaster;
+
+                /**===================================================================
+              * 해당 스터디에 참가하고 있는 멤버들 조회 
+              ===================================================================*/
+                //각 스터디에 참여한 멤버들을 유저에서 찾아 유저 아이디와 프로필을 가져오기 위한 것
+                //각 스터디에 참여한 멤버들이 마스터인지 아닌지 판단 여부 넣어줌
+                //people===스터디에 참여한 사람들
+                const studyMasterProfile = {};
+
+                for (let j = 0; j < people.length; j++) {
+
+                    let joinedUser = await USER.findOne({
+                        userId: people[j].studyMemberId,
+                    });
+
+                    const userId = joinedUser.userId;
+                    const profileImage = joinedUser.profileImage;
+                    const username = joinedUser.username;
+                    studyUserCnt = people.length;
+                    isStudyMaster = people[j].isStudyMaster;
+
+                    if (isStudyMaster) {
+                        studyMasterProfile.userId = userId;
+                        studyMasterProfile.profileImage = profileImage;
+                        studyMasterProfile.isStudyMaster = isStudyMaster;
+                        studyMasterProfile.username = username
+                    } else {
+                        together.push({
+                            userId,
+                            username,
+                            isStudyMaster,
+                            profileImage,
+                        });
+                    }
+                }
+
+                studyList.push({
+                    studyId,
+                    studyType,
+                    studyTitle,
+                    studyDateTime,
+                    isStudyJoined,
+                    studyNotice,
+                    studyLimitCnt,
+                    studyUserCnt,
+                    studyBookTitle,
+                    studyBookImg,
+                    studyBookInfo,
+                    studyBookWriter,
+                    studyBookPublisher,
+                    studyNote,
+                    studyMasterProfile,
+                    regDate,
+                    studyStatus,
+                    together,
+                });
+            }
         }
 
         studyList.sort(function (a, b) {
@@ -400,6 +520,7 @@ async function updateStudy(req, res) {
 
     let {
         studyId,
+        studyType,
         studyTitle,
         studyDateTime,
         meetingId,
@@ -416,160 +537,319 @@ async function updateStudy(req, res) {
 
     try {
 
-        if (studyBookImg === '' || studyBookImg === null) {
-            studyBookImg =
-                'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
-        }
+        if (studyType === 'offline') {
+            if (studyBookImg === '' || studyBookImg === null) {
+                studyBookImg =
+                    'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
+            }
 
-        const targetStudy = await STUDY.findOne({ studyId });
-        if (!targetStudy) {
-            /*=====================================================================================
-               #swagger.responses[403] = {
-                   description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
-                   schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
-               }
-               =====================================================================================*/
-            return res.status(400).json({
-                result: false,
-                message: '해당 스터디가 존재하지 않습니다! ',
+            const targetStudy = await STUDY.findOne({ studyId });
+            if (!targetStudy) {
+                /*=====================================================================================
+                   #swagger.responses[403] = {
+                       description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
+                       schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
+                   }
+                   =====================================================================================*/
+                return res.status(400).json({
+                    result: false,
+                    message: '해당 스터디가 존재하지 않습니다! ',
+                });
+            }
+            let validMeeting = await MEETING.findOne({ meetingId });
+            let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
+            let meetingMemberId = [];
+            //해당 모임에 가입되어 있는 사람들 찾음
+            if (!validMeeting) {
+                /*=====================================================================================
+                   #swagger.responses[403] = {
+                       description: '받은 모임 id가 유효하지 않을 때 이 응답이 갑니다.',
+                       schema: { "result": false, 'message':'해당 모임이 존재하지 않습니다.', }
+                   }
+                   =====================================================================================*/
+                return res.status(400).json({
+                    result: false,
+                    message: '모임이 존재하지 않습니다.',
+                });
+            }
+            for (let i = 0; i < meetingMembers.length; i++) {
+                meetingMemberId.push(meetingMembers[i].meetingMemberId);
+            }
+            const checkStudy = await STUDY.find({ meetingId });
+            let checkStudyId = [];
+            for (let i = 0; i < checkStudy.length; i++) {
+                checkStudyId.push(checkStudy[i].studyId);
+            }
+            if (!checkStudyId.includes(Number(studyId))) {
+                /*=====================================================================================
+                   #swagger.responses[403] = {
+                       description: '받은 스터디 id가 해당 모임에 없을 때 이 응답을 준다.',
+                       schema: { "result": false, 'message':'해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다!', }
+                   }
+                   =====================================================================================*/
+                return res.status(403).json({
+                    result: false,
+                    message:
+                        '해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다!',
+                });
+            }
+
+            //스터디 시작시간이 지나면 정보수정은 불가능하다
+
+            // let rightNow = getDate();
+            const updateStudy = await STUDY.findOne({ studyId });
+
+            // if (updateStudy.studyDateTime < rightNow) {
+            //     return res.status(400).json({
+            //         result: false,
+            //         message: '스터디 정보수정이 가능한 시간이 지났습니다'
+            //     })
+            // }
+
+
+
+            //로그인한 유저가 해당 모임에 가입되어 있다면
+            console.time('geocoder');
+            const result = await axios({
+                method: 'GET',
+                url: 'https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=' + encodeURI(updateStudy.studyAddr),
+                headers: {
+                    'X-NCP-APIGW-API-KEY-ID': process.env.NAVER_API_KEY_ID, //앱 등록 시 발급받은 Client ID
+                    'X-NCP-APIGW-API-KEY': process.env.NAVER_API_KEY, //앱 등록 시 발급받은 Client Secret
+                },
             });
-        }
-        let validMeeting = await MEETING.findOne({ meetingId });
-        let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
-        let meetingMemberId = [];
-        //해당 모임에 가입되어 있는 사람들 찾음
-        if (!validMeeting) {
-            /*=====================================================================================
-               #swagger.responses[403] = {
-                   description: '받은 모임 id가 유효하지 않을 때 이 응답이 갑니다.',
-                   schema: { "result": false, 'message':'해당 모임이 존재하지 않습니다.', }
-               }
-               =====================================================================================*/
-            return res.status(400).json({
-                result: false,
-                message: '모임이 존재하지 않습니다.',
-            });
-        }
-        for (let i = 0; i < meetingMembers.length; i++) {
-            meetingMemberId.push(meetingMembers[i].meetingMemberId);
-        }
-        const checkStudy = await STUDY.find({ meetingId });
-        let checkStudyId = [];
-        for (let i = 0; i < checkStudy.length; i++) {
-            checkStudyId.push(checkStudy[i].studyId);
-        }
-        if (!checkStudyId.includes(Number(studyId))) {
-            /*=====================================================================================
-               #swagger.responses[403] = {
-                   description: '받은 스터디 id가 해당 모임에 없을 때 이 응답을 준다.',
-                   schema: { "result": false, 'message':'해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다!', }
-               }
-               =====================================================================================*/
-            return res.status(403).json({
-                result: false,
-                message:
-                    '해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다!',
-            });
-        }
-
-        //스터디 시작시간이 지나면 정보수정은 불가능하다
-
-        // let rightNow = getDate();
-        const updateStudy = await STUDY.findOne({ studyId });
-
-        // if (updateStudy.studyDateTime < rightNow) {
-        //     return res.status(400).json({
-        //         result: false,
-        //         message: '스터디 정보수정이 가능한 시간이 지났습니다'
-        //     })
-        // }
+            const Lat = result.data.addresses[0].y; //위도
+            const Long = result.data.addresses[0].x; //경도
+            console.log(Lat, Long);
+            console.timeEnd('geocoder');
 
 
+            if (meetingMemberId.includes(Number(userId))) {
+                // 수정하고자 하는 스터디가 존재한다면
+                if (updateStudy) {
+                    if (
+                        updateStudy.studyMasterId === Number(userId) ||
+                        validMeeting.meetingMasterId === Number(userId)
+                    ) {
+                        await STUDY.updateOne(
+                            { studyId },
+                            {
+                                $set: {
+                                    studyTitle,
+                                    studyDateTime,
+                                    studyAddr,
+                                    Lat,
+                                    Long,
+                                    studyAddrDetail,
+                                    studyPrice,
+                                    studyNotice,
+                                    studyBookTitle,
+                                    studyBookImg,
+                                    studyBookInfo,
+                                    studyBookWriter,
+                                    studyBookPublisher,
+                                },
+                            }
+                        );
 
-        //로그인한 유저가 해당 모임에 가입되어 있다면
-        console.time('geocoder');
-        const result = await axios({
-            method: 'GET',
-            url: 'https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=' + encodeURI(updateStudy.studyAddr),
-            headers: {
-                'X-NCP-APIGW-API-KEY-ID': process.env.NAVER_API_KEY_ID, //앱 등록 시 발급받은 Client ID
-                'X-NCP-APIGW-API-KEY': process.env.NAVER_API_KEY, //앱 등록 시 발급받은 Client Secret
-            },
-        });
-        const Lat = result.data.addresses[0].y; //위도
-        const Long = result.data.addresses[0].x; //경도
-        console.log(Lat, Long);
-        console.timeEnd('geocoder');
-
-
-        if (meetingMemberId.includes(Number(userId))) {
-            // 수정하고자 하는 스터디가 존재한다면
-            if (updateStudy) {
-                if (
-                    updateStudy.studyMasterId === Number(userId) ||
-                    validMeeting.meetingMasterId === Number(userId)
-                ) {
-                    await STUDY.updateOne(
-                        { studyId },
-                        {
-                            $set: {
-                                studyTitle,
-                                studyDateTime,
-                                studyAddr,
-                                Lat,
-                                Long,
-                                studyAddrDetail,
-                                studyPrice,
-                                studyNotice,
-                                studyBookTitle,
-                                studyBookImg,
-                                studyBookInfo,
-                                studyBookWriter,
-                                studyBookPublisher,
-                            },
-                        }
-                    );
-
+                        /*=====================================================================================
+                           #swagger.responses[201] = {
+                               description: '스터디 정보 수정이 완료되면 이 응답을 준다.',
+                               schema: { "result": true, 'message':'스터디 정보 수정 완료!', }
+                           }
+                           =====================================================================================*/
+                        return res.status(201).json({
+                            result: true,
+                            message: '스터디 정보 수정 완료!',
+                        });
+                    } else {
+                        return res.status(403).json({
+                            result: false,
+                            message:
+                                '스터디 정보 수정은 스터디장 또는 모임장만 가능합니다.',
+                        });
+                    }
+                } else {
                     /*=====================================================================================
-                       #swagger.responses[201] = {
-                           description: '스터디 정보 수정이 완료되면 이 응답을 준다.',
-                           schema: { "result": true, 'message':'스터디 정보 수정 완료!', }
+                       #swagger.responses[403] = {
+                           description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
+                           schema: { "result": false, 'message':'존재하지 않은 스터디에 접근하려고 합니다.', }
                        }
                        =====================================================================================*/
-                    return res.status(201).json({
-                        result: true,
-                        message: '스터디 정보 수정 완료!',
-                    });
-                } else {
-                    return res.status(403).json({
+                    return res.status(400).json({
                         result: false,
-                        message:
-                            '스터디 정보 수정은 스터디장 또는 모임장만 가능합니다.',
+                        message: '존재하지 않은 스터디에 접근하려고 합니다.',
                     });
                 }
             } else {
                 /*=====================================================================================
                    #swagger.responses[403] = {
+                       description: '모입에 가입하지 않은 사용자가 스터디를 수정하려고 할 때 이 응답을 준다.',
+                       schema: { "result": false, 'message':'해당 모임에 가입되지 않은 유저이다.', }
+                   }
+                   =====================================================================================*/
+                res.status(403).json({
+                    result: false,
+                    message: '해당 모임에 가입되지 않은 유저이다.',
+                });
+            }
+
+        } else if (studyType === 'online') {
+            if (studyBookImg === '' || studyBookImg === null) {
+                studyBookImg =
+                    'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
+            }
+
+            const targetStudy = await STUDY.findOne({ studyId });
+            if (!targetStudy) {
+                /*=====================================================================================
+                   #swagger.responses[403] = {
                        description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
-                       schema: { "result": false, 'message':'존재하지 않은 스터디에 접근하려고 합니다.', }
+                       schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
                    }
                    =====================================================================================*/
                 return res.status(400).json({
                     result: false,
-                    message: '존재하지 않은 스터디에 접근하려고 합니다.',
+                    message: '해당 스터디가 존재하지 않습니다! ',
                 });
             }
-        } else {
-            /*=====================================================================================
-               #swagger.responses[403] = {
-                   description: '모입에 가입하지 않은 사용자가 스터디를 수정하려고 할 때 이 응답을 준다.',
-                   schema: { "result": false, 'message':'해당 모임에 가입되지 않은 유저이다.', }
-               }
-               =====================================================================================*/
-            res.status(403).json({
-                result: false,
-                message: '해당 모임에 가입되지 않은 유저이다.',
+            let validMeeting = await MEETING.findOne({ meetingId });
+            let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
+            let meetingMemberId = [];
+            //해당 모임에 가입되어 있는 사람들 찾음
+            if (!validMeeting) {
+                /*=====================================================================================
+                   #swagger.responses[403] = {
+                       description: '받은 모임 id가 유효하지 않을 때 이 응답이 갑니다.',
+                       schema: { "result": false, 'message':'해당 모임이 존재하지 않습니다.', }
+                   }
+                   =====================================================================================*/
+                return res.status(400).json({
+                    result: false,
+                    message: '모임이 존재하지 않습니다.',
+                });
+            }
+            for (let i = 0; i < meetingMembers.length; i++) {
+                meetingMemberId.push(meetingMembers[i].meetingMemberId);
+            }
+            const checkStudy = await STUDY.find({ meetingId });
+            let checkStudyId = [];
+            for (let i = 0; i < checkStudy.length; i++) {
+                checkStudyId.push(checkStudy[i].studyId);
+            }
+            if (!checkStudyId.includes(Number(studyId))) {
+                /*=====================================================================================
+                   #swagger.responses[403] = {
+                       description: '받은 스터디 id가 해당 모임에 없을 때 이 응답을 준다.',
+                       schema: { "result": false, 'message':'해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다!', }
+                   }
+                   =====================================================================================*/
+                return res.status(403).json({
+                    result: false,
+                    message:
+                        '해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다!',
+                });
+            }
+
+            //스터디 시작시간이 지나면 정보수정은 불가능하다
+
+            // let rightNow = getDate();
+            const updateStudy = await STUDY.findOne({ studyId });
+
+            // if (updateStudy.studyDateTime < rightNow) {
+            //     return res.status(400).json({
+            //         result: false,
+            //         message: '스터디 정보수정이 가능한 시간이 지났습니다'
+            //     })
+            // }
+
+
+
+            //로그인한 유저가 해당 모임에 가입되어 있다면
+            console.time('geocoder');
+            const result = await axios({
+                method: 'GET',
+                url: 'https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=' + encodeURI(updateStudy.studyAddr),
+                headers: {
+                    'X-NCP-APIGW-API-KEY-ID': process.env.NAVER_API_KEY_ID, //앱 등록 시 발급받은 Client ID
+                    'X-NCP-APIGW-API-KEY': process.env.NAVER_API_KEY, //앱 등록 시 발급받은 Client Secret
+                },
             });
+            const Lat = result.data.addresses[0].y; //위도
+            const Long = result.data.addresses[0].x; //경도
+            console.log(Lat, Long);
+            console.timeEnd('geocoder');
+
+
+            if (meetingMemberId.includes(Number(userId))) {
+                // 수정하고자 하는 스터디가 존재한다면
+                if (updateStudy) {
+                    if (
+                        updateStudy.studyMasterId === Number(userId) ||
+                        validMeeting.meetingMasterId === Number(userId)
+                    ) {
+                        await STUDY.updateOne(
+                            { studyId },
+                            {
+                                $set: {
+                                    studyTitle,
+                                    studyDateTime,
+                                    studyAddr,
+                                    Lat,
+                                    Long,
+                                    studyAddrDetail,
+                                    studyPrice,
+                                    studyNotice,
+                                    studyBookTitle,
+                                    studyBookImg,
+                                    studyBookInfo,
+                                    studyBookWriter,
+                                    studyBookPublisher,
+                                },
+                            }
+                        );
+
+                        /*=====================================================================================
+                           #swagger.responses[201] = {
+                               description: '스터디 정보 수정이 완료되면 이 응답을 준다.',
+                               schema: { "result": true, 'message':'스터디 정보 수정 완료!', }
+                           }
+                           =====================================================================================*/
+                        return res.status(201).json({
+                            result: true,
+                            message: '스터디 정보 수정 완료!',
+                        });
+                    } else {
+                        return res.status(403).json({
+                            result: false,
+                            message:
+                                '스터디 정보 수정은 스터디장 또는 모임장만 가능합니다.',
+                        });
+                    }
+                } else {
+                    /*=====================================================================================
+                       #swagger.responses[403] = {
+                           description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
+                           schema: { "result": false, 'message':'존재하지 않은 스터디에 접근하려고 합니다.', }
+                       }
+                       =====================================================================================*/
+                    return res.status(400).json({
+                        result: false,
+                        message: '존재하지 않은 스터디에 접근하려고 합니다.',
+                    });
+                }
+            } else {
+                /*=====================================================================================
+                   #swagger.responses[403] = {
+                       description: '모입에 가입하지 않은 사용자가 스터디를 수정하려고 할 때 이 응답을 준다.',
+                       schema: { "result": false, 'message':'해당 모임에 가입되지 않은 유저이다.', }
+                   }
+                   =====================================================================================*/
+                res.status(403).json({
+                    result: false,
+                    message: '해당 모임에 가입되지 않은 유저이다.',
+                });
+            }
         }
     } catch (err) {
         console.log(err);
@@ -585,6 +865,7 @@ async function updateStudy(req, res) {
             message: '스터디를 수정할 수 없습니다!',
         });
     }
+
 }
 
 /**
