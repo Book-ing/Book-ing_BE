@@ -558,20 +558,11 @@ async function updateStudy(req, res) {
                 studyBookImg =
                     'https://cdn.pixabay.com/photo/2017/01/30/10/03/book-2020460_960_720.jpg';
             }
-
-
-
             let validMeeting = await MEETING.findOne({ meetingId });
             let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
             let meetingMemberId = [];
             //해당 모임에 가입되어 있는 사람들 찾음
             if (!validMeeting) {
-                /*=====================================================================================
-                   #swagger.responses[403] = {
-                       description: '받은 모임 id가 유효하지 않을 때 이 응답이 갑니다.',
-                       schema: { "result": false, 'message':'해당 모임이 존재하지 않습니다.', }
-                   }
-                   =====================================================================================*/
                 return res.status(400).json({
                     result: false,
                     message: '모임이 존재하지 않습니다.',
@@ -757,15 +748,15 @@ async function updateStudy(req, res) {
 
             //스터디 시작시간이 지나면 정보수정은 불가능하다
 
-            // let rightNow = getDate();
+            let rightNow = getDate();
             const updateStudy = await STUDY.findOne({ studyId });
 
-            // if (updateStudy.studyDateTime < rightNow) {
-            //     return res.status(400).json({
-            //         result: false,
-            //         message: '스터디 정보수정이 가능한 시간이 지났습니다'
-            //     })
-            // }
+            if (updateStudy.studyDateTime < rightNow) {
+                return res.status(400).json({
+                    result: false,
+                    message: '스터디 정보수정이 가능한 시간이 지났습니다'
+                })
+            }
 
             if (meetingMemberId.includes(Number(userId))) {
                 // 수정하고자 하는 스터디가 존재한다면
@@ -868,7 +859,7 @@ async function inoutStudy(req, res) {
     ========================================================================================================*/
     const { userId } = res.locals.user;
     // const { userId } = req.query;
-    const { studyId, meetingId, studyType } = req.body;
+    const { studyId, meetingId, } = req.body;
 
 
     try {
