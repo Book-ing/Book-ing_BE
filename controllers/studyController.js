@@ -540,7 +540,7 @@ async function updateStudy(req, res) {
         if (studyType === 'offline') {
             if (studyBookImg === '' || studyBookImg === null) {
                 studyBookImg =
-                    'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
+                    'https://cdn.pixabay.com/photo/2017/01/30/10/03/book-2020460_960_720.jpg';
             }
 
             const targetStudy = await STUDY.findOne({ studyId });
@@ -660,13 +660,13 @@ async function updateStudy(req, res) {
                            =====================================================================================*/
                         return res.status(201).json({
                             result: true,
-                            message: '스터디 정보 수정 완료!',
+                            message: '오프라인 스터디 정보 수정 완료!',
                         });
                     } else {
                         return res.status(403).json({
                             result: false,
                             message:
-                                '스터디 정보 수정은 스터디장 또는 모임장만 가능합니다.',
+                                '오프라인 스터디 정보 수정은 스터디장 또는 모임장만 가능합니다.',
                         });
                     }
                 } else {
@@ -678,7 +678,7 @@ async function updateStudy(req, res) {
                        =====================================================================================*/
                     return res.status(400).json({
                         result: false,
-                        message: '존재하지 않은 스터디에 접근하려고 합니다.',
+                        message: '존재하지 않은 오프라인 스터디에 접근하려고 합니다.',
                     });
                 }
             } else {
@@ -694,10 +694,11 @@ async function updateStudy(req, res) {
                 });
             }
 
+            //온라인 스터디 수정 
         } else if (studyType === 'online') {
             if (studyBookImg === '' || studyBookImg === null) {
                 studyBookImg =
-                    'https://kuku-keke.com/wp-content/uploads/2020/05/2695_3.png';
+                    'https://cdn.pixabay.com/photo/2017/01/30/10/03/book-2020460_960_720.jpg';
             }
 
             const targetStudy = await STUDY.findOne({ studyId });
@@ -763,24 +764,6 @@ async function updateStudy(req, res) {
             //     })
             // }
 
-
-
-            //로그인한 유저가 해당 모임에 가입되어 있다면
-            console.time('geocoder');
-            const result = await axios({
-                method: 'GET',
-                url: 'https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=' + encodeURI(updateStudy.studyAddr),
-                headers: {
-                    'X-NCP-APIGW-API-KEY-ID': process.env.NAVER_API_KEY_ID, //앱 등록 시 발급받은 Client ID
-                    'X-NCP-APIGW-API-KEY': process.env.NAVER_API_KEY, //앱 등록 시 발급받은 Client Secret
-                },
-            });
-            const Lat = result.data.addresses[0].y; //위도
-            const Long = result.data.addresses[0].x; //경도
-            console.log(Lat, Long);
-            console.timeEnd('geocoder');
-
-
             if (meetingMemberId.includes(Number(userId))) {
                 // 수정하고자 하는 스터디가 존재한다면
                 if (updateStudy) {
@@ -794,10 +777,6 @@ async function updateStudy(req, res) {
                                 $set: {
                                     studyTitle,
                                     studyDateTime,
-                                    studyAddr,
-                                    Lat,
-                                    Long,
-                                    studyAddrDetail,
                                     studyPrice,
                                     studyNotice,
                                     studyBookTitle,
@@ -817,13 +796,13 @@ async function updateStudy(req, res) {
                            =====================================================================================*/
                         return res.status(201).json({
                             result: true,
-                            message: '스터디 정보 수정 완료!',
+                            message: '온라인 스터디 정보 수정 완료!',
                         });
                     } else {
                         return res.status(403).json({
                             result: false,
                             message:
-                                '스터디 정보 수정은 스터디장 또는 모임장만 가능합니다.',
+                                '온라인 스터디 정보 수정은 스터디장 또는 모임장만 가능합니다.',
                         });
                     }
                 } else {
@@ -835,7 +814,7 @@ async function updateStudy(req, res) {
                        =====================================================================================*/
                     return res.status(400).json({
                         result: false,
-                        message: '존재하지 않은 스터디에 접근하려고 합니다.',
+                        message: '존재하지 않은 온라인 스터디에 접근하려고 합니다.',
                     });
                 }
             } else {
