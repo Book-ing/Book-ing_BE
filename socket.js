@@ -8,7 +8,6 @@ const MEETINGMEMBER = require('./schemas/meetingMember');
 const CHAT = require('./schemas/chats');
 const lib = require('./lib/util');
 const credentials = require('./config/httpsConfig');
-const room = require('./react/Room');
 
 let server = '';
 if (process.env.PORT) {
