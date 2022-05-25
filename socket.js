@@ -139,7 +139,7 @@ io.on('connection', (socket) => {
         targetRoomObj.currentNum++
         // 입력한 방에 입장 
         console.log(
-            `${username}이 방 ${studyId}에 입장 (${targetRoomObj.currentNum}/${MAXIMUM})`
+            `${nickname}이 방 ${studyId}에 입장 (${targetRoomObj.currentNum}/${MAXIMUM})`
         )
 
         mediaStatus[studyId][socket.id] = {
