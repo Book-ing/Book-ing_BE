@@ -84,6 +84,7 @@ io.on('connection', (socket) => {
         myRoomName = studyId
         myNickname = nickname
         myRoom = studyId;
+        console.log('joinRoom', 'studyId :', studyId, 'nickname:', nickname);
 
         let isRoomExist = false
         let targetRoomObj = null
@@ -131,6 +132,7 @@ io.on('connection', (socket) => {
             roomObjArr.push(targetRoomObj)
         }
 
+        console.log('joinRoom', 'targetRoomObj : ', targetRoomObj);
         // 어떠한 경우든 방에 참여
         targetRoomObj.users.push({
             socketId: socket.id,
@@ -156,22 +158,26 @@ io.on('connection', (socket) => {
 
 
     socket.on('ice', (ice, remoteSocketId) => {
+        console.log('ice 이벤트', 'ice : ', ice, 'remoteSocketId', remoteSocketId)
         socket.to(remoteSocketId).emit('ice', ice, socket.id)
     })
 
     socket.on('offer', (offer, remoteSocketId, localNickname) => {
+        console.log('offer 이벤트', 'offer : ', offer, 'remoteSocketId', remoteSocketId, 'localNickname : ', localNickname)
         socket.to(remoteSocketId).emit('offer', offer, socket.id, localNickname)
     })
     // 다른 브라우저에서 보낸 answer 받음 =>5. 
     socket.on('answer', (answer, remoteSocketId) => {
-        // 받은 answer 
+        // 받은 answer  
+        console.log('answer 이벤트', 'answer : ', answer, 'remoteSocketId', remoteSocketId)
         socket.to(remoteSocketId).emit('answer', answer, socket.id)
     })
 
     //방에 나갔을 때 
     socket.on('disconnecting', async () => {
+        console.log('disconnecting')
         socket.to(myRoom).emit('leave_room', socket.id)
-
+        console.log('disconnecting', 'myRoom : ', myRoom, 'socket.id : ', socket.id);
         for (let i = 0; i < roomObjArr.length; i++) {
             if (roomObjArr[i].studyId === myRoom) {
                 const newUsers = roomObjArr[i].users.filter(
