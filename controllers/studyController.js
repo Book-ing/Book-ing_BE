@@ -1478,6 +1478,7 @@ async function searchStudy(req, res) {
             { studyTitle: { $regex: keywordReg, $options: 'i' } },
             { studyAddr: { $regex: keywordReg, $options: 'i' } },
             { studyBookTitle: { $regex: keywordReg, $options: 'i' } },
+
         ]
     })
     console.log("검색된 스터디", searchData)
