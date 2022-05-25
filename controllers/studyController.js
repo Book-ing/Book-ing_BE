@@ -1480,123 +1480,225 @@ async function searchStudy(req, res) {
             { studyBookTitle: { $regex: keywordReg, $options: 'i' } },
         ]
     })
+    console.log("검색된 스터디", searchData)
     for (let i = 0; i < searchData.length; i++) {
         searchedDataId.push(searchData[i].studyId)
     }
 
-
+    //오프라인 스터디 
     for (let i = 0; i < searchData.length; i++) {
-        const studyId = searchData[i].studyId;
-        const studyTitle = searchData[i].studyTitle;
-        const studyPrice = searchData[i].studyPrice;
-        const studyDateTime = searchData[i].studyDateTime;
-        const studyAddr = searchData[i].studyAddr;
-        const studyAddrDetail = searchData[i].studyAddrDetail;
-        const studyNotice = searchData[i].studyNotice;
-        const studyLimitCnt = searchData[i].studyLimitCnt;
-        const studyBookTitle = searchData[i].studyBookTitle;
-        const studyBookImg = searchData[i].studyBookImg;
-        const studyBookInfo = searchData[i].studyBookInfo;
-        const studyBookWriter = searchData[i].studyBookWriter;
-        const studyBookPublisher = searchData[i].studyBookPublisher;
-        const studyNote = searchData[i].studyNote;
-        const regDate = searchData[i].regDate;
-        const Lat = searchData[i].Lat; //위도
-        const Long = searchData[i].Long; //경도
+        if (searchData[i].studyType === 302) {
+            const studyId = searchData[i].studyId;
+            const studyType = searchData[i].studyType;
+            const studyTitle = searchData[i].studyTitle;
+            const studyPrice = searchData[i].studyPrice;
+            const studyDateTime = searchData[i].studyDateTime;
+            const studyAddr = searchData[i].studyAddr;
+            const studyAddrDetail = searchData[i].studyAddrDetail;
+            const studyNotice = searchData[i].studyNotice;
+            const studyLimitCnt = searchData[i].studyLimitCnt;
+            const studyBookTitle = searchData[i].studyBookTitle;
+            const studyBookImg = searchData[i].studyBookImg;
+            const studyBookInfo = searchData[i].studyBookInfo;
+            const studyBookWriter = searchData[i].studyBookWriter;
+            const studyBookPublisher = searchData[i].studyBookPublisher;
+            const studyNote = searchData[i].studyNote;
+            const regDate = searchData[i].regDate;
+            const Lat = searchData[i].Lat; //위도
+            const Long = searchData[i].Long; //경도
 
-        let studyStatus;
-        let rightNow = getDate();
-        // 스터디 시작시간 
-        let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
+            let studyStatus;
+            let rightNow = getDate();
+            // 스터디 시작시간 
+            let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
+            const studyTypeCode = await CODE.findOne({ codeId: studyType })
+
+            //아직 24시간이 지나기 전이라 작성 가능
+            if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
+                studyStatus = 'A';
+                //24시간이 지나서 작성 불가
+            } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
+                studyStatus = 'B';
+            }
 
 
-        //아직 24시간이 지나기 전이라 작성 가능
-        if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
-            studyStatus = 'A';
-            //24시간이 지나서 작성 불가
-        } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
-            studyStatus = 'B';
-        }
+            const people = await STUDYMEMBERS.find({ studyId });
+            let studyUserCnt = 0;
+            let isStudyJoined = false;
 
+            //유저가 로그인하지 않아도 내용을 볼 수 있도록
+            if (res.locals.user) {
+                const { userId } = res.locals.user;
 
-        people = await STUDYMEMBERS.find({ studyId });
-        let studyUserCnt = 0;
-        let isStudyJoined = false;
-
-        //유저가 로그인하지 않아도 내용을 볼 수 있도록
-        if (res.locals.user) {
-            const { userId } = res.locals.user;
-
-            for (let k = 0; k < people.length; k++) {
-                if (people[k].studyMemberId === Number(userId)) {
-                    isStudyJoined = true;
+                for (let k = 0; k < people.length; k++) {
+                    if (people[k].studyMemberId === Number(userId)) {
+                        isStudyJoined = true;
+                    }
                 }
             }
-        }
 
-        const together = [];
-        let isStudyMaster;
-        const studyMasterProfile = {};
+            const together = [];
+            let isStudyMaster;
+            const studyMasterProfile = {};
 
 
-        for (let j = 0; j < people.length; j++) {
+            for (let j = 0; j < people.length; j++) {
 
-            let joinedUser = await USER.find({
-                userId: people[j].studyMemberId,
-            });
-
-            const userId = joinedUser[0].userId;
-            const profileImage = joinedUser[0].profileImage;
-            const username = joinedUser[0].username;
-            studyUserCnt = people.length;
-            isStudyMaster = people[j].isStudyMaster;
-
-            if (isStudyMaster) {
-                studyMasterProfile.userId = userId;
-                studyMasterProfile.profileImage = profileImage;
-                studyMasterProfile.isStudyMaster = isStudyMaster;
-                studyMasterProfile.username = username
-            } else {
-                together.push({
-                    userId,
-                    username,
-                    isStudyMaster,
-                    profileImage,
+                let joinedUser = await USER.find({
+                    userId: people[j].studyMemberId,
                 });
-            }
-        }
-        studyList.push({
-            studyId,
-            studyTitle,
-            studyPrice,
-            studyDateTime,
-            studyAddr,
-            isStudyJoined,
-            studyAddrDetail,
-            studyNotice,
-            studyLimitCnt,
-            studyUserCnt,
-            studyBookTitle,
-            studyBookImg,
-            studyBookInfo,
-            studyBookWriter,
-            studyBookPublisher,
-            studyNote,
-            studyMasterProfile,
-            regDate,
-            Lat,
-            Long,
-            studyStatus,
-            together,
-        });
 
+                const userId = joinedUser[0].userId;
+                const profileImage = joinedUser[0].profileImage;
+                const username = joinedUser[0].username;
+                studyUserCnt = people.length;
+                isStudyMaster = people[j].isStudyMaster;
+
+                if (isStudyMaster) {
+                    studyMasterProfile.userId = userId;
+                    studyMasterProfile.profileImage = profileImage;
+                    studyMasterProfile.isStudyMaster = isStudyMaster;
+                    studyMasterProfile.username = username
+                } else {
+                    together.push({
+                        userId,
+                        username,
+                        isStudyMaster,
+                        profileImage,
+                    });
+                }
+            }
+            studyList.push({
+                studyId,
+                studyType: studyTypeCode.codeValue,
+                studyTitle,
+                studyPrice,
+                studyDateTime,
+                studyAddr,
+                isStudyJoined,
+                studyAddrDetail,
+                studyNotice,
+                studyLimitCnt,
+                studyUserCnt,
+                studyBookTitle,
+                studyBookImg,
+                studyBookInfo,
+                studyBookWriter,
+                studyBookPublisher,
+                studyNote,
+                studyMasterProfile,
+                regDate,
+                Lat,
+                Long,
+                studyStatus,
+                together,
+            });
+        }
+        //온라인 스터디
+        else if (searchData[i].studyType === 301) {
+            const studyId = searchData[i].studyId;
+            const studyType = searchData[i].studyType;
+            const studyTitle = searchData[i].studyTitle;
+            const studyDateTime = searchData[i].studyDateTime;
+            const studyNotice = searchData[i].studyNotice;
+            const studyLimitCnt = searchData[i].studyLimitCnt;
+            const studyBookTitle = searchData[i].studyBookTitle;
+            const studyBookImg = searchData[i].studyBookImg;
+            const studyBookInfo = searchData[i].studyBookInfo;
+            const studyBookWriter = searchData[i].studyBookWriter;
+            const studyBookPublisher = searchData[i].studyBookPublisher;
+            const studyNote = searchData[i].studyNote;
+            const regDate = searchData[i].regDate;
+
+            const studyTypeCode = await CODE.findOne({ codeId: studyType })
+            let studyStatus;
+            let rightNow = getDate();
+            // 스터디 시작시간 
+            let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
+
+
+            //아직 24시간이 지나기 전이라 작성 가능
+            if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
+                studyStatus = 'A';
+                //24시간이 지나서 작성 불가
+            } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
+                studyStatus = 'B';
+            }
+
+
+            const people = await STUDYMEMBERS.find({ studyId });
+            let studyUserCnt = 0;
+            let isStudyJoined = false;
+
+            //유저가 로그인하지 않아도 내용을 볼 수 있도록
+            if (res.locals.user) {
+                const { userId } = res.locals.user;
+
+                for (let k = 0; k < people.length; k++) {
+                    if (people[k].studyMemberId === Number(userId)) {
+                        isStudyJoined = true;
+                    }
+                }
+            }
+
+            const together = [];
+            let isStudyMaster;
+            const studyMasterProfile = {};
+
+
+            for (let j = 0; j < people.length; j++) {
+
+                let joinedUser = await USER.findOne({
+                    userId: people[j].studyMemberId,
+                });
+
+                const userId = joinedUser.userId;
+                const profileImage = joinedUser.profileImage;
+                const username = joinedUser.username;
+                studyUserCnt = people.length;
+                isStudyMaster = people[j].isStudyMaster;
+
+                if (isStudyMaster) {
+                    studyMasterProfile.userId = userId;
+                    studyMasterProfile.profileImage = profileImage;
+                    studyMasterProfile.isStudyMaster = isStudyMaster;
+                    studyMasterProfile.username = username
+                } else {
+                    together.push({
+                        userId,
+                        username,
+                        isStudyMaster,
+                        profileImage,
+                    });
+                }
+            }
+            studyList.push({
+                studyId,
+                studyType: studyTypeCode.codeValue,
+                studyTitle,
+                studyDateTime,
+                isStudyJoined,
+                studyNotice,
+                studyLimitCnt,
+                studyUserCnt,
+                studyBookTitle,
+                studyBookImg,
+                studyBookInfo,
+                studyBookWriter,
+                studyBookPublisher,
+                studyNote,
+                studyMasterProfile,
+                regDate,
+                studyStatus,
+                together,
+            });
+        }
         studyList.sort(function (a, b) {
             a = a.regDate;
             b = b.regDate;
             return a > b ? -1 : a < b ? 1 : 0;
         });
     }
-
 
     return res.status(200).json({
         result: true,
