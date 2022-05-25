@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const autoIdSetter = require('./auto-id-setter');
 
 const chatsSchema = new mongoose.Schema({
-    meetingId: { type: Number, required: true },
+    roomId: { type: String, required: true },
     userId: { type: Number, required: true },
     message: { type: String, required: true },
     regDate: { type: String, required: true },
