@@ -91,9 +91,9 @@ io.on('connection', (socket) => {
         let targetRoomObj = null
 
         //만약 
-        // if (!mediaStatus[roomName]) {
-        //     mediaStatus[roomName] = {}
-        // }
+        if (!mediaStatus[studyId]) {
+            mediaStatus[studyId] = {}
+        }
 
 
         for (let i = 0; i < roomObjArr.length; i++) {
