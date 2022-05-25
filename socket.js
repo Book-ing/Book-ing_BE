@@ -2,6 +2,8 @@ const app = require('./app');
 const http = require('http');
 const https = require('https');
 const USER = require('./schemas/user');
+const STUDY = require('./schemas/studys');
+const STUDYMEMBERS = require('./schemas/studyMembers');
 const MEETINGMEMBER = require('./schemas/meetingMember');
 const CHAT = require('./schemas/chats');
 const lib = require('./lib/util');
@@ -20,11 +22,16 @@ const io = require('socket.io')(server, {
     },
 });
 
+//방 배열 (studyId)
+let roomObjArr = [];
+const MAXIMUM = 10;
+
 io.on('connection', (socket) => {
     console.log('socketId : ', socket.id);
     socket.on('disconnect', () => {
         console.log('disconnect socketId : ', socket.id);
     });
+    let myRoom = null;
 
     socket.on('joinMeetingRoom', async (meetingId, userId) => {
         if (!meetingId || !userId) return;
@@ -68,6 +75,117 @@ io.on('connection', (socket) => {
             console.log(`${userId} join a ${meetingId} Room`);
         }
     });
+
+    let myRoomName = null
+    let myNickname = null
+
+    // roomName===studyId, nickname===userId
+    socket.on('joinRoom', async (studyId, nickname) => {
+        myRoomName = studyId
+        myNickname = nickname
+        myRoom = studyId;
+
+        let isRoomExist = false
+        let targetRoomObj = null
+
+        //만약 
+        // if (!mediaStatus[roomName]) {
+        //     mediaStatus[roomName] = {}
+        // }
+
+
+        for (let i = 0; i < roomObjArr.length; i++) {
+
+            // 스터디 룸 
+            if (roomObjArr[i].studyId === studyId) {
+                // 정원 초과
+                if (roomObjArr[i].currentNum >= MAXIMUM) {
+                    //정원 초과라 거부 이벤트 실행 
+                    socket.emit('rejectJoin')
+                    return
+                }
+                // 스터디 멤버 체크 
+                // const joinedMemeber = await STUDYMEMBERS.findOne({ studyId })
+                // if (username !== joinedMemeber.studyMemberId) {
+                //     socket.emit('rejectUnvalidUser')
+                //     return
+                // }
+
+                //정원 초과 아니면 해당 스터디 룸에 참여 
+                isRoomExist = true
+                //맞는 룸에 들어감 
+                targetRoomObj = roomObjArr[i]
+                break
+            }
+        }
+
+        // 입력한 룸이름이 없다면 새로운 방 만듦 
+        // 방이 존재하지 않는다면 방을 생성
+
+        if (!isRoomExist) {
+            targetRoomObj = {
+                studyId,
+                currentNum: 0,
+                users: [],
+            }
+            roomObjArr.push(targetRoomObj)
+        }
+
+        // 어떠한 경우든 방에 참여
+        targetRoomObj.users.push({
+            socketId: socket.id,
+            nickname,
+        })
+        targetRoomObj.currentNum++
+        // 입력한 방에 입장 
+        console.log(
+            `${username}이 방 ${studyId}에 입장 (${targetRoomObj.currentNum}/${MAXIMUM})`
+        )
+
+        mediaStatus[studyId][socket.id] = {
+            screensaver: false,
+            muted: false,
+        }
+        // 입장 
+        socket.join(studyId)
+        //방에 참가하는 거 수락  3. 
+        //입장할 때 socket.id 같이 보냄 
+        socket.emit('joinStudyRoom', targetRoomObj.users, socket.id)
+        socket.emit('checkCurStatus', mediaStatus[studyId])
+    })
+
+
+    socket.on('ice', (ice, remoteSocketId) => {
+        socket.to(remoteSocketId).emit('ice', ice, socket.id)
+    })
+
+    socket.on('offer', (offer, remoteSocketId, localNickname) => {
+        socket.to(remoteSocketId).emit('offer', offer, socket.id, localNickname)
+    })
+    // 다른 브라우저에서 보낸 answer 받음 =>5. 
+    socket.on('answer', (answer, remoteSocketId) => {
+        // 받은 answer 
+        socket.to(remoteSocketId).emit('answer', answer, socket.id)
+    })
+
+    //방에 나갔을 때 
+    socket.on('disconnecting', async () => {
+        socket.to(myRoom).emit('leave_room', socket.id)
+
+        for (let i = 0; i < roomObjArr.length; i++) {
+            if (roomObjArr[i].studyId === myRoom) {
+                const newUsers = roomObjArr[i].users.filter(
+                    (user) => user.socketId !== socket.id
+                )
+                roomObjArr[i].users = newUsers
+                roomObjArr[i].currentNum--;
+                break;
+            }
+        }
+        console.log("룸에 나간 이후", roomObjArr)
+    })
+
+
 
     socket.on('leaveMeetingRoom', (meetingId, userId) => {
         socket.leave('meeting', meetingId);
