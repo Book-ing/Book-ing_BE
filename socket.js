@@ -24,6 +24,7 @@ const io = require('socket.io')(server, {
 
 //방 배열 (studyId)
 let roomObjArr = [];
+let mediaStatus = {}
 const MAXIMUM = 10;
 
 io.on('connection', (socket) => {
