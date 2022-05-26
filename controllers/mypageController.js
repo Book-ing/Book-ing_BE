@@ -6,6 +6,7 @@ const MEETINGMEMBER = require('../schemas/meetingMember');
 const STUDY = require('../schemas/studys');
 const STUDYMEMBER = require('../schemas/studyMembers');
 const moment = require('moment')
+const CODE = require('../schemas/codes');
 /**
  * 2022. 05. 04. HSYOO.
  * FIXME:
@@ -288,111 +289,190 @@ async function getSelectMyStudy(req, res) {
 
     try {
         const arrMyStudy = await STUDY.find({ studyMasterId: Number(userId) })
-        // console.log("내가 마스터인 스터디", arrMyStudy)
 
+        //오프라인 스터디 
         for (let i = 0; i < arrMyStudy.length; i++) {
-            const together = [];
-            let isStudyMaster = false;
-            const studyMasterProfile = {};
+            if (arrMyStudy[i].studyType === 302) {
+                const together = [];
+                let isStudyMaster = false;
+                const studyMasterProfile = {};
+                const studyId = arrMyStudy[i].studyId;
+                const studyType = arrMyStudy[i].studyType;
+                const studyTitle = arrMyStudy[i].studyTitle;
+                const studyPrice = arrMyStudy[i].studyPrice;
+                const studyDateTime = arrMyStudy[i].studyDateTime;
+                const studyAddr = arrMyStudy[i].studyAddr;
+                const studyAddrDetail = arrMyStudy[i].studyAddrDetail;
+                const studyNotice = arrMyStudy[i].studyNotice;
+                const studyLimitCnt = arrMyStudy[i].studyLimitCnt;
+                const studyBookTitle = arrMyStudy[i].studyBookTitle;
+                const studyBookImg = arrMyStudy[i].studyBookImg;
+                const studyBookInfo = arrMyStudy[i].studyBookInfo;
+                const studyBookWriter = arrMyStudy[i].studyBookWriter;
+                const studyBookPublisher = arrMyStudy[i].studyBookPublisher;
+                const studyNote = arrMyStudy[i].studyNote;
+                const regDate = arrMyStudy[i].regDate;
+                const Lat = arrMyStudy[i].Lat; //위도
+                const Long = arrMyStudy[i].Long; //경도
 
-            const studyId = arrMyStudy[i].studyId;
-            const studyTitle = arrMyStudy[i].studyTitle;
-            const studyPrice = arrMyStudy[i].studyPrice;
-            const studyDateTime = arrMyStudy[i].studyDateTime;
-            const studyAddr = arrMyStudy[i].studyAddr;
-            const studyAddrDetail = arrMyStudy[i].studyAddrDetail;
-            const studyNotice = arrMyStudy[i].studyNotice;
-            const studyLimitCnt = arrMyStudy[i].studyLimitCnt;
-            const studyBookTitle = arrMyStudy[i].studyBookTitle;
-            const studyBookImg = arrMyStudy[i].studyBookImg;
-            const studyBookInfo = arrMyStudy[i].studyBookInfo;
-            const studyBookWriter = arrMyStudy[i].studyBookWriter;
-            const studyBookPublisher = arrMyStudy[i].studyBookPublisher;
-            const studyNote = arrMyStudy[i].studyNote;
-            const regDate = arrMyStudy[i].regDate;
-            const Lat = arrMyStudy[i].Lat; //위도
-            const Long = arrMyStudy[i].Long; //경도
+                const studyTypeCode = await CODE.findOne({ codeId: studyType })
+                let studyStatus;
+                let rightNow = getDate();
+                // 스터디 시작시간 
+                let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
 
-            let studyStatus;
-            let rightNow = getDate();
-            // 스터디 시작시간 
-            let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
-
-            if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
-                studyStatus = 'A';
-                //24시간이 지나서 작성 불가
-            } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
-                studyStatus = 'B';
-            }
-
-            //내가 만든 스터디마다 해당 스터디에 참여한 사람들 가져오기
-            const people = await STUDYMEMBER.find({ studyId: arrMyStudy[i].studyId });
-            let studyUserCnt = 0;
-
-            //유저가 로그인하지 않아도 내용을 볼 수 있도록
-
-            //i=0 studyId===34
-
-            //i=0  현재 34번 스터디의 참여인원이 2명이라는 소리 people.length===2
-            //34번의 스터디에 참여한 사람의 유저아이디, 유저 프로필이미지, 마스터유무를 확인하기 위해 
-            // 반복문을 사용한다. 
-            // if (people.length !== 2) {
-            //     return res.status(400).json({
-            //         result: false,
-            //         message: '잘못됨'
-            //     })
-            // }
-
-            //여기가 문제
-            for (let j = 0; j < people.length; j++) {
-
-                const joinedUser = await USER.findOne({
-                    userId: people[j].studyMemberId,
-                });
-                // console.log(`${studyId}에 참여한 한 명의 사람의 데이터를 불러오기`, joinedUser)
-                const userId = joinedUser.userId;
-                const profileImage = joinedUser.profileImage;
-                const username = joinedUser.username;
-                studyUserCnt = people.length;
-                isStudyMaster = people[j].isStudyMaster;
-                if (isStudyMaster) {
-                    studyMasterProfile.userId = userId;
-                    studyMasterProfile.profileImage = profileImage;
-                    studyMasterProfile.isStudyMaster = isStudyMaster;
-                    studyMasterProfile.username = username
-                } else if (isStudyMaster === false) {
-                    together.push({
-                        userId,
-                        username,
-                        isStudyMaster,
-                        profileImage,
-                    });
+                if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
+                    studyStatus = 'A';
+                    //24시간이 지나서 작성 불가
+                } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
+                    studyStatus = 'B';
                 }
-            }
 
-            myStudyList.push({
-                studyId,
-                studyTitle,
-                studyPrice,
-                studyDateTime,
-                studyAddr,
-                studyAddrDetail,
-                studyNotice,
-                studyLimitCnt,
-                studyUserCnt,
-                studyBookTitle,
-                studyBookImg,
-                studyBookInfo,
-                studyBookWriter,
-                studyBookPublisher,
-                studyNote,
-                studyMasterProfile,
-                regDate,
-                Lat,
-                Long,
-                studyStatus,
-                together,
-            });
+                //내가 만든 스터디마다 해당 스터디에 참여한 사람들 가져오기
+                const people = await STUDYMEMBER.find({ studyId: arrMyStudy[i].studyId });
+                let studyUserCnt = 0;
+
+                //유저가 로그인하지 않아도 내용을 볼 수 있도록
+                //여기가 문제
+                for (let j = 0; j < people.length; j++) {
+
+                    const joinedUser = await USER.findOne({
+                        userId: people[j].studyMemberId,
+                    });
+                    // console.log(`${studyId}에 참여한 한 명의 사람의 데이터를 불러오기`, joinedUser)
+                    const userId = joinedUser.userId;
+                    const profileImage = joinedUser.profileImage;
+                    const username = joinedUser.username;
+                    studyUserCnt = people.length;
+                    isStudyMaster = people[j].isStudyMaster;
+                    if (isStudyMaster) {
+                        studyMasterProfile.userId = userId;
+                        studyMasterProfile.profileImage = profileImage;
+                        studyMasterProfile.isStudyMaster = isStudyMaster;
+                        studyMasterProfile.username = username
+                    } else if (isStudyMaster === false) {
+                        together.push({
+                            userId,
+                            username,
+                            isStudyMaster,
+                            profileImage,
+                        });
+                    }
+                }
+
+                myStudyList.push({
+                    studyId,
+                    studyType: studyTypeCode.codeValue,
+                    studyTitle,
+                    studyPrice,
+                    studyDateTime,
+                    studyAddr,
+                    studyAddrDetail,
+                    studyNotice,
+                    studyLimitCnt,
+                    studyUserCnt,
+                    studyBookTitle,
+                    studyBookImg,
+                    studyBookInfo,
+                    studyBookWriter,
+                    studyBookPublisher,
+                    studyNote,
+                    studyMasterProfile,
+                    regDate,
+                    Lat,
+                    Long,
+                    studyStatus,
+                    together,
+                });
+                //온라인 
+            } else if (arrMyStudy[i].studyType === 301) {
+                const together = [];
+                let isStudyMaster = false;
+                const studyMasterProfile = {};
+                const studyId = arrMyStudy[i].studyId;
+                const studyType = arrMyStudy[i].studyType;
+                const studyTitle = arrMyStudy[i].studyTitle;
+                const studyDateTime = arrMyStudy[i].studyDateTime;
+                const studyNotice = arrMyStudy[i].studyNotice;
+                const studyLimitCnt = arrMyStudy[i].studyLimitCnt;
+                const studyBookTitle = arrMyStudy[i].studyBookTitle;
+                const studyBookImg = arrMyStudy[i].studyBookImg;
+                const studyBookInfo = arrMyStudy[i].studyBookInfo;
+                const studyBookWriter = arrMyStudy[i].studyBookWriter;
+                const studyBookPublisher = arrMyStudy[i].studyBookPublisher;
+                const studyNote = arrMyStudy[i].studyNote;
+                const regDate = arrMyStudy[i].regDate;
+
+
+                const studyTypeCode = await CODE.findOne({ codeId: studyType })
+                let studyStatus;
+                let rightNow = getDate();
+                // 스터디 시작시간 
+                let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
+
+                if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
+                    studyStatus = 'A';
+                    //24시간이 지나서 작성 불가
+                } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
+                    studyStatus = 'B';
+                }
+
+                //내가 만든 스터디마다 해당 스터디에 참여한 사람들 가져오기
+                const people = await STUDYMEMBER.find({ studyId: arrMyStudy[i].studyId });
+                let studyUserCnt = 0;
+
+                //유저가 로그인하지 않아도 내용을 볼 수 있도록
+
+                //i=0 studyId===34
+
+
+                //여기가 문제
+                for (let j = 0; j < people.length; j++) {
+
+                    const joinedUser = await USER.findOne({
+                        userId: people[j].studyMemberId,
+                    });
+                    // console.log(`${studyId}에 참여한 한 명의 사람의 데이터를 불러오기`, joinedUser)
+                    const userId = joinedUser.userId;
+                    const profileImage = joinedUser.profileImage;
+                    const username = joinedUser.username;
+                    studyUserCnt = people.length;
+                    isStudyMaster = people[j].isStudyMaster;
+                    if (isStudyMaster) {
+                        studyMasterProfile.userId = userId;
+                        studyMasterProfile.profileImage = profileImage;
+                        studyMasterProfile.isStudyMaster = isStudyMaster;
+                        studyMasterProfile.username = username
+                    } else if (isStudyMaster === false) {
+                        together.push({
+                            userId,
+                            username,
+                            isStudyMaster,
+                            profileImage,
+                        });
+                    }
+                }
+
+                myStudyList.push({
+                    studyId,
+                    studyType: studyTypeCode.codeValue,
+                    studyTitle,
+                    studyDateTime,
+                    studyNotice,
+                    studyLimitCnt,
+                    studyUserCnt,
+                    studyBookTitle,
+                    studyBookImg,
+                    studyBookInfo,
+                    studyBookWriter,
+                    studyBookPublisher,
+                    studyNote,
+                    studyMasterProfile,
+                    regDate,
+                    studyStatus,
+                    together,
+                });
+            }
         }
 
         myStudyList.sort(function (a, b) {
