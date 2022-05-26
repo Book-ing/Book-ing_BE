@@ -24,38 +24,49 @@ const io = require('socket.io')(server, {
 
 //방 배열 (roomId)
 let roomObjArr = [];
-let mediaStatus = {}
+let mediaStatus = {};
 const MAXIMUM = 10; //TODO 바꿔야됨
 
+const roomNameCreator = (roomId, type) => {
+    type = type === 'room' ? 'study' : 'meeting';
+    return type + roomId;
+};
+
+async function findMember(type, roomId, userId) {
+    let existMember;
+    if (type === 'room') {
+        console.log('스터디 타입을 탔어요');
+        existMember = await STUDYMEMBERS.findOne({
+            studyId: roomId,
+            studyMemberId: userId,
+        });
+    } else if (type === 'crew') {
+        console.log('모임 타입을 탔어요');
+        existMember = await MEETINGMEMBER.findOne({
+            meetingId: roomId,
+            meetingMemberId: userId,
+        });
+    }
+    return existMember;
+}
+
 io.on('connection', (socket) => {
-    console.log('socketId : ', socket.id);
-    socket.on('disconnect', () => {
-        console.log('disconnect socketId : ', socket.id);
-    });
+    console.log('connection socketId : ', socket.id);
     let myRoom = null;
-    let myRoomName = null
-    let myNickname = null
+    // let myRoomName = null;
+    let myNickname = null;
 
     // roomName===roomId, nickname===userId
     // type = room(study) or crew(meeting)
     socket.on('joinRoom', async (roomId, userId, type) => {
         console.log('roomId : ', roomId, ' userId : ', userId, ' type : ', type);
         // 공통적인 부분
-        let existMember;
-        if (type === 'room') {
-            console.log('스터디 타입을 탔어요');
-            existMember = await STUDYMEMBERS.findOne({
-                studyId: roomId,
-                studyMemberId: userId,
-            });
-        } else if (type === 'crew') {
-            console.log('모임 타입을 탔어요');
-            existMember = await MEETINGMEMBER.findOne({
-                meetingId: roomId,
-                meetingMemberId: userId,
-            });
-        }
+        let existMember = await findMember(type, roomId, userId);
         if (!roomId || !userId || !existMember) return;
+
+        const roomName = roomNameCreator(roomId, type);
+        console.log('roomName : ', roomName);
+
         const user = await USER.findOne({ userId });
         const nickname = user.username;
 
@@ -63,7 +74,7 @@ io.on('connection', (socket) => {
         // video
         if (type === 'room') {
             console.log('스터디에 들어와서 비디오 부분이 시작돼요');
-            myRoomName = roomId;
+            // myRoomName = roomId;
             myNickname = nickname;
             myRoom = roomId;
             console.log('joinRoom', 'roomId :', roomId, 'nickname:', nickname);
@@ -122,7 +133,7 @@ io.on('connection', (socket) => {
             targetRoomObj.currentNum++;
             // 입력한 방에 입장
             console.log(
-                `${ nickname }이 방 ${ roomId }에 입장 (${ targetRoomObj.currentNum }/${ MAXIMUM })`,
+                `${ nickname }이 방 ${ roomName }에 입장 (${ targetRoomObj.currentNum }/${ MAXIMUM })`,
             );
 
             mediaStatus[roomId][socket.id] = {
@@ -136,8 +147,7 @@ io.on('connection', (socket) => {
         }
         // End of if
 
-
-        const chats = await CHAT.find({ roomId })
+        const chats = await CHAT.find({ roomId: roomName })
                                 .limit(50)
                                 .sort({ chatId: -1 })
                                 .then(result => result.sort((a, b) => a.chatId - b.chatId));
@@ -168,123 +178,66 @@ io.on('connection', (socket) => {
             }
         }
         // 입장
-        socket.join(type, roomId);
-        io.to(type, roomId).emit('getMessages', Messages); // db에 저장된 메세지를 보내준다.
+        socket.join(roomName);
+        io.to(roomName).emit('getMessages', Messages); // db에 저장된 메세지를 보내준다.
     });
 
-
     socket.on('ice', (ice, remoteSocketId) => {
-        console.log('ice 이벤트', 'ice : ', ice, 'remoteSocketId', remoteSocketId)
-        socket.to(remoteSocketId).emit('ice', ice, socket.id)
-    })
+        console.log('ice 이벤트', 'ice : ', ice, 'remoteSocketId', remoteSocketId);
+        socket.to(remoteSocketId).emit('ice', ice, socket.id);
+    });
 
     socket.on('offer', (offer, remoteSocketId, localNickname) => {
-        console.log('offer 이벤트', 'offer : ', offer, 'remoteSocketId', remoteSocketId, 'localNickname : ', localNickname)
-        socket.to(remoteSocketId).emit('offer', offer, socket.id, localNickname)
-    })
+        console.log('offer 이벤트', 'offer : ', offer, 'remoteSocketId', remoteSocketId, 'localNickname : ', localNickname);
+        socket.to(remoteSocketId).emit('offer', offer, socket.id, localNickname);
+    });
     // 다른 브라우저에서 보낸 answer 받음 =>5. 
     socket.on('answer', (answer, remoteSocketId) => {
         // 받은 answer  
-        console.log('answer 이벤트', 'answer : ', answer, 'remoteSocketId', remoteSocketId)
-        socket.to(remoteSocketId).emit('answer', answer, socket.id)
-    })
+        console.log('answer 이벤트', 'answer : ', answer, 'remoteSocketId', remoteSocketId);
+        socket.to(remoteSocketId).emit('answer', answer, socket.id);
+    });
 
     //방에 나갔을 때 
     socket.on('disconnecting', async () => {
-        console.log('disconnecting')
-        socket.to(myRoom).emit('leave_room', socket.id)
+        socket.to(myRoom).emit('leave_room', socket.id);
         console.log('disconnecting', 'myRoom : ', myRoom, 'socket.id : ', socket.id);
         for (let i = 0; i < roomObjArr.length; i++) {
             if (roomObjArr[i].roomId === myRoom) {
                 const newUsers = roomObjArr[i].users.filter(
-                    (user) => user.socketId !== socket.id
-                )
-                roomObjArr[i].users = newUsers
+                    (user) => user.socketId !== socket.id,
+                );
+                roomObjArr[i].users = newUsers;
                 roomObjArr[i].currentNum--;
                 break;
             }
         }
-        console.log("룸에 나간 이후", roomObjArr)
-    })
+        console.log('룸에 나간 이후', roomObjArr);
+    });
 
-    // socket.on('joinMeetingRoom', async (meetingId, userId) => {
-    //     if (!meetingId || !userId) return;
-    //     const existMember = await MEETINGMEMBER.findOne({
-    //         meetingId,
-    //         meetingMemberId: userId,
-    //     });
-    //     if (existMember) {
-    //         socket.join('meeting', meetingId);
-    //         const chats = await CHAT.find({ meetingId })
-    //                                 .limit(50)
-    //                                 .sort({ chatId: -1 })
-    //                                 .then(result => result.sort((a, b) => a.chatId - b.chatId));
-    //         const chatsUserId = chats.map(result => result.userId);
-    //         const usersProfile = await USER.find({ userId: chatsUserId });
-    //
-    //         const Messages = [];
-    //         for (let i = 0; i < chats.length; i++) {
-    //             const meetingId = chats[i].meetingId;
-    //             const userId = chats[i].userId;
-    //             const message = chats[i].message;
-    //             const regDate = chats[i].regDate;
-    //             const chatId = chats[i].chatId;
-    //             for (let j = 0; j < usersProfile.length; j++) {
-    //                 const username = usersProfile[j].username;
-    //                 const profileImage = usersProfile[j].profileImage;
-    //                 if (usersProfile[j].userId === userId) {
-    //                     Messages.push({
-    //                         meetingId,
-    //                         chatId,
-    //                         message,
-    //                         regDate,
-    //                         userId,
-    //                         username,
-    //                         profileImage,
-    //                     });
-    //                 }
-    //             }
-    //         }
-    //         io.to('meeting', meetingId).emit('getMessages', Messages); // db에 저장된 메세지를 보내준다.
-    //         console.log(`${userId} join a ${meetingId} Room`);
-    //     }
-    // });
+    socket.on('chat message', async (roomId, userId, message, type) => { //TODO type 받아야함
+        console.log('roomId: ', roomId, ' userId : ', userId, ' message : ', message, ' type : ', type);
+        let existMember = await findMember(type, roomId, userId);
+        if (!roomId || !userId || !existMember) return;
 
-    socket.on('chat message', async (roomId, userId, message) => { //TODO type 받아야함
-        if (!roomId || !userId) return;
-        try {
-            console.log(
-                'roomId: ',
-                roomId,
-                ' userId : ',
-                userId,
-                ' message : ',
-                message,
-            );
-            const existMember = await MEETINGMEMBER.findOne({
-                meetingId: roomId,
-                meetingMemberId: userId,
-            });
-            if (existMember) {
-                const userProfile = await USER.findOne({ userId });
-                const chatMessage = {
-                    userId,
-                    username: userProfile.username,
-                    profileImage: userProfile.profileImage,
-                    message,
-                    regDate: lib.getDate(),
-                };
-                io.to('meeting', roomId).emit('chat message', chatMessage);
-                await CHAT.create({
-                    roomId, //TODO DB 손봐야함
-                    userId,
-                    message,
-                    regDate: lib.getDate(),
-                });
-            }
-        } catch (error) {
-            console.log(error);
-        }
+        const roomName = roomNameCreator(roomId, type);
+        console.log('roomName : ', roomName);
+
+        const userProfile = await USER.findOne({ userId });
+        const chatMessage = {
+            userId,
+            username: userProfile.username,
+            profileImage: userProfile.profileImage,
+            message,
+            regDate: lib.getDate(),
+        };
+        await CHAT.create({
+            roomId: roomName,
+            userId,
+            message,
+            regDate: lib.getDate(),
+        });
+        io.to(roomName).emit('chat message', chatMessage);
     });
 });
 
