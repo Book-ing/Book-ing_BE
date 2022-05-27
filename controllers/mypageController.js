@@ -12,7 +12,7 @@ const CODE = require('../schemas/codes');
  * FIXME:
  *  1. valid check
  */
-async function getSelectMyProfile(req, res) {
+async function getSelectMyProfile(req, res, next) {
     /*========================================================================================================
     #swagger.tags = ['MYPAGE']
     #swagger.summary = '내 프로필 조회 API'
@@ -33,33 +33,35 @@ async function getSelectMyProfile(req, res) {
     ========================================================================================================*/
     const { userId } = req.params;
 
-    const existUser = await USER.findOne(
-        { userId: userId },
-        {
-            _id: false,
-            userId: true,
-            profileImage: true,
-            statusMessage: true,
-        }
-    );
+    try {
+        const existUser = await USER.findOne(
+            { userId: userId },
+            {
+                _id: false,
+                userId: true,
+                profileImage: true,
+                statusMessage: true,
+            }
+        );
 
-    if (!existUser)
-        return res
-            .status(400)
-            .json({ result: true, message: '존재하지 않는 사용자입니다.' });
+        if (!existUser)
+            return next(new Error('존재하지 않는 사용자입니다.'));
 
-    let resultdata = {
-        userId: existUser.userId,
-        profileImage: existUser.profileImage,
-        statusMessage: existUser.statusMessage,
-        isStatusMessage: existUser.statusMessage === '' ? false : true,
-    };
+        let resultdata = {
+            userId: existUser.userId,
+            profileImage: existUser.profileImage,
+            statusMessage: existUser.statusMessage,
+            isStatusMessage: existUser.statusMessage === '' ? false : true,
+        };
 
-    res.json({
-        result: true,
-        message: '마이페이지 프로필 조회 성공',
-        data: resultdata,
-    });
+        res.json({
+            result: true,
+            message: '마이페이지 프로필 조회 성공',
+            data: resultdata,
+        });
+    } catch (error) {
+        return next({ message: '마이페이지 프로필 조회 실패', stack: error, code: 500 });
+    }
 }
 
 /**
@@ -67,7 +69,7 @@ async function getSelectMyProfile(req, res) {
  * FIXME:
  *  1. valid check
  */
-async function putUpdateMyIntro(req, res) {
+async function putUpdateMyIntro(req, res, next) {
     /*========================================================================================================
     #swagger.tags = ['MYPAGE']
     #swagger.summary = '상태메시지 수정 API'
@@ -89,24 +91,25 @@ async function putUpdateMyIntro(req, res) {
 
     const { userId, statusMessage } = req.body;
 
-    const updateResult = await USER.updateOne(
-        { userId: userId },
-        {
-            $set: {
-                statusMessage: statusMessage,
-            },
-        }
-    );
-    if (!updateResult)
-        res.status(400).json({
-            result: false,
-            message: '마이페이지 프로필 수정 실패',
-        });
+    try {
+        const updateResult = await USER.updateOne(
+            { userId: userId },
+            {
+                $set: {
+                    statusMessage: statusMessage,
+                },
+            }
+        );
+        if (!updateResult)
+            return next(new Error('마이페이지 프로필 수정 실패'));
 
-    res.status(201).json({
-        result: true,
-        message: '마이페이지 프로필 수정 성공',
-    });
+        res.status(201).json({
+            result: true,
+            message: '마이페이지 프로필 수정 성공',
+        });
+    } catch (error) {
+        return next({ message: '마이페이지 프로필 수정 실패', stack: error, code: 500 });
+    }
 }
 
 /**
@@ -114,7 +117,7 @@ async function putUpdateMyIntro(req, res) {
  * FIXME:
  *  1. valid check(userId:int)
  */
-async function getSelectMyMeeting(req, res) {
+async function getSelectMyMeeting(req, res, next) {
     /*========================================================================================================
     #swagger.tags = ['MYPAGE']
     #swagger.summary = '내 모임 조회 API'
@@ -131,43 +134,48 @@ async function getSelectMyMeeting(req, res) {
     ========================================================================================================*/
     const { userId } = req.params;
 
-    // 결과데이터 오브젝트 선언
-    let resultData = {};
+    try {
+        // 결과데이터 오브젝트 선언
+        let resultData = {};
 
-    // 내가 만든 모임 조회
-    const myMeeting = await MEETING.findOne({ meetingMasterId: userId });
+        // 내가 만든 모임 조회
+        const myMeeting = await MEETING.findOne({ meetingMasterId: userId });
 
-    // 내가 만든 모임이 없다면, 빈 오브젝트를 내려준다.
-    if (!myMeeting)
-        return res.json({
+        // 내가 만든 모임이 없다면, 빈 오브젝트를 내려준다.
+        if (!myMeeting)
+            return res.json({
+                result: true,
+                message: '마이페이지 내가 만든 모임 조회 성공',
+                data: resultData,
+            });
+
+        // 내가 만든 모임이 존재한다면, 해당 모임의 가입인원 수, 스터디 발제 수를 구한다.
+        const joinedCnt = await MEETINGMEMBER.countDocuments({
+            meetingId: myMeeting.meetingId,
+        }); // 가입 인원 수
+        const studyCnt = await STUDY.countDocuments({
+            meetingId: myMeeting.meetingId,
+        }); // 스터디 발제 수
+
+        // 결과데이터 생성
+        resultData.myMeeting = {
+            meetingId: myMeeting.meetingId,
+            meetingName: myMeeting.meetingName,
+            meetingImage: myMeeting.meetingImage,
+            meetingJoinedCnt: joinedCnt,
+            meetingStudyCnt: studyCnt,
+            meetingIntro: myMeeting.meetingIntro,
+        };
+
+        res.json({
             result: true,
             message: '마이페이지 내가 만든 모임 조회 성공',
             data: resultData,
         });
+    } catch (error) {
+        return next({ message: '마이페이지 내가 만든 모임 조회 실패', stack: error, code: 500 });
+    }
 
-    // 내가 만든 모임이 존재한다면, 해당 모임의 가입인원 수, 스터디 발제 수를 구한다.
-    const joinedCnt = await MEETINGMEMBER.countDocuments({
-        meetingId: myMeeting.meetingId,
-    }); // 가입 인원 수
-    const studyCnt = await STUDY.countDocuments({
-        meetingId: myMeeting.meetingId,
-    }); // 스터디 발제 수
-
-    // 결과데이터 생성
-    resultData.myMeeting = {
-        meetingId: myMeeting.meetingId,
-        meetingName: myMeeting.meetingName,
-        meetingImage: myMeeting.meetingImage,
-        meetingJoinedCnt: joinedCnt,
-        meetingStudyCnt: studyCnt,
-        meetingIntro: myMeeting.meetingIntro,
-    };
-
-    res.json({
-        result: true,
-        message: '마이페이지 내가 만든 모임 조회 성공',
-        data: resultData,
-    });
 }
 
 /**
@@ -175,7 +183,7 @@ async function getSelectMyMeeting(req, res) {
  * FIXME:
  *  1. valid check
  */
-async function getSelectJoinedMeeting(req, res) {
+async function getSelectJoinedMeeting(req, res, next) {
     /*========================================================================================================
     #swagger.tags = ['MYPAGE']
     #swagger.summary = '내가 가입한 모임 조회 API'
@@ -196,65 +204,66 @@ async function getSelectJoinedMeeting(req, res) {
     ========================================================================================================*/
     const { userId } = req.params;
 
-    // 요청한 사용자가 있는지 검사한다.
-    const existUser = await USER.find({ userId: userId });
-    if (!existUser)
-        res.status(400).json({
-            result: false,
-            message: '존재하지 않는 사용자입니다.',
+    try {
+        // 요청한 사용자가 있는지 검사한다.
+        const existUser = await USER.find({ userId: userId });
+        if (!existUser)
+            return next(new Error('존재하지 않는 사용자입니다.'));
+
+        // 결과데이터 오브젝트 선언
+        let resultData = {};
+
+        // 해당 사용자가 가입되어있는 모임을 조회 후 meetingId로 이루어진 배열로 만든다.
+        const arrResultMeeting = await MEETINGMEMBER.find(
+            { meetingMemberId: userId, isMeetingMaster: false },
+            { _id: false, meetingId: true }
+        );
+        const arrJoinedMeetingId = arrResultMeeting.map((val, i) => {
+            return val.meetingId;
         });
 
-    // 결과데이터 오브젝트 선언
-    let resultData = {};
-
-    // 해당 사용자가 가입되어있는 모임을 조회 후 meetingId로 이루어진 배열로 만든다.
-    const arrResultMeeting = await MEETINGMEMBER.find(
-        { meetingMemberId: userId, isMeetingMaster: false },
-        { _id: false, meetingId: true }
-    );
-    const arrJoinedMeetingId = arrResultMeeting.map((val, i) => {
-        return val.meetingId;
-    });
-
-    // 해당 사용자가 가입되어있는 모임의 정보를 조회한다.
-    const arrJoinedMeetingList = await MEETING.find({
-        meetingId: arrJoinedMeetingId,
-    });
-
-    // 미팅 별 가입자 수
-    const meetingByJoindedCnt = await MEETINGMEMBER.aggregate([
-        { $group: { _id: '$meetingId', count: { $sum: 1 } } },
-    ]);
-
-    // 미팅 별 스터디 수
-    const meetingByStudyCnt = await STUDY.aggregate([
-        { $group: { _id: '$meetingId', count: { $sum: 1 } } },
-    ]);
-
-    resultData.joinedMeeting = arrJoinedMeetingList.map((val, i) => {
-        const joinedCnt = meetingByJoindedCnt.find((element) => {
-            if (element._id === val.meetingId) return true;
+        // 해당 사용자가 가입되어있는 모임의 정보를 조회한다.
+        const arrJoinedMeetingList = await MEETING.find({
+            meetingId: arrJoinedMeetingId,
         });
-        let studyCnt = meetingByStudyCnt.find((element) => {
-            if (element._id === val.meetingId) return true;
+
+        // 미팅 별 가입자 수
+        const meetingByJoindedCnt = await MEETINGMEMBER.aggregate([
+            { $group: { _id: '$meetingId', count: { $sum: 1 } } },
+        ]);
+
+        // 미팅 별 스터디 수
+        const meetingByStudyCnt = await STUDY.aggregate([
+            { $group: { _id: '$meetingId', count: { $sum: 1 } } },
+        ]);
+
+        resultData.joinedMeeting = arrJoinedMeetingList.map((val, i) => {
+            const joinedCnt = meetingByJoindedCnt.find((element) => {
+                if (element._id === val.meetingId) return true;
+            });
+            let studyCnt = meetingByStudyCnt.find((element) => {
+                if (element._id === val.meetingId) return true;
+            });
+            studyCnt = !studyCnt ? 0 : studyCnt.count;
+
+            return {
+                meetingId: val.meetingId,
+                meetingName: val.meetingName,
+                meetingImage: val.meetingImage,
+                meetingJoinedCnt: joinedCnt.count,
+                meetingStudyCnt: studyCnt,
+                meetingIntro: val.meetingIntro,
+            };
         });
-        studyCnt = !studyCnt ? 0 : studyCnt.count;
 
-        return {
-            meetingId: val.meetingId,
-            meetingName: val.meetingName,
-            meetingImage: val.meetingImage,
-            meetingJoinedCnt: joinedCnt.count,
-            meetingStudyCnt: studyCnt,
-            meetingIntro: val.meetingIntro,
-        };
-    });
-
-    res.json({
-        result: true,
-        message: '마이페이지 내가 가입된 모임 조회 성공',
-        data: resultData,
-    });
+        res.status(200).json({
+            result: true,
+            message: '마이페이지 내가 가입된 모임 조회 성공',
+            data: resultData,
+        });
+    } catch (error) {
+        return next({ message: '마이페이지 내가 가입된 모임 조회 실패', stack: error, code: 500 });
+    }
 }
 
 /**
@@ -265,7 +274,7 @@ async function getSelectJoinedMeeting(req, res) {
 
 //내가 만든 스터디 마이페이지
 //api/mypage/mystudy
-async function getSelectMyStudy(req, res) {
+async function getSelectMyStudy(req, res, next) {
     /*========================================================================================================
     #swagger.tags = ['MYPAGE']
     #swagger.summary = '내 스터디 조회 API'
@@ -485,13 +494,9 @@ async function getSelectMyStudy(req, res) {
             myStudyList,
             message: '내가 만든 스터디 조회 성공'
         })
-    } catch (err) {
-        console.log(err)
-
-        return res.status(400).json({
-            result: false,
-            message: '내가 만든 스터디 조회 실패'
-        })
+    } catch (error) {
+        console.log(error)
+        return next({ message: '내가 만든 스터디 조회 실패', stack: error, code: 500 });
     }
 }
 
@@ -540,7 +545,7 @@ async function getSelectMyStudy(req, res) {
  */
 
 //내가 참석한 스터디 조회
-async function getSelectJoinedStudy(req, res) {
+async function getSelectJoinedStudy(req, res, next) {
     /*========================================================================================================
     #swagger.tags = ['MYPAGE']
     #swagger.summary = '내가 참여한 스터디 조회 API'
@@ -565,7 +570,6 @@ async function getSelectJoinedStudy(req, res) {
 
         //로그인한 유저가 참석하고 있는 스터디 아이디를 알기 위해 스터디멤버 db를 조회
         const arrMyStudy = await STUDYMEMBER.find({ studyMemberId: userId });
-        console.log("로그인한 유저가 참가하고 있는 스터디", arrMyStudy)
         const arrStudyList = arrMyStudy.filter((val, i) => {
             if (val.isStudyMaster === false) {
                 return val.studyId
@@ -687,9 +691,6 @@ async function getSelectJoinedStudy(req, res) {
                 studyStatus,
                 together,
             });
-
-
-
         }
 
         return res.status(200).json({
@@ -697,12 +698,8 @@ async function getSelectJoinedStudy(req, res) {
             myJoinedStudy,
             message: '내가 참가한 스터디 조회 성공'
         })
-    } catch (err) {
-        console.log(err)
-        return res.status(400).json({
-            result: false,
-            message: '내가 참가한 스터디 조회 실패!'
-        })
+    } catch (error) {
+        return next({ message: '내가 참가한 스터디 조회 실패', stack: error, code: 500 });
     }
 
     // const { userId } = req.params;
