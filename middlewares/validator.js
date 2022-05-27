@@ -6,7 +6,7 @@ const error = (req, res, next) => {
         return next();
     }
     console.log('validateError : ', errors['errors']);
-    return res.json({ result: false, message: errors.array()[0].msg });
+    return res.status(400).json({ result: false, message: errors.array()[0].msg });
 };
 
 const createMeetingValidation = [
@@ -28,7 +28,7 @@ const createMeetingValidation = [
         .notEmpty()
         .withMessage('모임 인원 수 제한을 입력해 주세요.')
         .custom((value) => {
-            if (value > 300)
+            if (value > 300 || value < 2)
                 throw new Error('모임 최대 인원수 제한은 300명입니다.');
             return true;
         }),
