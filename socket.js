@@ -141,9 +141,13 @@ io.on('connection', (socket) => {
             socketId: socket.id,
             nickname,
         })
-        const set = new Set(targetRoomObj.users)
-        let joinedUsers = [...set]
-        console.log("참석한 유저들", joinedUsers)
+
+        const joinedUsers = targetRoomObj.users
+        let notDup = joinedUsers.filter((val, idx) => {
+            return joinedUsers.indexOf(val) === idx
+        })
+
+        console.log("참석한 유저들", notDup)
         targetRoomObj.currentNum++
 
         // 입력한 방에 입장 
@@ -159,7 +163,7 @@ io.on('connection', (socket) => {
         socket.join(studyId)
         //방에 참가하는 거 수락  3. 
         //입장할 때 socket.id 같이 보냄 
-        socket.emit('joinStudyRoom', joinedUsers, socket.id, videoType)
+        socket.emit('joinStudyRoom', notDup, socket.id, videoType)
         console.log('보내고 넘어오쟈!!')
         socket.emit('checkCurStatus', mediaStatus[studyId])
     })
