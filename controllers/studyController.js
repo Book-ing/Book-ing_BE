@@ -34,7 +34,7 @@ const axios = require('axios');
  *
  *
  */
-async function getStudyLists(req, res) {
+async function getStudyLists(req, res, next) {
     /*========================================================================================================
         #swagger.tags = ['STUDY']
         #swagger.summary = '스터디 조회 API'
@@ -56,15 +56,10 @@ async function getStudyLists(req, res) {
                    schema: { "result": false, 'message':'해당 모임이 존재하지 않습니다.', }
                }
                =====================================================================================*/
-            return res.status(400).json({
-                result: false,
-                message: '존재하지 않는 모임입니다.',
-            });
+            return next(new Error('해당 모임이 존재하지 않습니다.'));
         }
 
-        const data = await STUDY.find({ meetingId, });
-        const studyTypeId = data.map((val) => val.studyType)
-        console.log("@@@", studyTypeId)
+        const data = await STUDY.find({ meetingId });
         let studyList = [];
         // studyStatus a == 스터디 일시 전, b== 스터디 시작 후 24시간 이내 c == 시작부터 24시간 후 
 
@@ -337,23 +332,18 @@ async function getStudyLists(req, res) {
            }
            =====================================================================================*/
         return res.status(200).json({ result: true, studyList });
-    } catch (err) {
-        console.log(err);
-
+    } catch (error) {
         /*=====================================================================================
-           #swagger.responses[400] = {
+           #swagger.responses[500] = {
                description: '모든 예외처리를 빗나간 경우 이 응답을 준다.',
                schema: { "result": false, 'message':'스터디 목록 조회 실패', }
            }
            =====================================================================================*/
-        return res.status(400).json({
-            result: false,
-            message: '스터디 목록 조회 실패!',
-        });
+        return next({ message: '스터디 목록 조회 실패', stack: error, code: 500 });
     }
 }
 
-async function postStudy(req, res) {
+async function postStudy(req, res, next) {
     const { userId } = res.locals.user;
     const {
         meetingId,
@@ -373,27 +363,15 @@ async function postStudy(req, res) {
 
     try {
         const existMeetingMember = await MEETINGMEMBERS.findOne({ meetingMemberId: userId, meetingId });
-        if (!existMeetingMember) {
-            return res.status(403).json({
-                result: false,
-                message: '유저가 모임에 가입되지 않았습니다.',
-            });
-        }
+        if (!existMeetingMember)
+            return next(new Error('유저가 모임에 가입되지 않았습니다.'));
 
         const findMeeting = await MEETING.findOne({ meetingId });
-        if (studyLimitCnt > findMeeting.meetingLimitCnt || studyLimitCnt < 2) {
-            return res.status(400).json({
-                result: false,
-                message: '스터디 제한 인원은 2명 이상이고 모임 제한인원보다 클 수 없다',
-            });
-        }
+        if (studyLimitCnt > findMeeting.meetingLimitCnt || studyLimitCnt < 2)
+            return next(new Error('스터디 제한 인원은 2명 이상이고 모임 제한인원보다 클 수 없다'));
 
-        if (getDate() > studyDateTime) {
-            return res.status(400).json({
-                result: false,
-                message: '스터디는 지난 날짜에 생성 불가',
-            });
-        }
+        if (getDate() > studyDateTime)
+            return next(new Error('스터디는 지난 날짜에 생성 불가'));
 
         let studyBookImg;
         if (!req.body.studyBookImg) {
@@ -403,20 +381,12 @@ async function postStudy(req, res) {
         }
 
         const studyTypeCode = await CODE.findOne({ codeValue: studyType });
-        if (studyTypeCode.groupId !== 3) {
-            return res.status(400).json({
-                result: false,
-                message: '스터디 타입 입력 오류',
-            });
-        }
+        if (studyTypeCode.groupId !== 3)
+            return next(new Error('스터디 타입 입력 오류'));
 
         if (studyTypeCode.codeValue === 'online') {
-            if (studyLimitCnt > 10) {
-                return res.status(400).json({
-                    result: false,
-                    message: '온라인 스터디의 제한 인원은 10명을 넘길 수 없다.',
-                });
-            }
+            if (studyLimitCnt > 10)
+                return next(new Error('스터디 타입 입력 오류'));
 
             await STUDY.create({
                 meetingId,
@@ -442,12 +412,8 @@ async function postStudy(req, res) {
             });
             res.status(201).json({ result: true, message: '온라인 스터디 생성 성공' });
         } else if (studyTypeCode.codeValue === 'offline') {
-            if (studyPrice % 500 !== 0) {
-                return res.status(400).json({
-                    result: false,
-                    message: '오프라인 금액은 필수값이며 500원 단위로 떨어져야한다.',
-                });
-            }
+            if (studyPrice % 500 !== 0 || studyPrice < 0)
+                return next(new Error('오프라인 금액은 필수값이며 음수일 수 없고 500원 단위로 떨어져야한다.'));
 
             // 위도 경도 변환
             const result = await axios({
@@ -491,8 +457,7 @@ async function postStudy(req, res) {
             res.status(201).json({ result: true, message: '오프라인 스터디 생성 성공' });
         }
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ result: false, message: '스터디 생성 실패' });
+        return next({ message: '스터디 생성 실패', stack: error, code: 500 });
     }
 }
 
@@ -508,7 +473,7 @@ async function postStudy(req, res) {
  *  6. 수정하고자 하는 스터디가 모임에 종속되어 있는 지 확인
  *
  */
-async function updateStudy(req, res) {
+async function updateStudy(req, res, next) {
     /*========================================================================================================
         #swagger.tags = ['STUDY']
         #swagger.summary = '스터디 정보 수정 API'
@@ -537,20 +502,11 @@ async function updateStudy(req, res) {
         const checkStudyType = await CODE.findOne({ codeValue: studyType })
 
         const targetStudy = await STUDY.findOne({ studyId });
-        if (!targetStudy) {
-            return res.status(400).json({
-                result: false,
-                message: '해당 스터디가 존재하지 않습니다! ',
-            });
-        }
-        if (targetStudy.studyType !== checkStudyType.codeId) {
-            return res.status(400).json({
-                result: false,
-                message: '수정하려는 스터디의 타입이 기존에 만들었던 타입과 다릅니다'
-            })
-        }
+        if (!targetStudy)
+            return next(new Error('해당 스터디가 존재하지 않습니다'));
 
-
+        if (targetStudy.studyType !== checkStudyType.codeId)
+            return next(new Error('수정하려는 스터디의 타입이 기존에 만들었던 타입과 다릅니다'));
 
         if (studyType === "offline") {
             if (studyBookImg === '' || studyBookImg === null) {
@@ -561,12 +517,9 @@ async function updateStudy(req, res) {
             let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
             let meetingMemberId = [];
             //해당 모임에 가입되어 있는 사람들 찾음
-            if (!validMeeting) {
-                return res.status(400).json({
-                    result: false,
-                    message: '모임이 존재하지 않습니다.',
-                });
-            }
+            if (!validMeeting)
+                return next(new Error('모임이 존재하지 않습니다.'));
+
             for (let i = 0; i < meetingMembers.length; i++) {
                 meetingMemberId.push(meetingMembers[i].meetingMemberId);
             }
@@ -575,33 +528,24 @@ async function updateStudy(req, res) {
             for (let i = 0; i < checkStudy.length; i++) {
                 checkStudyId.push(checkStudy[i].studyId);
             }
-            if (!checkStudyId.includes(Number(studyId))) {
-                /*=====================================================================================
-                   #swagger.responses[403] = {
-                       description: '받은 스터디 id가 해당 모임에 없을 때 이 응답을 준다.',
-                       schema: { "result": false, 'message':'해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다!', }
-                   }
-                   =====================================================================================*/
-                return res.status(403).json({
-                    result: false,
-                    message:
-                        '해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다!',
-                });
-            }
+
+            /*=====================================================================================
+               #swagger.responses[403] = {
+                   description: '받은 스터디 id가 해당 모임에 없을 때 이 응답을 준다.',
+                   schema: { "result": false, 'message':'해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다!', }
+               }
+               =====================================================================================*/
+            if (!checkStudyId.includes(Number(studyId)))
+                return next(new Error('해당 모임에 있는 스터디가 아닙니다'));
 
             //스터디 시작시간이 지나면 정보수정은 불가능하다
-
             let rightNow = getDate();
             const updateStudy = await STUDY.findOne({ studyId });
 
-            if (updateStudy.studyDateTime < rightNow) {
-                return res.status(400).json({
-                    result: false,
-                    message: '스터디 정보수정이 가능한 시간이 지났습니다'
-                })
-            }
+            if (updateStudy.studyDateTime < rightNow)
+                return next(new Error('스터디 정보수정이 가능한 시간이 지났습니다'));
+
             //로그인한 유저가 해당 모임에 가입되어 있다면
-            console.time('geocoder');
             const result = await axios({
                 method: 'GET',
                 url: 'https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=' + encodeURI(studyAddr),
@@ -612,9 +556,6 @@ async function updateStudy(req, res) {
             });
             const Lat = result.data.addresses[0].y; //위도
             const Long = result.data.addresses[0].x; //경도
-            console.log(Lat, Long);
-            console.timeEnd('geocoder');
-
 
             if (meetingMemberId.includes(Number(userId))) {
                 // 수정하고자 하는 스터디가 존재한다면
@@ -655,11 +596,7 @@ async function updateStudy(req, res) {
                             message: '오프라인 스터디 정보 수정 완료!',
                         });
                     } else {
-                        return res.status(403).json({
-                            result: false,
-                            message:
-                                '오프라인 스터디 정보 수정은 스터디장 또는 모임장만 가능합니다.',
-                        });
+                        return next(new Error('오프라인 스터디 정보 수정은 스터디장 또는 모임장만 가능합니다.'));
                     }
                 } else {
                     /*=====================================================================================
@@ -668,10 +605,7 @@ async function updateStudy(req, res) {
                            schema: { "result": false, 'message':'존재하지 않은 스터디에 접근하려고 합니다.', }
                        }
                        =====================================================================================*/
-                    return res.status(400).json({
-                        result: false,
-                        message: '존재하지 않은 오프라인 스터디에 접근하려고 합니다.',
-                    });
+                    return next(new Error('존재하지 않은 오프라인 스터디에 접근하려고 합니다.'));
                 }
             } else {
                 /*=====================================================================================
@@ -680,10 +614,7 @@ async function updateStudy(req, res) {
                        schema: { "result": false, 'message':'해당 모임에 가입되지 않은 유저이다.', }
                    }
                    =====================================================================================*/
-                res.status(403).json({
-                    result: false,
-                    message: '해당 모임에 가입되지 않은 유저이다.',
-                });
+                return next(new Error('해당 모임에 가입되지 않은 유저이다.'));
             }
 
 
@@ -702,10 +633,7 @@ async function updateStudy(req, res) {
                        schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
                    }
                    =====================================================================================*/
-                return res.status(400).json({
-                    result: false,
-                    message: '해당 스터디가 존재하지 않습니다! ',
-                });
+                return next(new Error('해당 스터디가 존재하지 않습니다'));
             }
             let validMeeting = await MEETING.findOne({ meetingId });
             let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
@@ -718,10 +646,7 @@ async function updateStudy(req, res) {
                        schema: { "result": false, 'message':'해당 모임이 존재하지 않습니다.', }
                    }
                    =====================================================================================*/
-                return res.status(400).json({
-                    result: false,
-                    message: '모임이 존재하지 않습니다.',
-                });
+                return next(new Error('모임이 존재하지 않습니다.'));
             }
             for (let i = 0; i < meetingMembers.length; i++) {
                 meetingMemberId.push(meetingMembers[i].meetingMemberId);
@@ -738,11 +663,7 @@ async function updateStudy(req, res) {
                        schema: { "result": false, 'message':'해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다!', }
                    }
                    =====================================================================================*/
-                return res.status(403).json({
-                    result: false,
-                    message:
-                        '해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다!',
-                });
+                return next(new Error('해당 모임에 있는 스터디가 아닙니다! 수정하실 수 없습니다'));
             }
 
             //스터디 시작시간이 지나면 정보수정은 불가능하다
@@ -751,10 +672,7 @@ async function updateStudy(req, res) {
             const updateStudy = await STUDY.findOne({ studyId });
 
             if (updateStudy.studyDateTime < rightNow) {
-                return res.status(400).json({
-                    result: false,
-                    message: '스터디 정보수정이 가능한 시간이 지났습니다'
-                })
+                return next(new Error('스터디 정보수정이 가능한 시간이 지났습니다'));
             }
 
             if (meetingMemberId.includes(Number(userId))) {
@@ -792,11 +710,7 @@ async function updateStudy(req, res) {
                             message: '온라인 스터디 정보 수정 완료!',
                         });
                     } else {
-                        return res.status(403).json({
-                            result: false,
-                            message:
-                                '온라인 스터디 정보 수정은 스터디장 또는 모임장만 가능합니다.',
-                        });
+                        return next(new Error('온라인 스터디 정보 수정은 스터디장 또는 모임장만 가능합니다.'));
                     }
                 } else {
                     /*=====================================================================================
@@ -805,10 +719,7 @@ async function updateStudy(req, res) {
                            schema: { "result": false, 'message':'존재하지 않은 스터디에 접근하려고 합니다.', }
                        }
                        =====================================================================================*/
-                    return res.status(400).json({
-                        result: false,
-                        message: '존재하지 않은 온라인 스터디에 접근하려고 합니다.',
-                    });
+                    return next(new Error('존재하지 않은 온라인 스터디에 접근하려고 합니다.'));
                 }
             } else {
                 /*=====================================================================================
@@ -817,27 +728,18 @@ async function updateStudy(req, res) {
                        schema: { "result": false, 'message':'해당 모임에 가입되지 않은 유저이다.', }
                    }
                    =====================================================================================*/
-                res.status(403).json({
-                    result: false,
-                    message: '해당 모임에 가입되지 않은 유저이다.',
-                });
+                return next(new Error('해당 모임에 가입되지 않은 유저이다.'));
             }
         }
-    } catch (err) {
-        console.log(err);
-
+    } catch (error) {
         /*=====================================================================================
            #swagger.responses[400] = {
                description: '모든 예외처리를 빗나간 에러는 이 응답을 준다.',
                schema: { "result": false, 'message':'스터디를 수정할 수 없습니다.', }
            }
            =====================================================================================*/
-        res.status(400).json({
-            result: false,
-            message: '스터디를 수정할 수 없습니다!',
-        });
+        return next({ message: '스터디를 수정할 수 없습니다', stack: error, code: 500 });
     }
-
 }
 
 /**
@@ -850,7 +752,7 @@ async function updateStudy(req, res) {
  *  4. 참가하고자 하는 모임이 존재하는 지 여부 체크
  *
  */
-async function inoutStudy(req, res) {
+async function inoutStudy(req, res, next) {
     /*========================================================================================================
         #swagger.tags = ['STUDY']
         #swagger.summary = '스터디 참가 및 취소 API'
@@ -871,10 +773,7 @@ async function inoutStudy(req, res) {
                    schema: { "result": false, 'message':'해당 모임이 존재하지 않습니다.', }
                }
                =====================================================================================*/
-            return res.status(400).json({
-                result: false,
-                message: '존재하지 않은 모임입니다. ',
-            });
+            return next(new Error('존재하지 않은 모임입니다'));
         }
         const validStudy = await STUDY.findOne({ studyId });
         if (!validStudy) {
@@ -884,10 +783,7 @@ async function inoutStudy(req, res) {
                    schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
                }
                =====================================================================================*/
-            return res.status(400).json({
-                result: false,
-                message: '유효하지 않은 스터디입니다',
-            });
+            return next(new Error('유효하지 않은 스터디입니다'));
         }
         //모임안에 있는 스터디들
         const targetStudy = await STUDY.find({ meetingId });
@@ -902,10 +798,7 @@ async function inoutStudy(req, res) {
                    schema: { "result": false, 'message':'해당 모임에 존재하지 않는 스터디이다.', }
                }
                =====================================================================================*/
-            return res.status(400).json({
-                result: false,
-                message: '해당 모임에 존재하지 않는 스터디입니다',
-            });
+            return next(new Error('해당 모임에 존재하지 않는 스터디입니다'));
         }
 
         let meetingMemberId = [];
@@ -926,26 +819,8 @@ async function inoutStudy(req, res) {
                            schema: { "result": false, 'message':'강퇴 당하야 해당 스터디에 참가불가능', }
                        }
                        =====================================================================================*/
-                    return res.status(403).json({
-                        result: false,
-                        message:
-                            '강퇴 당하셨기 때문에 해당 스터디에 참가하실 수 없습니다.',
-                    });
+                    return next(new Error('강퇴 당하셨기 때문에 해당 스터디에 참가하실 수 없습니다.'));
                 }
-            }
-            //참가할 스터디 찾기
-            let study = await STUDY.findOne({ studyId });
-            if (!study) {
-                /*=====================================================================================
-                   #swagger.responses[403] = {
-                       description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
-                       schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
-                   }
-                   =====================================================================================*/
-                return res.status(400).json({
-                    result: false,
-                    message: '존재하지 않은 스터디 입니다! ',
-                });
             }
             // let rightNow = getDate()
             // console.log("참가하려고 했던 스터디", study)
@@ -970,10 +845,7 @@ async function inoutStudy(req, res) {
                             schema: { "result": false, 'message':'스터디장은 나갈 수 없습니다.', }
                         }
                         =====================================================================================*/
-                        return res.status(400).json({
-                            result: false,
-                            message: '스터디장은 나갈 수 없습니다.',
-                        });
+                        return next(new Error('스터디장은 나갈 수 없습니다.'));
                     }
 
                     await STUDYMEMBERS.findOneAndDelete({
@@ -1015,10 +887,7 @@ async function inoutStudy(req, res) {
                    schema: { "result": false, 'message':'정원초과라 해당 스터디에 참가할 수 없습니다.', }
                }
                =====================================================================================*/
-                return res.status(403).json({
-                    resutl: false,
-                    message: '정원 초과라 해당 스터디에 참가할 수 없습니다!',
-                });
+                return next(new Error('정원 초과라 해당 스터디에 참가할 수 없습니다'));
             }
 
             if (study.studyMasterId === Number(userId)) {
@@ -1056,23 +925,16 @@ async function inoutStudy(req, res) {
                schema: { "result": false, 'message':'해당 모임에 먼저 가입하고 스터디에 참가가능', }
            }
            =====================================================================================*/
-            return res.status(403).json({
-                result: false,
-                message: '해당 모임에 먼저 가입하고 스터디에 참가가능',
-            });
+            return next(new Error('해당 모임에 먼저 가입하고 스터디에 참가가능'));
         }
-    } catch (err) {
-        console.log(err);
+    } catch (error) {
         /*=====================================================================================
-           #swagger.responses[403] = {
+           #swagger.responses[500] = {
                description: '모든 예외처리를 빗나간 에러는 이 응답을 줍니다.',
                schema: { "result": false, 'message':'스터디 참가 실패!', }
            }
            =====================================================================================*/
-        return res.status(400).json({
-            result: true,
-            message: '스터디 참가 실패!',
-        });
+        return next({ message: '스터디 참가/취소 실패', stack: error, code: 500 });
     }
 }
 
@@ -1086,7 +948,7 @@ async function inoutStudy(req, res) {
  * 4. 나는 포함되지 않고 스터디장만 맨 위로 나오게 된다. 
  ===================================================================*/
 
-async function getStudyMembers(req, res) {
+async function getStudyMembers(req, res, next) {
     /*========================================================================================================
         #swagger.tags = ['STUDY']
         #swagger.summary = '스터디 멤버 팝업 조회 API'
@@ -1098,10 +960,7 @@ async function getStudyMembers(req, res) {
     try {
         const validStudy = await STUDY.findOne({ studyId: Number(studyId) });
         if (!validStudy) {
-            return res.status(400).json({
-                result: false,
-                message: '유효하지 않은 스터디 입니다.',
-            });
+            return next(new Error('유효하지 않은 스터디 입니다.'));
         }
         let studyUsers = [];
         let myProfileData = {};
@@ -1212,19 +1071,14 @@ async function getStudyMembers(req, res) {
             studyMasterProfile,
             studyUsers,
         });
-    } catch (err) {
-        console.log(err);
-
+    } catch (error) {
         /*=====================================================================================
-           #swagger.responses[400] = {
+           #swagger.responses[500] = {
                description: '모든 예외처리를 빗나간 에러는 이 응답을 줍니다.',
                schema: { "result": false, 'message':'스터디 멤버들 조회 실패', }
            }
            =====================================================================================*/
-        return res.status(400).json({
-            result: false,
-            message: '스터디 멤버들 조회 실패!',
-        });
+        return next({ message: '스터디 멤버들 조회 실패', stack: error, code: 500 });
     }
 }
 
@@ -1239,7 +1093,7 @@ async function getStudyMembers(req, res) {
  * 5. 강퇴는 모임장과 스터디장만 가능 
  * 
  ===================================================================*/
-async function kickUser(req, res) {
+async function kickUser(req, res, next) {
     /*========================================================================================================
         #swagger.tags = ['STUDY']
         #swagger.summary = '스터디 강퇴 API'
@@ -1252,18 +1106,12 @@ async function kickUser(req, res) {
     try {
         const validStudy = await STUDY.findOne({ studyId });
         if (!validStudy) {
-            return res.status(400).json({
-                result: false,
-                message: '유효하지 않은 스터디 입니다.',
-            });
+            return next(new Error('유효하지 않은 스터디 입니다.'));
         }
 
         let validMeeting = await MEETING.findOne({ meetingId });
         if (!validMeeting) {
-            return res.status(403).json({
-                result: false,
-                message: '유효하지 않은 모임입니다.',
-            });
+            return next(new Error('유효하지 않은 모임 입니다.'));
         }
         const meetingMemberId = [];
         const meetingMembers = await MEETINGMEMBERS.find({ meetingId });
@@ -1312,36 +1160,21 @@ async function kickUser(req, res) {
                            schema: { "result": false, 'message': '유저 강퇴는 스터디장 또는 모임장만 가능합니다.', }
                        }
                        =====================================================================================*/
-                    return res.status(403).json({
-                        result: false,
-                        message:
-                            '유저 강퇴는 스터디장 또는 모임장만 가능합니다.',
-                    });
+                    return next(new Error('유저 강퇴는 스터디장 또는 모임장만 가능합니다.'));
                 }
             }
-            return res.status(400).json({
-                result: false,
-                message: '입력하신 스터디가 존재하지 않습니다.',
-            });
+            return next(new Error('입력하신 스터디가 존재하지 않습니다.'));
         } else {
-            return res.status(403).json({
-                result: false,
-                message: '모임에 가입되지 않은 사용자입니다.',
-            });
+            return next(new Error('모임에 가입되지 않은 사용자입니다.'));
         }
-    } catch (err) {
-        console.log(err);
-
+    } catch (error) {
         /*=====================================================================================
-           #swagger.responses[400] = {
+           #swagger.responses[500] = {
                description: '예외처리를 모두 빗난 간 에러가 발생 했을 때 이 응답을 줍니다.',
                schema: { "result": false, 'message': '유저 강퇴 실패!, }
            }
            =====================================================================================*/
-        return res.status(400).json({
-            result: false,
-            message: '유저 강퇴 실패!',
-        });
+        return next({ message: '유저 강퇴 실패', stack: error, code: 500 });
     }
 }
 
@@ -1356,7 +1189,7 @@ async function kickUser(req, res) {
  * 5. 모임이 유효한지 체크
  * 6. 삭제하려는 스터디가 모임에 종속되어 있는 지 체크 
  ===================================================================*/
-async function deleteStudy(req, res) {
+async function deleteStudy(req, res, next) {
     /*========================================================================================================
         #swagger.tags = ['STUDY']
         #swagger.summary = '스터디 삭제 API'
@@ -1366,22 +1199,14 @@ async function deleteStudy(req, res) {
     const { userId } = res.locals.user;
     const { studyId, meetingId } = req.params;
     try {
-        console.log("스터디 아이디,", studyId, "스터디 아이디 타입", typeof (studyId))
-        console.log("미팅 아이디", meetingId, "미팅 아이디 타입", typeof (meetingId))
         const targetStudy = await STUDY.findOne({ studyId });
         if (!targetStudy) {
-            return res.status(400).json({
-                result: false,
-                message: '해당 스터디가 존재하지 않습니다! ',
-            });
+            return next(new Error('해당 스터디가 존재하지 않습니다'));
         }
 
         const validMeeting = await MEETING.findOne({ meetingId: Number(meetingId) });
         if (!validMeeting) {
-            return res.status(400).json({
-                result: false,
-                message: '해당 모임이 존재하지 않습니다.',
-            });
+            return next(new Error('해당 모임이 존재하지 않습니다.'));
         }
 
         //해당 모임에 없는 스터디 삭제요청 예외처리 
@@ -1391,12 +1216,8 @@ async function deleteStudy(req, res) {
             deleteStudyId.push(deleteStudy[i].studyId);
         }
         if (!deleteStudyId.includes(Number(studyId))) {
-            return res.status(400).json({
-                result: false,
-                message: '삭제하고자 하는 스터디는 현재 모임에 없습니다! ',
-            });
+            return next(new Error('삭제하고자 하는 스터디는 현재 모임에 없습니다'));
         }
-
 
         //모임 멤버 찾기 
         let meetingMemberId = [];
@@ -1432,280 +1253,270 @@ async function deleteStudy(req, res) {
                     message: '스터디 삭제 성공!',
                 });
             } else {
-
-                return res.status(400).json({
-                    result: false,
-                    message: '스터디장 또는 모임장만 삭제 가능합니다!',
-                });
+                return next(new Error('스터디장 또는 모임장만 삭제 가능합니다'));
             }
         } else {
-
-            return res.status(403).json({
-                result: false,
-                message: '해당 모임에 먼저 가입하세요!',
-            });
+            return next(new Error('해당 모임에 먼저 가입하세요'));
         }
-    } catch (err) {
-        console.log(err);
+    } catch (error) {
         /*=====================================================================================
-           #swagger.responses[400] = {
+           #swagger.responses[500] = {
                description: '모든 예외처리를 빗나간 에러가 발생했을 때 이 응답이 갑니다.',
                schema: { "result": false, 'message:'스터디 삭제 실패', }
            }
            =====================================================================================*/
-        return res.status(400).json({
-            result: false,
-            message: '스터디 삭제 실패!',
-        });
+        return next({ message: '스터디 삭제 실패', stack: error, code: 500 });
     }
 }
 
 //스터디 목록 검색 
-async function searchStudy(req, res) {
-
+async function searchStudy(req, res, next) {
     const { meetingId } = req.params;
     const { keyword } = req.query
 
-    const regex = (pattern) => {
-        return new RegExp(`.*${pattern}.*`);
-    };
+    try {
+        const regex = (pattern) => {
+            return new RegExp(`.*${pattern}.*`);
+        };
 
-    const keywordReg = regex(keyword);
-    let searchedDataId = [];
-    let studyList = [];
-    const searchData = await STUDY.where({ meetingId }).find({
-        $or: [
-            { studyTitle: { $regex: keywordReg, $options: 'i' } },
-            { studyAddr: { $regex: keywordReg, $options: 'i' } },
-            { studyBookTitle: { $regex: keywordReg, $options: 'i' } },
+        const keywordReg = regex(keyword);
+        let searchedDataId = [];
+        let studyList = [];
+        const searchData = await STUDY.where({ meetingId }).find({
+            $or: [
+                { studyTitle: { $regex: keywordReg, $options: 'i' } },
+                { studyAddr: { $regex: keywordReg, $options: 'i' } },
+                { studyBookTitle: { $regex: keywordReg, $options: 'i' } },
+            ]
+        })
+        for (let i = 0; i < searchData.length; i++) {
+            searchedDataId.push(searchData[i].studyId)
+        }
 
-        ]
-    })
-    console.log("검색된 스터디", searchData)
-    for (let i = 0; i < searchData.length; i++) {
-        searchedDataId.push(searchData[i].studyId)
-    }
+        //오프라인 스터디
+        for (let i = 0; i < searchData.length; i++) {
+            if (searchData[i].studyType === 302) {
+                const studyId = searchData[i].studyId;
+                const studyType = searchData[i].studyType;
+                const studyTitle = searchData[i].studyTitle;
+                const studyPrice = searchData[i].studyPrice;
+                const studyDateTime = searchData[i].studyDateTime;
+                const studyAddr = searchData[i].studyAddr;
+                const studyAddrDetail = searchData[i].studyAddrDetail;
+                const studyNotice = searchData[i].studyNotice;
+                const studyLimitCnt = searchData[i].studyLimitCnt;
+                const studyBookTitle = searchData[i].studyBookTitle;
+                const studyBookImg = searchData[i].studyBookImg;
+                const studyBookInfo = searchData[i].studyBookInfo;
+                const studyBookWriter = searchData[i].studyBookWriter;
+                const studyBookPublisher = searchData[i].studyBookPublisher;
+                const studyNote = searchData[i].studyNote;
+                const regDate = searchData[i].regDate;
+                const Lat = searchData[i].Lat; //위도
+                const Long = searchData[i].Long; //경도
 
-    //오프라인 스터디 
-    for (let i = 0; i < searchData.length; i++) {
-        if (searchData[i].studyType === 302) {
-            const studyId = searchData[i].studyId;
-            const studyType = searchData[i].studyType;
-            const studyTitle = searchData[i].studyTitle;
-            const studyPrice = searchData[i].studyPrice;
-            const studyDateTime = searchData[i].studyDateTime;
-            const studyAddr = searchData[i].studyAddr;
-            const studyAddrDetail = searchData[i].studyAddrDetail;
-            const studyNotice = searchData[i].studyNotice;
-            const studyLimitCnt = searchData[i].studyLimitCnt;
-            const studyBookTitle = searchData[i].studyBookTitle;
-            const studyBookImg = searchData[i].studyBookImg;
-            const studyBookInfo = searchData[i].studyBookInfo;
-            const studyBookWriter = searchData[i].studyBookWriter;
-            const studyBookPublisher = searchData[i].studyBookPublisher;
-            const studyNote = searchData[i].studyNote;
-            const regDate = searchData[i].regDate;
-            const Lat = searchData[i].Lat; //위도
-            const Long = searchData[i].Long; //경도
+                let studyStatus;
+                let rightNow = getDate();
+                // 스터디 시작시간
+                let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
+                const studyTypeCode = await CODE.findOne({ codeId: studyType })
 
-            let studyStatus;
-            let rightNow = getDate();
-            // 스터디 시작시간 
-            let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
-            const studyTypeCode = await CODE.findOne({ codeId: studyType })
-
-            //아직 24시간이 지나기 전이라 작성 가능
-            if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
-                studyStatus = 'A';
-                //24시간이 지나서 작성 불가
-            } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
-                studyStatus = 'B';
-            }
+                //아직 24시간이 지나기 전이라 작성 가능
+                if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
+                    studyStatus = 'A';
+                    //24시간이 지나서 작성 불가
+                } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
+                    studyStatus = 'B';
+                }
 
 
-            const people = await STUDYMEMBERS.find({ studyId });
-            let studyUserCnt = 0;
-            let isStudyJoined = false;
+                const people = await STUDYMEMBERS.find({ studyId });
+                let studyUserCnt = 0;
+                let isStudyJoined = false;
 
-            //유저가 로그인하지 않아도 내용을 볼 수 있도록
-            if (res.locals.user) {
-                const { userId } = res.locals.user;
+                //유저가 로그인하지 않아도 내용을 볼 수 있도록
+                if (res.locals.user) {
+                    const { userId } = res.locals.user;
 
-                for (let k = 0; k < people.length; k++) {
-                    if (people[k].studyMemberId === Number(userId)) {
-                        isStudyJoined = true;
+                    for (let k = 0; k < people.length; k++) {
+                        if (people[k].studyMemberId === Number(userId)) {
+                            isStudyJoined = true;
+                        }
                     }
                 }
-            }
 
-            const together = [];
-            let isStudyMaster;
-            const studyMasterProfile = {};
+                const together = [];
+                let isStudyMaster;
+                const studyMasterProfile = {};
 
 
-            for (let j = 0; j < people.length; j++) {
+                for (let j = 0; j < people.length; j++) {
 
-                let joinedUser = await USER.find({
-                    userId: people[j].studyMemberId,
-                });
-
-                const userId = joinedUser[0].userId;
-                const profileImage = joinedUser[0].profileImage;
-                const username = joinedUser[0].username;
-                studyUserCnt = people.length;
-                isStudyMaster = people[j].isStudyMaster;
-
-                if (isStudyMaster) {
-                    studyMasterProfile.userId = userId;
-                    studyMasterProfile.profileImage = profileImage;
-                    studyMasterProfile.isStudyMaster = isStudyMaster;
-                    studyMasterProfile.username = username
-                } else {
-                    together.push({
-                        userId,
-                        username,
-                        isStudyMaster,
-                        profileImage,
+                    let joinedUser = await USER.find({
+                        userId: people[j].studyMemberId,
                     });
-                }
-            }
-            studyList.push({
-                studyId,
-                studyType: studyTypeCode.codeValue,
-                studyTitle,
-                studyPrice,
-                studyDateTime,
-                studyAddr,
-                isStudyJoined,
-                studyAddrDetail,
-                studyNotice,
-                studyLimitCnt,
-                studyUserCnt,
-                studyBookTitle,
-                studyBookImg,
-                studyBookInfo,
-                studyBookWriter,
-                studyBookPublisher,
-                studyNote,
-                studyMasterProfile,
-                regDate,
-                Lat,
-                Long,
-                studyStatus,
-                together,
-            });
-        }
-        //온라인 스터디
-        else if (searchData[i].studyType === 301) {
-            const studyId = searchData[i].studyId;
-            const studyType = searchData[i].studyType;
-            const studyTitle = searchData[i].studyTitle;
-            const studyDateTime = searchData[i].studyDateTime;
-            const studyNotice = searchData[i].studyNotice;
-            const studyLimitCnt = searchData[i].studyLimitCnt;
-            const studyBookTitle = searchData[i].studyBookTitle;
-            const studyBookImg = searchData[i].studyBookImg;
-            const studyBookInfo = searchData[i].studyBookInfo;
-            const studyBookWriter = searchData[i].studyBookWriter;
-            const studyBookPublisher = searchData[i].studyBookPublisher;
-            const studyNote = searchData[i].studyNote;
-            const regDate = searchData[i].regDate;
 
-            const studyTypeCode = await CODE.findOne({ codeId: studyType })
-            let studyStatus;
-            let rightNow = getDate();
-            // 스터디 시작시간 
-            let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
+                    const userId = joinedUser[0].userId;
+                    const profileImage = joinedUser[0].profileImage;
+                    const username = joinedUser[0].username;
+                    studyUserCnt = people.length;
+                    isStudyMaster = people[j].isStudyMaster;
 
-
-            //아직 24시간이 지나기 전이라 작성 가능
-            if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
-                studyStatus = 'A';
-                //24시간이 지나서 작성 불가
-            } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
-                studyStatus = 'B';
-            }
-
-
-            const people = await STUDYMEMBERS.find({ studyId });
-            let studyUserCnt = 0;
-            let isStudyJoined = false;
-
-            //유저가 로그인하지 않아도 내용을 볼 수 있도록
-            if (res.locals.user) {
-                const { userId } = res.locals.user;
-
-                for (let k = 0; k < people.length; k++) {
-                    if (people[k].studyMemberId === Number(userId)) {
-                        isStudyJoined = true;
+                    if (isStudyMaster) {
+                        studyMasterProfile.userId = userId;
+                        studyMasterProfile.profileImage = profileImage;
+                        studyMasterProfile.isStudyMaster = isStudyMaster;
+                        studyMasterProfile.username = username
+                    } else {
+                        together.push({
+                            userId,
+                            username,
+                            isStudyMaster,
+                            profileImage,
+                        });
                     }
                 }
-            }
-
-            const together = [];
-            let isStudyMaster;
-            const studyMasterProfile = {};
-
-
-            for (let j = 0; j < people.length; j++) {
-
-                let joinedUser = await USER.findOne({
-                    userId: people[j].studyMemberId,
+                studyList.push({
+                    studyId,
+                    studyType: studyTypeCode.codeValue,
+                    studyTitle,
+                    studyPrice,
+                    studyDateTime,
+                    studyAddr,
+                    isStudyJoined,
+                    studyAddrDetail,
+                    studyNotice,
+                    studyLimitCnt,
+                    studyUserCnt,
+                    studyBookTitle,
+                    studyBookImg,
+                    studyBookInfo,
+                    studyBookWriter,
+                    studyBookPublisher,
+                    studyNote,
+                    studyMasterProfile,
+                    regDate,
+                    Lat,
+                    Long,
+                    studyStatus,
+                    together,
                 });
-
-                const userId = joinedUser.userId;
-                const profileImage = joinedUser.profileImage;
-                const username = joinedUser.username;
-                studyUserCnt = people.length;
-                isStudyMaster = people[j].isStudyMaster;
-
-                if (isStudyMaster) {
-                    studyMasterProfile.userId = userId;
-                    studyMasterProfile.profileImage = profileImage;
-                    studyMasterProfile.isStudyMaster = isStudyMaster;
-                    studyMasterProfile.username = username
-                } else {
-                    together.push({
-                        userId,
-                        username,
-                        isStudyMaster,
-                        profileImage,
-                    });
-                }
             }
-            studyList.push({
-                studyId,
-                studyType: studyTypeCode.codeValue,
-                studyTitle,
-                studyDateTime,
-                isStudyJoined,
-                studyNotice,
-                studyLimitCnt,
-                studyUserCnt,
-                studyBookTitle,
-                studyBookImg,
-                studyBookInfo,
-                studyBookWriter,
-                studyBookPublisher,
-                studyNote,
-                studyMasterProfile,
-                regDate,
-                studyStatus,
-                together,
+            //온라인 스터디
+            else if (searchData[i].studyType === 301) {
+                const studyId = searchData[i].studyId;
+                const studyType = searchData[i].studyType;
+                const studyTitle = searchData[i].studyTitle;
+                const studyDateTime = searchData[i].studyDateTime;
+                const studyNotice = searchData[i].studyNotice;
+                const studyLimitCnt = searchData[i].studyLimitCnt;
+                const studyBookTitle = searchData[i].studyBookTitle;
+                const studyBookImg = searchData[i].studyBookImg;
+                const studyBookInfo = searchData[i].studyBookInfo;
+                const studyBookWriter = searchData[i].studyBookWriter;
+                const studyBookPublisher = searchData[i].studyBookPublisher;
+                const studyNote = searchData[i].studyNote;
+                const regDate = searchData[i].regDate;
+
+                const studyTypeCode = await CODE.findOne({ codeId: studyType })
+                let studyStatus;
+                let rightNow = getDate();
+                // 스터디 시작시간
+                let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
+
+
+                //아직 24시간이 지나기 전이라 작성 가능
+                if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
+                    studyStatus = 'A';
+                    //24시간이 지나서 작성 불가
+                } else if (moment.duration(studyTime.diff(rightNow)).asHours() < -24) {
+                    studyStatus = 'B';
+                }
+
+
+                const people = await STUDYMEMBERS.find({ studyId });
+                let studyUserCnt = 0;
+                let isStudyJoined = false;
+
+                //유저가 로그인하지 않아도 내용을 볼 수 있도록
+                if (res.locals.user) {
+                    const { userId } = res.locals.user;
+
+                    for (let k = 0; k < people.length; k++) {
+                        if (people[k].studyMemberId === Number(userId)) {
+                            isStudyJoined = true;
+                        }
+                    }
+                }
+
+                const together = [];
+                let isStudyMaster;
+                const studyMasterProfile = {};
+
+
+                for (let j = 0; j < people.length; j++) {
+
+                    let joinedUser = await USER.findOne({
+                        userId: people[j].studyMemberId,
+                    });
+
+                    const userId = joinedUser.userId;
+                    const profileImage = joinedUser.profileImage;
+                    const username = joinedUser.username;
+                    studyUserCnt = people.length;
+                    isStudyMaster = people[j].isStudyMaster;
+
+                    if (isStudyMaster) {
+                        studyMasterProfile.userId = userId;
+                        studyMasterProfile.profileImage = profileImage;
+                        studyMasterProfile.isStudyMaster = isStudyMaster;
+                        studyMasterProfile.username = username
+                    } else {
+                        together.push({
+                            userId,
+                            username,
+                            isStudyMaster,
+                            profileImage,
+                        });
+                    }
+                }
+                studyList.push({
+                    studyId,
+                    studyType: studyTypeCode.codeValue,
+                    studyTitle,
+                    studyDateTime,
+                    isStudyJoined,
+                    studyNotice,
+                    studyLimitCnt,
+                    studyUserCnt,
+                    studyBookTitle,
+                    studyBookImg,
+                    studyBookInfo,
+                    studyBookWriter,
+                    studyBookPublisher,
+                    studyNote,
+                    studyMasterProfile,
+                    regDate,
+                    studyStatus,
+                    together,
+                });
+            }
+            studyList.sort(function (a, b) {
+                a = a.regDate;
+                b = b.regDate;
+                return a > b ? -1 : a < b ? 1 : 0;
             });
         }
-        studyList.sort(function (a, b) {
-            a = a.regDate;
-            b = b.regDate;
-            return a > b ? -1 : a < b ? 1 : 0;
-        });
+
+        return res.status(200).json({
+            result: true,
+            studyList,
+            message: '검색 성공!'
+        })
+    } catch (error) {
+        return next({ message: '검색 실패', stack: error, code: 500 });
     }
 
-    return res.status(200).json({
-        result: true,
-        studyList,
-        message: '검색 성공!'
-    })
 }
 
 module.exports = {
