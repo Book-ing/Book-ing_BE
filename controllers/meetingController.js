@@ -34,12 +34,12 @@ async function createMeeting(req, res) {
             });
         }
 
-        let meetingImage = '';
+        let meetingImage;
         if (req.file) {
             meetingImage = req.file.location;
         } else {
             meetingImage =
-                'https://img.lovepik.com/element/40135/2302.png_300.png';
+                'https://drive.google.com/file/d/1SrPhxwdruBL2vCGJorhUgc2OpBJ-s_Yy/view?usp=sharing';
         }
 
         const categoryCode = await CODE.findOne({ codeValue: meetingCategory });
