@@ -209,7 +209,7 @@ async function getSelectJoinedMeeting(req, res) {
 
     // 해당 사용자가 가입되어있는 모임을 조회 후 meetingId로 이루어진 배열로 만든다.
     const arrResultMeeting = await MEETINGMEMBER.find(
-        { meetingMemberId: userId },
+        { meetingMemberId: userId, isMeetingMaster: false },
         { _id: false, meetingId: true }
     );
     const arrJoinedMeetingId = arrResultMeeting.map((val, i) => {
@@ -220,37 +220,35 @@ async function getSelectJoinedMeeting(req, res) {
     const arrJoinedMeetingList = await MEETING.find({
         meetingId: arrJoinedMeetingId,
     });
-    if (arrJoinedMeetingList === 0) {
-        resultData.joinedMeeting = {};
-    } else {
-        // 미팅 별 가입자 수
-        const meetingByJoindedCnt = await MEETINGMEMBER.aggregate([
-            { $group: { _id: '$meetingId', count: { $sum: 1 } } },
-        ]);
 
-        // 미팅 별 스터디 수
-        const meetingByStudyCnt = await STUDY.aggregate([
-            { $group: { _id: '$meetingId', count: { $sum: 1 } } },
-        ]);
+    // 미팅 별 가입자 수
+    const meetingByJoindedCnt = await MEETINGMEMBER.aggregate([
+        { $group: { _id: '$meetingId', count: { $sum: 1 } } },
+    ]);
 
-        resultData.joinedMeeting = arrJoinedMeetingList.map((val, i) => {
-            const joinedCnt = meetingByJoindedCnt.find((element) => {
-                if (element._id === val.meetingId) return true;
-            });
-            const studyCnt = meetingByStudyCnt.find((element) => {
-                if (element._id === val.meetingId) return true;
-            });
+    // 미팅 별 스터디 수
+    const meetingByStudyCnt = await STUDY.aggregate([
+        { $group: { _id: '$meetingId', count: { $sum: 1 } } },
+    ]);
 
-            return {
-                meetingId: val.meetingId,
-                meetingName: val.meetingName,
-                meetingImage: val.meetingImage,
-                meetingJoinedCnt: joinedCnt.count,
-                meetingStudyCnt: studyCnt.count,
-                meetingIntro: val.meetingIntro,
-            };
+    resultData.joinedMeeting = arrJoinedMeetingList.map((val, i) => {
+        const joinedCnt = meetingByJoindedCnt.find((element) => {
+            if (element._id === val.meetingId) return true;
         });
-    }
+        let studyCnt = meetingByStudyCnt.find((element) => {
+            if (element._id === val.meetingId) return true;
+        });
+        studyCnt = !studyCnt ? 0 : studyCnt.count;
+
+        return {
+            meetingId: val.meetingId,
+            meetingName: val.meetingName,
+            meetingImage: val.meetingImage,
+            meetingJoinedCnt: joinedCnt.count,
+            meetingStudyCnt: studyCnt,
+            meetingIntro: val.meetingIntro,
+        };
+    });
 
     res.json({
         result: true,
