@@ -81,11 +81,13 @@ io.on('connection', (socket) => {
     let myNickname = null
 
     // roomName===studyId, nickname===userId
-    socket.on('joinRoom', async (studyId, nickname) => {
+    socket.on('joinRoom', async (studyId, nickname, videoType) => {
+
         myRoomName = studyId
         myNickname = nickname
         myRoom = studyId;
         console.log('joinRoom', 'studyId :', studyId, 'nickname:', nickname);
+
 
         let isRoomExist = false
         let targetRoomObj = null
@@ -153,7 +155,7 @@ io.on('connection', (socket) => {
         socket.join(studyId)
         //방에 참가하는 거 수락  3. 
         //입장할 때 socket.id 같이 보냄 
-        socket.emit('joinStudyRoom', targetRoomObj.users, socket.id)
+        socket.emit('joinStudyRoom', targetRoomObj.users, socket.id, videoType)
         socket.emit('checkCurStatus', mediaStatus[studyId])
     })
 
