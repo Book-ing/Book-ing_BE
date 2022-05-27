@@ -4,11 +4,12 @@ const MEETINGMEMBER = require('../schemas/meetingMember');
 const STUDY = require('../schemas/studys');
 const STUDYMEMBER = require('../schemas/studyMembers');
 const BANNEDUSER = require('../schemas/bannedUsers');
+const CHAT = require('../schemas/chats');
 const CODE = require('../schemas/codes');
 const lib = require('../lib/util');
 const { deleteImage } = require('../middlewares/multer');
 
-async function createMeeting(req, res) {
+async function createMeeting(req, res, next) {
     // #swagger.tags = ['MEETING']
     // #swagger.summary = '모임 생성 API'
     const { userId } = res.locals.user;
@@ -28,18 +29,15 @@ async function createMeeting(req, res) {
              #swagger.responses[400] = { description: '이미 생성한 모임이 있을 때 이 응답이 갑니다.',
              schema: { 'result': false, 'message': '이미 생성한 모임이 있습니다.', } }
              */
-            return res.status(400).json({
-                result: false,
-                message: '이미 생성한 모임이 있습니다.',
-            });
+            return next(new Error('이미 생성한 모임이 있습니다.'));
         }
 
-        let meetingImage = '';
+        let meetingImage;
         if (req.file) {
             meetingImage = req.file.location;
         } else {
             meetingImage =
-                'https://img.lovepik.com/element/40135/2302.png_300.png';
+                'https://book-ing.s3.ap-northeast-2.amazonaws.com/book-2020460_1920.jpg';
         }
 
         const categoryCode = await CODE.findOne({ codeValue: meetingCategory });
@@ -50,19 +48,13 @@ async function createMeeting(req, res) {
              #swagger.responses[400] = { description: '코드 테이블에 카테고리 값이 없거나 잘못될 때 이 응답이 갑니다.',
              schema: { 'result': false, 'message': '모임 카테고리 입력 오류', } }
             */
-            return res.status(400).json({
-                result: false,
-                message: '모임 카테고리 입력 오류',
-            });
+            return next(new Error('모임 카테고리 입력 오류'));
         } else if (!locationCode) {
             /*
              #swagger.responses[400] = { description: '코드 테이블에 지역 값이 없거나 잘못될 때 이 응답이 갑니다.',
              schema: { 'result': false, 'message': '모임 지역 입력 오류', } }
             */
-            return res.status(400).json({
-                result: false,
-                message: '모임 지역 입력 오류',
-            });
+            return next(new Error('모임 지역 입력 오류'));
         }
 
         await MEETING.create({
@@ -81,9 +73,8 @@ async function createMeeting(req, res) {
                     meetingId: result.meetingId,
                     isMeetingMaster: true,
                     regDate: lib.getDate(),
-                })
+                }),
         );
-
 
         /*
          #swagger.responses[201] = { description: '모임 생성이 성공했을 때 이 응답이 갑니다.',
@@ -91,17 +82,15 @@ async function createMeeting(req, res) {
         */
         res.status(201).json({ result: true, message: '모임 생성 성공' });
     } catch (error) {
-        console.log(error);
-
         /*
          #swagger.responses[500] = { description: '서버측에서 오류가 났을 때 이 응답이 갑니다.',
          schema: { 'result': false, 'message': '모임 생성 실패', } }
         */
-        res.status(500).json({ result: false, message: '모임 생성 실패' });
+        return next({ message: '모임 생성 실패', stack: error, code: 500 });
     }
 }
 
-async function getMeetingInfo(req, res) {
+async function getMeetingInfo(req, res, next) {
     // #swagger.tags = ['MEETING']
     // #swagger.summary = '모임 페이지 모임 정보 API'
     const { meetingId } = req.params;
@@ -198,19 +187,15 @@ async function getMeetingInfo(req, res) {
             },
         });
     } catch (error) {
-        console.log(error);
         /*
          #swagger.responses[500] = { description: '서버측에서 오류가 났을 때 이 응답이 갑니다.',
          schema: { 'result': false, 'message': '모임 페이지 모임정보 조회 실패', } }
         */
-        res.status(500).json({
-            result: false,
-            message: '모임 페이지 모임정보 조회 실패',
-        });
+        return next({ message: '모임 페이지 모임정보 조회 실패', stack: error, code: 500 });
     }
 }
 
-async function getMeetingUsers(req, res) {
+async function getMeetingUsers(req, res, next) {
     // #swagger.tags = ['MEETING']
     // #swagger.summary = '모임 페이지 함께하는 사람들 팝업 조회 API'
     const { meetingId } = req.params;
@@ -223,16 +208,12 @@ async function getMeetingUsers(req, res) {
             meetingMemberId: userId,
             meetingId,
         });
-        if (!existMeetingMember) {
-            /*
-             #swagger.responses[400] = { description: '모임 가입유저가 아닌 사람이 조회했을 때 이 응답이 갑니다.',
-             schema: { 'result': false, 'message': '모임 가입 유저만 조회가 가능합니다.', } }
-            */
-            return res.status(400).json({
-                result: false,
-                message: '모임 가입 유저만 조회가 가능합니다.',
-            });
-        }
+        /*
+         #swagger.responses[400] = { description: '모임 가입유저가 아닌 사람이 조회했을 때 이 응답이 갑니다.',
+         schema: { 'result': false, 'message': '모임 가입 유저만 조회가 가능합니다.', } }
+        */
+        if (!existMeetingMember)
+            return next(new Error('모임 가입 유저만 조회가 가능합니다.'));
 
         const myProfile = await USER.findOne(
             { userId },
@@ -242,7 +223,7 @@ async function getMeetingUsers(req, res) {
                 profileImage: true,
                 statusMessage: true,
                 _id: false,
-            }
+            },
         );
         // 모임 정보
         const meetingInfo = await MEETING.findOne({ meetingId });
@@ -253,7 +234,7 @@ async function getMeetingUsers(req, res) {
 
         const meetingUsers = await MEETINGMEMBER.find({ meetingId });
         const meetingUsersId = meetingUsers.map(
-            (result) => result.meetingMemberId
+            (result) => result.meetingMemberId,
         );
         const meetingUsersProfile = await USER.find(
             { userId: meetingUsersId },
@@ -263,7 +244,7 @@ async function getMeetingUsers(req, res) {
                 profileImage: true,
                 statusMessage: true,
                 _id: false,
-            }
+            },
         );
 
         if (existMeetingMember) isMeetingJoined = true;
@@ -320,19 +301,15 @@ async function getMeetingUsers(req, res) {
             },
         });
     } catch (error) {
-        console.log(error);
         /*
          #swagger.responses[500] = { description: '서버측에서 오류가 났을 때 이 응답이 갑니다.',
          schema: { 'result': false, 'message': '모임 가입 유저 조회 실패', } }
         */
-        res.status(500).json({
-            result: false,
-            message: '모임 가입 유저 조회 실패',
-        });
+        return next({ message: '모임 가입 유저 조회 실패', stack: error, code: 500 });
     }
 }
 
-async function inoutMeeting(req, res) {
+async function inoutMeeting(req, res, next) {
     // #swagger.tags = ['MEETING']
     // #swagger.summary = '모임 페이지 모임 가입/탈퇴 API'
     const { meetingId } = req.body;
@@ -345,44 +322,34 @@ async function inoutMeeting(req, res) {
         });
 
         const meeting = await MEETING.findOne({ meetingId });
-        if (userId === meeting.meetingMasterId) {
-            /*
-             #swagger.responses[400] = { description: '모임 마스터가 모임에 가입 혹은 탈퇴를 시도할 때 이 응답이 갑니다.',
-             schema: { 'result': false, 'message': '모임 마스터는 모임 참여, 탈퇴가 불가능합니다.', } }
-            */
-            return res.status(400).json({
-                result: false,
-                message: '모임 마스터는 모임 참여, 탈퇴가 불가능합니다.',
-            });
-        }
+        /*
+         #swagger.responses[400] = { description: '모임 마스터가 모임에 가입 혹은 탈퇴를 시도할 때 이 응답이 갑니다.',
+         schema: { 'result': false, 'message': '모임 마스터는 모임 참여, 탈퇴가 불가능합니다.', } }
+        */
+        if (userId === meeting.meetingMasterId)
+            return next(new Error('모임 마스터는 모임 참여, 탈퇴가 불가능합니다.'));
 
         const bannedMeetingUser = await BANNEDUSER.findOne({
             meetingId,
             userId,
         });
-        if (bannedMeetingUser) {
-            /*
-             #swagger.responses[400] = { description: '강퇴당한 유저가 해당 모임에 가입을 시도할 때 이 응답이 갑니다.',
-             schema: { 'result': false, 'message': '강퇴당한 유저는 모임 참여가 불가능합니다.', } }
-            */
-            return res.status(400).json({
-                result: false,
-                message: '강퇴당한 유저는 모임 참여가 불가능합니다.',
-            });
-        }
+
+        /*
+         #swagger.responses[400] = { description: '강퇴당한 유저가 해당 모임에 가입을 시도할 때 이 응답이 갑니다.',
+         schema: { 'result': false, 'message': '강퇴당한 유저는 모임 참여가 불가능합니다.', } }
+        */
+        if (bannedMeetingUser)
+            return next(new Error('강퇴당한 유저는 모임 참여가 불가능합니다.'));
 
         if (!existMeetingMember) {
             const meetingMember = await MEETINGMEMBER.find({ meetingId });
-            if (meetingMember.length >= meeting.meetingLimitCnt) {
-                /*
-                 #swagger.responses[400] = { description: '모임 제한 인원수가 가득차고 가입을 시도했을 때 이 응답이 갑니다.',
-                 schema: { 'result': false, 'message': '모임 제한 인원 수가 찼습니다.', } }
-                */
-                return res.status(400).json({
-                    result: false,
-                    message: '모임 제한 인원 수가 찼습니다.',
-                });
-            }
+            /*
+             #swagger.responses[400] = { description: '모임 제한 인원수가 가득차고 가입을 시도했을 때 이 응답이 갑니다.',
+             schema: { 'result': false, 'message': '모임 제한 인원 수가 찼습니다.', } }
+            */
+            if (meetingMember.length >= meeting.meetingLimitCnt)
+                return next(new Error('모임 제한 인원 수가 찼습니다.'));
+
             await MEETINGMEMBER.create({
                 meetingMemberId: userId,
                 meetingId,
@@ -392,10 +359,7 @@ async function inoutMeeting(req, res) {
              #swagger.responses[201] = { description: '모임 가입에 성공했을 때 이 응답이 갑니다.',
              schema: { 'result': true, 'message': '모임 가입 성공', } }
             */
-            res.status(201).json({
-                result: true,
-                message: '모임 가입 성공',
-            });
+            res.status(201).json({ result: true, message: '모임 가입 성공' });
         } else {
             const memberStudys = await STUDYMEMBER.find({
                 studyMemberId: userId,
@@ -431,22 +395,18 @@ async function inoutMeeting(req, res) {
              #swagger.responses[201] = { description: '모임 탈퇴에 성공했을 때 이 응답이 갑니다.',
              schema: { 'result': true, 'message': '모임 탈퇴 성공', } }
             */
-            res.status(201).json({
-                result: true,
-                message: '모임 탈퇴 성공',
-            });
+            res.status(201).json({ result: true, message: '모임 탈퇴 성공' });
         }
     } catch (error) {
-        console.log(error);
         /*
          #swagger.responses[500] = { description: '서버측에서 오류가 났을 때 이 응답이 갑니다.',
          schema: { 'result': false, 'message': '모임 가입/탈퇴 실패', } }
         */
-        res.status(500).json({ result: false, message: '모임 가입/탈퇴 실패' });
+        return next({ message: '모임 가입/탈퇴 실패', stack: error, code: 500 });
     }
 }
 
-async function kickMeetingMember(req, res) {
+async function kickMeetingMember(req, res, next) {
     // #swagger.tags = ['MEETING']
     // #swagger.summary = '모임 페이지 함께 하는 사람들 내보내기(강퇴) API'
     const { targetId, meetingId } = req.body; // targetId: 강퇴를 당하는 사람의 Id (밴 당하는 유저)
@@ -454,29 +414,19 @@ async function kickMeetingMember(req, res) {
 
     try {
         const meeting = await MEETING.findOne({ meetingId });
-        // 모임 마스터만 내보내기가 가능하다.
-        if (userId !== meeting.meetingMasterId) {
-            /*
-             #swagger.responses[400] = { description: '모임 마스터가 아닌 유저가 내보내기를 시도할 때 이 응답이 갑니다.',
-             schema: { 'result': false, 'message': '모임 마스터만 내보내기가 가능합니다.', } }
-            */
-            return res.status(400).json({
-                result: false,
-                message: '모임 마스터만 내보내기가 가능합니다.',
-            });
-        }
+        /*
+         #swagger.responses[400] = { description: '모임 마스터가 아닌 유저가 내보내기를 시도할 때 이 응답이 갑니다.',
+         schema: { 'result': false, 'message': '모임 마스터만 내보내기가 가능합니다.', } }
+        */
+        if (userId !== meeting.meetingMasterId)
+            return next(new Error('모임 마스터만 내보내기가 가능합니다.'));
 
-        // 내보내려는 유저가 모임 마스터면 내보내기가 불가능하다.
-        if (targetId === meeting.meetingMasterId) {
-            /*
-             #swagger.responses[400] = { description: '모임 마스터를 내보내기 시도할 때 이 응답이 갑니다.',
-             schema: { 'result': false, 'message': '모임 마스터는 내보내기가 불가능합니다.', } }
-            */
-            return res.status(400).json({
-                result: false,
-                message: '모임 마스터는 내보내기가 불가능합니다.',
-            });
-        }
+        /*
+         #swagger.responses[400] = { description: '모임 마스터를 내보내기 시도할 때 이 응답이 갑니다.',
+         schema: { 'result': false, 'message': '모임 마스터는 내보내기가 불가능합니다.', } }
+        */
+        if (targetId === meeting.meetingMasterId)
+            return next(new Error('모임 마스터는 내보내기가 불가능합니다.'));
 
         const kickMeetingMember = await MEETINGMEMBER.deleteOne({
             meetingId,
@@ -522,24 +472,17 @@ async function kickMeetingMember(req, res) {
          #swagger.responses[201] = { description: '모임 유저 내보내기에 성공했을 때 이 응답이 갑니다.',
          schema: { 'result': true, 'message': '모임 유저 내보내기 성공', } }
         */
-        res.status(201).json({
-            result: true,
-            message: '모임 유저 내보내기 성공',
-        });
+        res.status(201).json({ result: true, message: '모임 유저 내보내기 성공' });
     } catch (error) {
-        console.log(error);
         /*
          #swagger.responses[500] = { description: '서버측에서 오류가 났을 때 이 응답이 갑니다.',
          schema: { 'result': false, 'message': '모임 유저 내보내기 실패', } }
         */
-        res.status(500).json({
-            result: false,
-            message: '모임 유저 내보내기 실패',
-        });
+        return next({ message: '모임 유저 내보내기 실패', stack: error, code: 500 });
     }
 }
 
-async function modifyMeeting(req, res) {
+async function modifyMeeting(req, res, next) {
     // #swagger.tags = ['MEETING']
     // #swagger.summary = '모임 정보 수정 API'
     const {
@@ -552,16 +495,13 @@ async function modifyMeeting(req, res) {
 
     try {
         const meeting = await MEETING.findOne({ meetingId });
-        if (userId !== meeting.meetingMasterId) {
-            /*
-             #swagger.responses[400] = { description: '모임 마스터가 아닌 유저가 모임 정보 수정을 시도할 때 이 응답이 갑니다.',
-             schema: { 'result': false, 'message': '모임 마스터만 모임 정보 수정이 가능합니다.', } }
-            */
-            return res.status(400).json({
-                result: false,
-                message: '모임 마스터만 모임 정보 수정이 가능합니다.',
-            });
-        }
+        /*
+         #swagger.responses[400] = { description: '모임 마스터가 아닌 유저가 모임 정보 수정을 시도할 때 이 응답이 갑니다.',
+         schema: { 'result': false, 'message': '모임 마스터만 모임 정보 수정이 가능합니다.', } }
+        */
+        if (userId !== meeting.meetingMasterId)
+            return next(new Error('모임 마스터만 모임 정보 수정이 가능합니다.'));
+
 
         const categoryCode = await CODE.findOne({ codeValue: meetingCategory });
         const locationCode = await CODE.findOne({ codeValue: meetingLocation });
@@ -571,19 +511,13 @@ async function modifyMeeting(req, res) {
              #swagger.responses[400] = { description: '코드 테이블에 카테고리 값이 없거나 잘못될 때 이 응답이 갑니다.',
              schema: { 'result': false, 'message': '모임 카테고리 입력 오류', } }
             */
-            return res.status(400).json({
-                result: false,
-                message: '모임 카테고리 입력 오류',
-            });
+            return next(new Error('모임 카테고리 입력 오류'));
         } else if (!locationCode) {
             /*
              #swagger.responses[400] = { description: '코드 테이블에 지역 값이 없거나 잘못될 때 이 응답이 갑니다.',
              schema: { 'result': false, 'message': '모임 지역 입력 오류', } }
             */
-            return res.status(400).json({
-                result: false,
-                message: '모임 지역 입력 오류',
-            });
+            return next(new Error('모임 지역 입력 오류'));
         }
 
         if (req.file) {
@@ -598,7 +532,7 @@ async function modifyMeeting(req, res) {
                         meetingIntro,
                         meetingImage,
                     },
-                }
+                },
             );
         } else {
             await MEETING.updateOne(
@@ -609,7 +543,7 @@ async function modifyMeeting(req, res) {
                         meetingLocation: locationCode.codeId,
                         meetingIntro,
                     },
-                }
+                },
             );
         }
 
@@ -617,21 +551,17 @@ async function modifyMeeting(req, res) {
          #swagger.responses[201] = { description: '모임 정보 수정에 성공했을 때 이 응답이 갑니다.',
          schema: { 'result': true, 'message': '모임 정보 수정 성공', } }
         */
-        res.status(201).json({
-            result: true,
-            message: '모임 정보 수정 성공',
-        });
+        res.status(201).json({ result: true, message: '모임 정보 수정 성공' });
     } catch (error) {
-        console.log(error);
         /*
          #swagger.responses[500] = { description: '서버측에서 오류가 났을 때 이 응답이 갑니다.',
          schema: { 'result': false, 'message': '모임 정보 수정 실패', } }
         */
-        res.status(500).json({ result: false, message: '모임 정보 수정 실패' });
+        return next({ message: '모임 정보 수정 실패', stack: error, code: 500 });
     }
 }
 
-async function deleteMeeting(req, res) {
+async function deleteMeeting(req, res, next) {
     // #swagger.tags = ['MEETING']
     // #swagger.summary = '모임 삭제 API'
     const { meetingId } = req.params;
@@ -639,42 +569,36 @@ async function deleteMeeting(req, res) {
 
     try {
         const meeting = await MEETING.findOne({ meetingId });
-        if (userId !== meeting.meetingMasterId) {
-            /*
-             #swagger.responses[400] = { description: '모임 마스터가 아닌 유저가 모임 삭제를 시도할 때 이 응답이 갑니다.',
-             schema: { 'result': false, 'message': '모임 마스터만 모임 삭제가 가능합니다.', } }
-            */
-            return res.status(400).json({
-                result: false,
-                message: '모임 마스터만 모임 삭제가 가능합니다.',
-            });
-        }
+        /*
+         #swagger.responses[400] = { description: '모임 마스터가 아닌 유저가 모임 삭제를 시도할 때 이 응답이 갑니다.',
+         schema: { 'result': false, 'message': '모임 마스터만 모임 삭제가 가능합니다.', } }
+        */
+        if (userId !== meeting.meetingMasterId)
+            return next(new Error('모임 마스터만 모임 삭제가 가능합니다.'));
+
 
         await MEETING.deleteOne({ meetingId, meetingMasterId: userId });
         await MEETINGMEMBER.deleteMany({ meetingId });
         const studyId = await STUDY.find({ meetingId }).then((value) =>
-            value.map((result) => result.studyId)
+            value.map((result) => result.studyId),
         );
         await STUDYMEMBER.deleteMany({ studyId });
         await STUDY.deleteMany({ meetingId });
         await BANNEDUSER.deleteMany({ meetingId });
+        await CHAT.deleteMany({ meetingId });
         deleteImage(meeting.meetingImage);
 
         /*
          #swagger.responses[201] = { description: '모임 삭제에 성공했을 때 이 응답이 갑니다.',
          schema: { 'result': true, 'message': '모임 삭제 성공', } }
         */
-        res.status(201).json({
-            result: true,
-            message: '모임 삭제 성공',
-        });
+        res.status(201).json({ result: true, message: '모임 삭제 성공' });
     } catch (error) {
-        console.log(error);
         /*
          #swagger.responses[500] = { description: '서버측에서 오류가 났을 때 이 응답이 갑니다.',
          schema: { 'result': false, 'message': '모임 삭제 실패', } }
         */
-        res.status(500).json({ result: false, message: '모임 삭제 실패' });
+        return next({ message: '모임 삭제 실패', stack: error, code: 500 });
     }
 }
 
