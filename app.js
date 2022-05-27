@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { Logger, stream } = require('./logging');
 const express = require('express');
 const app = express();
 const connect = require('./schemas');
@@ -24,7 +25,7 @@ const passportConfig = require('./passport/kakaoStrategy');
 // };
 
 app.use(cors({ origin: '*' }));
-app.use(morgan('dev'));
+app.use(morgan('dev', { stream }));
 connect();
 
 const swaggerUi = require('swagger-ui-express');
@@ -51,7 +52,8 @@ app.use((req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-    res.json({ result: false, message: err.message });
+    Logger.error(`${err.message} \n ${err.stack ? err.stack : ""} `)
+    res.status(err.status || 400).json({ result: false, message: err.message });
 });
 
 module.exports = app;
