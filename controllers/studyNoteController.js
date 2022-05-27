@@ -1,7 +1,6 @@
 const STUDY = require('../schemas/studys');
 const STUDYMEMBERS = require('../schemas/studyMembers');
 const MEETING = require('../schemas/meeting');
-const USER = require('../schemas/user');
 const { getDate } = require('../lib/util');
 const moment = require('moment')
 
@@ -13,7 +12,7 @@ const moment = require('moment')
  * 2. 유저가 유효한지 체크 
  * 3. 스터디 발제자(장)과 모임장만 노트 작성가능한지 체크
  ===================================================================*/
-async function postNote(req, res) {
+async function postNote(req, res, next) {
     /*================================================
         #swagger.tags = ['STUDYNOTE']
         #swagger.summary = '스터디 노트 작성  API'
@@ -24,13 +23,9 @@ async function postNote(req, res) {
 
     // studyStatus a == 스터디 일시 전, b== 스터디 시작 후 24시간 이내 c == 시작부터 24시간 후 
     try {
-
         let validStudy = await STUDY.findOne({ studyId });
         if (!validStudy) {
-            return res.status(403).json({
-                result: false,
-                message: '해당 스터디가 존재하지 않습니다! ',
-            });
+            return next(new Error('해당 스터디가 존재하지 않습니다'));
         }
 
 
@@ -50,10 +45,7 @@ async function postNote(req, res) {
 
 
         if (moment.duration(studyTime.diff(rightNow)).asHours() <= -24) {
-            return res.status(400).json({
-                result: false,
-                message: '스터디 노트 작성은 스터디 시작 이후 24시간이 지나면 작성이 불가능합니다.'
-            })
+            return next(new Error('스터디 노트 작성은 스터디 시작 이후 24시간이 지나면 작성이 불가능합니다.'));
         }
 
         //스터디 노트 작성 가능한 자
@@ -68,10 +60,7 @@ async function postNote(req, res) {
 
         //받은 스터디의 모임 찾음
         if (!validStudyMembers.includes(Number(userId))) {
-            return res.status(403).json({
-                result: 'false',
-                message: '해당 스터디 참여 멤버가 아닙니다',
-            });
+            return next(new Error('해당 스터디 참여 멤버가 아닙니다'));
         }
         let targetMeeting = await MEETING.findOne({
             meetingId: validStudy.meetingId,
@@ -100,24 +89,16 @@ async function postNote(req, res) {
                 .status(201)
                 .json({ result: true, message: '스터디 노트 작성 완료!' });
         } else {
-            return res.status(400).json({
-                result: false,
-                message: '스터디 노트 작성은 발제자와 모임장만 가능합니다.',
-            });
+            return next(new Error('스터디 노트 작성은 발제자와 모임장만 가능합니다.'));
         }
-    } catch (err) {
-        console.log(err);
-
+    } catch (error) {
         /*=====================================================================================
            #swagger.responses[400] = {
                description: '모든 예외처리를 빗나간 경우 이 응답을 준다.',
                schema: { "result": false, 'message':'스터디 노트 작성 실패', }
            }
            =====================================================================================*/
-        return res.status(400).json({
-            result: true,
-            message: '스터디 노트 작성 실패!!',
-        });
+        return next({ message: '스터디 노트 작성 실패', stack: error, code: 500 });
     }
 }
 
@@ -129,7 +110,7 @@ async function postNote(req, res) {
  * 2. 로그인한 유저 유효한지 체크
  * 3. 스터디장(발제자)과 모임장만 스터디 노트 수정 가능 
  ===================================================================*/
-async function updateNote(req, res) {
+async function updateNote(req, res, next) {
     /*================================================
         #swagger.tags = ['STUDYNOTE']
         #swagger.summary = '스터디 수정 API'
@@ -142,10 +123,7 @@ async function updateNote(req, res) {
     try {
         const validStudy = await STUDY.findOne({ studyId });
         if (!validStudy) {
-            return res.status(403).json({
-                result: false,
-                message: '유효하지 않은 스터디 입니다.',
-            });
+            return next(new Error('유효하지 않은 스터디 입니다.'));
         }
 
         //스터디노트를 편집할 수 있는 자
@@ -180,23 +158,16 @@ async function updateNote(req, res) {
                 .status(201)
                 .json({ result: true, message: '스터디 노트 수정 완료!' });
         } else {
-            return res.status(400).json({
-                result: false,
-                message: '스터디 노트 수정은 발제자와 모임장만 가능합니다.',
-            });
+            return next(new Error('스터디 노트 수정은 발제자와 모임장만 가능합니다.'));
         }
-    } catch (err) {
-        console.log(err);
-        return res.status(400).json({
-            /*=====================================================================================
-               #swagger.responses[400] = {
-                   description: '모든 예외처리를 빗나간 경우 이 응답을 준다.',
-                   schema: { "result": false, 'message':'스터디 노트 수정 실패', }
-               }
-               =====================================================================================*/
-            result: true,
-            message: '스터디 노트 수정 실패!!',
-        });
+    } catch (error) {
+        /*=====================================================================================
+           #swagger.responses[400] = {
+               description: '모든 예외처리를 빗나간 경우 이 응답을 준다.',
+               schema: { "result": false, 'message':'스터디 노트 수정 실패', }
+           }
+           =====================================================================================*/
+        return next({ message: '스터디 노트 수정 실패', stack: error, code: 500 });
     }
 }
 
