@@ -141,7 +141,7 @@ io.on('connection', (socket) => {
             socketId: socket.id,
             nickname,
         })
-        const set = new Set(targetRoomObj.user)
+        const set = new Set(targetRoomObj.users)
         let joinedUsers = [...set]
         console.log("참석한 유저들", joinedUsers)
         targetRoomObj.currentNum++
