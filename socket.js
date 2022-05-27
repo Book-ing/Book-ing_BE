@@ -156,6 +156,7 @@ io.on('connection', (socket) => {
         //방에 참가하는 거 수락  3. 
         //입장할 때 socket.id 같이 보냄 
         socket.emit('joinStudyRoom', targetRoomObj.users, socket.id, videoType)
+        console.log('보내고 넘어오쟈!!')
         socket.emit('checkCurStatus', mediaStatus[studyId])
     })
 
