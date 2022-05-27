@@ -141,7 +141,11 @@ io.on('connection', (socket) => {
             socketId: socket.id,
             nickname,
         })
+        const set = new Set(targetRoomObj.user)
+        let joinedUsers = [...set]
+        console.log("참석한 유저들", joinedUsers)
         targetRoomObj.currentNum++
+
         // 입력한 방에 입장 
         console.log(
             `${nickname}이 방 ${studyId}에 입장 (${targetRoomObj.currentNum}/${MAXIMUM})`
@@ -155,33 +159,32 @@ io.on('connection', (socket) => {
         socket.join(studyId)
         //방에 참가하는 거 수락  3. 
         //입장할 때 socket.id 같이 보냄 
-        socket.emit('joinStudyRoom', targetRoomObj.users, socket.id, videoType)
+        socket.emit('joinStudyRoom', joinedUsers, socket.id, videoType)
         console.log('보내고 넘어오쟈!!')
         socket.emit('checkCurStatus', mediaStatus[studyId])
     })
 
 
     socket.on('ice', (ice, remoteSocketId) => {
-        console.log('ice 이벤트', 'ice : ', ice, 'remoteSocketId', remoteSocketId)
         socket.to(remoteSocketId).emit('ice', ice, socket.id)
     })
 
     socket.on('offer', (offer, remoteSocketId, localNickname) => {
-        console.log('offer 이벤트', 'offer : ', offer, 'remoteSocketId', remoteSocketId, 'localNickname : ', localNickname)
+        // console.log('offer 이벤트', 'offer : ', offer, 'remoteSocketId', remoteSocketId, 'localNickname : ', localNickname)
         socket.to(remoteSocketId).emit('offer', offer, socket.id, localNickname)
     })
     // 다른 브라우저에서 보낸 answer 받음 =>5. 
     socket.on('answer', (answer, remoteSocketId) => {
         // 받은 answer  
-        console.log('answer 이벤트', 'answer : ', answer, 'remoteSocketId', remoteSocketId)
+        // console.log('answer 이벤트', 'answer : ', answer, 'remoteSocketId', remoteSocketId)
         socket.to(remoteSocketId).emit('answer', answer, socket.id)
     })
 
     //방에 나갔을 때 
     socket.on('disconnecting', async () => {
-        console.log('disconnecting')
+        // console.log('disconnecting')
         socket.to(myRoom).emit('leave_room', socket.id)
-        console.log('disconnecting', 'myRoom : ', myRoom, 'socket.id : ', socket.id);
+        // console.log('disconnecting', 'myRoom : ', myRoom, 'socket.id : ', socket.id);
         for (let i = 0; i < roomObjArr.length; i++) {
             if (roomObjArr[i].studyId === myRoom) {
                 const newUsers = roomObjArr[i].users.filter(
