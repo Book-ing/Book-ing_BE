@@ -658,6 +658,7 @@ async function deleteMeeting(req, res) {
         await STUDYMEMBER.deleteMany({ studyId });
         await STUDY.deleteMany({ meetingId });
         await BANNEDUSER.deleteMany({ meetingId });
+        await CHAT.deleteMany({ meetingId });
         deleteImage(meeting.meetingImage);
 
         /*
