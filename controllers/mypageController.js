@@ -588,8 +588,10 @@ async function getSelectJoinedStudy(req, res, next) {
             const data = await STUDY.findOne({ studyId: arrStudyList[i] })
             // console.log(`${arrStudyList[i]}스터디`, data)
             //참석한 스터디 중 첫 번째 
+            const studyTypeCode = await CODE.findOne({ codeId: data.studyType });
 
             const studyId = data.studyId;
+            const studyType = studyTypeCode.codeValue;
             const studyTitle = data.studyTitle;
             const studyPrice = data.studyPrice;
             const studyDateTime = data.studyDateTime;
@@ -669,6 +671,7 @@ async function getSelectJoinedStudy(req, res, next) {
             // console.log("스터디 장이냐?2 ", isStudyMaster)
             myJoinedStudy.push({
                 studyId,
+                studyType,
                 studyTitle,
                 studyPrice,
                 studyDateTime,
