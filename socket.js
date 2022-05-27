@@ -87,7 +87,7 @@ io.on('connection', (socket) => {
         myNickname = nickname
         myRoom = studyId;
         console.log('joinRoom', 'studyId :', studyId, 'nickname:', nickname);
-
+        console.log('비디오 타입 넘어오니?', videoType)
 
         let isRoomExist = false
         let targetRoomObj = null
