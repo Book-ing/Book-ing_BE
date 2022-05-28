@@ -93,7 +93,7 @@ io.on('connection', (socket) => {
         let targetRoomObj = null
 
         //화면공유 했을 때 
-        if (videoType === 'SHARESCREEEN') {
+        if (videoType === 'SHARESCREEN') {
             //만약 
             if (!mediaStatus[studyId]) {
                 mediaStatus[studyId] = {}
