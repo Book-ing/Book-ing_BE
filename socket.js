@@ -92,78 +92,146 @@ io.on('connection', (socket) => {
         let isRoomExist = false
         let targetRoomObj = null
 
-        //만약 
-        if (!mediaStatus[studyId]) {
-            mediaStatus[studyId] = {}
-        }
+        //화면공유 했을 때 
+        if (videoType === 'SHARESCREEEN') {
+            //만약 
+            if (!mediaStatus[studyId]) {
+                mediaStatus[studyId] = {}
+            }
 
 
-        for (let i = 0; i < roomObjArr.length; i++) {
+            for (let i = 0; i < roomObjArr.length; i++) {
 
-            // 스터디 룸 
-            if (roomObjArr[i].studyId === studyId) {
-                // 정원 초과
-                if (roomObjArr[i].currentNum >= MAXIMUM) {
-                    //정원 초과라 거부 이벤트 실행 
-                    socket.emit('rejectJoin')
-                    return
+                // 스터디 룸 
+                if (roomObjArr[i].studyId === studyId) {
+                    // 정원 초과
+                    if (roomObjArr[i].currentNum >= MAXIMUM) {
+                        //정원 초과라 거부 이벤트 실행 
+                        socket.emit('rejectJoin')
+                        return
+                    }
+                    // 스터디 멤버 체크 
+                    // const joinedMemeber = await STUDYMEMBERS.findOne({ studyId })
+                    // if (username !== joinedMemeber.studyMemberId) {
+                    //     socket.emit('rejectUnvalidUser')
+                    //     return
+                    // }
+
+                    //정원 초과 아니면 해당 스터디 룸에 참여 
+                    isRoomExist = true
+                    //맞는 룸에 들어감 
+                    targetRoomObj = roomObjArr[i]
+                    break
                 }
-                // 스터디 멤버 체크 
-                // const joinedMemeber = await STUDYMEMBERS.findOne({ studyId })
-                // if (username !== joinedMemeber.studyMemberId) {
-                //     socket.emit('rejectUnvalidUser')
-                //     return
-                // }
-
-                //정원 초과 아니면 해당 스터디 룸에 참여 
-                isRoomExist = true
-                //맞는 룸에 들어감 
-                targetRoomObj = roomObjArr[i]
-                break
             }
-        }
 
-        // 입력한 룸이름이 없다면 새로운 방 만듦 
-        // 방이 존재하지 않는다면 방을 생성
+            // 입력한 룸이름이 없다면 새로운 방 만듦 
+            // 방이 존재하지 않는다면 방을 생성
 
-        if (!isRoomExist) {
-            targetRoomObj = {
-                studyId,
-                currentNum: 0,
-                users: [],
+            if (!isRoomExist) {
+                targetRoomObj = {
+                    studyId,
+                    currentNum: 0,
+                    users: [],
+                }
+                roomObjArr.push(targetRoomObj)
             }
-            roomObjArr.push(targetRoomObj)
-        }
 
-        console.log('joinRoom', 'targetRoomObj : ', targetRoomObj);
-        // 어떠한 경우든 방에 참여
-        targetRoomObj.users.push({
-            socketId: socket.id,
-            nickname,
-        })
+            console.log('joinRoom', 'targetRoomObj : ', targetRoomObj);
+            // 어떠한 경우든 방에 참여
+            targetRoomObj.users.push({
+                socketId: socket.id,
+                nickname,
+            })
 
-        const joinedUsers = targetRoomObj.users
-        let notDup = joinedUsers.filter((val, idx) => {
-            return joinedUsers.indexOf(val) === idx
-        })
+            const joinedUsers = targetRoomObj.users
+            let notDup = joinedUsers.filter((val, idx) => {
+                return joinedUsers.indexOf(val) === idx
+            })
 
-        console.log("참석한 유저들", notDup)
-        targetRoomObj.currentNum++
+            console.log("화면공유한 소켓 아이디들", notDup)
+            targetRoomObj.currentNum++
 
-        // 입력한 방에 입장 
-        console.log(
-            `${nickname}이 방 ${studyId}에 입장 (${targetRoomObj.currentNum}/${MAXIMUM})`
-        )
+            // 입력한 방에 입장 
+            console.log(
+                `${nickname}이 방 ${studyId}에 입장 (${targetRoomObj.currentNum}/${MAXIMUM})`
+            )
 
-        mediaStatus[studyId][socket.id] = {
-            screensaver: false,
-            muted: false,
+            mediaStatus[studyId][socket.id] = {
+                screensaver: false,
+                muted: false,
+            }
+            socket.join(studyId)
+            socket.to(studyId).emit('joinStudyRoom', notDup, socket.id, videoType)
+            //여기는 그냥 방에 참가했을 때 
+        } else {
+
+            if (!mediaStatus[studyId]) {
+                mediaStatus[studyId] = {}
+            }
+
+
+            for (let i = 0; i < roomObjArr.length; i++) {
+
+                // 스터디 룸 
+                if (roomObjArr[i].studyId === studyId) {
+                    // 정원 초과
+                    if (roomObjArr[i].currentNum >= MAXIMUM) {
+                        //정원 초과라 거부 이벤트 실행 
+                        socket.emit('rejectJoin')
+                        return
+                    }
+
+
+                    //정원 초과 아니면 해당 스터디 룸에 참여 
+                    isRoomExist = true
+                    //맞는 룸에 들어감 
+                    targetRoomObj = roomObjArr[i]
+                    break
+                }
+            }
+
+            // 입력한 룸이름이 없다면 새로운 방 만듦 
+            // 방이 존재하지 않는다면 방을 생성
+
+            if (!isRoomExist) {
+                targetRoomObj = {
+                    studyId,
+                    currentNum: 0,
+                    users: [],
+                }
+                roomObjArr.push(targetRoomObj)
+            }
+
+            // 어떠한 경우든 방에 참여
+            targetRoomObj.users.push({
+                socketId: socket.id,
+                nickname,
+            })
+
+            const joinedUsers = targetRoomObj.users
+            let notDup = joinedUsers.filter((val, idx) => {
+                return joinedUsers.indexOf(val) === idx
+            })
+
+            console.log("참석한 유저들", notDup)
+            targetRoomObj.currentNum++
+
+            // 입력한 방에 입장 
+            console.log(
+                `${nickname}이 방 ${studyId}에 입장 (${targetRoomObj.currentNum}/${MAXIMUM})`
+            )
+
+            mediaStatus[studyId][socket.id] = {
+                screensaver: false,
+                muted: false,
+            }
+            socket.join(studyId)
+            socket.to(studyId).emit('joinStudyRoom', notDup, socket.id, videoType)
         }
         // 입장 
-        socket.join(studyId)
         //방에 참가하는 거 수락  3. 
         //입장할 때 socket.id 같이 보냄 
-        socket.emit('joinStudyRoom', notDup, socket.id, videoType)
         console.log('보내고 넘어오쟈!!')
         socket.emit('checkCurStatus', mediaStatus[studyId])
     })
