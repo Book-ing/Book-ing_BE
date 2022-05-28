@@ -822,6 +822,20 @@ async function inoutStudy(req, res, next) {
                     return next(new Error('강퇴 당하셨기 때문에 해당 스터디에 참가하실 수 없습니다.'));
                 }
             }
+            //참가할 스터디 찾기
+            let study = await STUDY.findOne({ studyId });
+            if (!study) {
+                /*=====================================================================================
+                   #swagger.responses[403] = {
+                       description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
+                       schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
+                   }
+                   =====================================================================================*/
+                return res.status(400).json({
+                    result: false,
+                    message: '존재하지 않은 스터디 입니다! ',
+                });
+            }
             // let rightNow = getDate()
             // console.log("참가하려고 했던 스터디", study)
             // if (study.studyDateTime < rightNow) {
