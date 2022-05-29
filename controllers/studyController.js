@@ -759,196 +759,71 @@ async function inoutStudy(req, res, next) {
         #swagger.description = '스터디 참가 및 취소 API'
     ========================================================================================================*/
     const { userId } = res.locals.user;
-    // const { userId } = req.query;
-    const { studyId, meetingId, } = req.body;
-
+    const { studyId, meetingId } = req.body;
 
     try {
-        //받은 모임이 존재하는 지 체크
-        const validMeeting = await MEETING.findOne({ meetingId });
-        if (!validMeeting) {
-            /*=====================================================================================
-               #swagger.responses[403] = {
-                   description: '받은 모임 id가 유효하지 않을 때 이 응답이 갑니다.',
-                   schema: { "result": false, 'message':'해당 모임이 존재하지 않습니다.', }
-               }
-               =====================================================================================*/
-            return next(new Error('존재하지 않은 모임입니다'));
-        }
-        const validStudy = await STUDY.findOne({ studyId });
-        if (!validStudy) {
-            /*=====================================================================================
-               #swagger.responses[403] = {
-                   description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
-                   schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
-               }
-               =====================================================================================*/
-            return next(new Error('유효하지 않은 스터디입니다'));
-        }
-        //모임안에 있는 스터디들
-        const targetStudy = await STUDY.find({ meetingId });
-        let targetStudyId = [];
-        for (let i = 0; i < targetStudy.length; i++) {
-            targetStudyId.push(targetStudy[i].studyId);
-        }
-        if (!targetStudyId.includes(Number(studyId))) {
-            /*=====================================================================================
-               #swagger.responses[403] = {
-                   description: '받은 스터디 id가 모임에 존재하지 않을 때 이 응답을 준다.',
-                   schema: { "result": false, 'message':'해당 모임에 존재하지 않는 스터디이다.', }
-               }
-               =====================================================================================*/
-            return next(new Error('해당 모임에 존재하지 않는 스터디입니다'));
+        const existMeetingMember = await MEETINGMEMBERS.findOne({ meetingMemberId: userId, meetingId });
+        if (!existMeetingMember) {
+            return res.status(403).json({
+                result: false,
+                message: '유저가 모임에 가입되지 않았습니다.',
+            });
         }
 
-        let meetingMemberId = [];
-        let meetingMembers = await MEETINGMEMBERS.find({ meetingId });
-        for (let i = 0; i < meetingMembers.length; i++) {
-            meetingMemberId.push(meetingMembers[i].meetingMemberId);
+        const study = await STUDY.findOne({ studyId, meetingId });
+        if (!study) {
+            return res.status(400).json({
+                result: false,
+                message: '유효하지 않은 스터디입니다',
+            });
         }
-        if (meetingMemberId.includes(Number(userId))) {
-            let master = false;
-            //모임에서 강퇴당한 유저 찾기
-            let bannedUser = await BANNEDUSERS.findOne({ meetingId });
-            // 로그인한 유저가 유효한 유저인지 체크
-            if (bannedUser) {
-                if (bannedUser.userId === Number(userId)) {
-                    /*=====================================================================================
-                       #swagger.responses[403] = {
-                           description: '강퇴당한 유저가 다시 스터디에 참가하려고 할 때 이 응답을 준다.',
-                           schema: { "result": false, 'message':'강퇴 당하야 해당 스터디에 참가불가능', }
-                       }
-                       =====================================================================================*/
-                    return next(new Error('강퇴 당하셨기 때문에 해당 스터디에 참가하실 수 없습니다.'));
-                }
-            }
-            //참가할 스터디 찾기
-            let study = await STUDY.findOne({ studyId });
-            if (!study) {
-                /*=====================================================================================
-                   #swagger.responses[403] = {
-                       description: '받은 스터디 id가 존재 하지 않을 때 이 응답이 갑니다.',
-                       schema: { "result": false, 'message':'해당 스터디가 존재하지 않습니다.', }
-                   }
-                   =====================================================================================*/
-                return res.status(400).json({
+
+        if (userId === study.studyMasterId) {
+            return res.status(403).json({
+                result: false,
+                message: '스터디 마스터는 모임 참여, 탈퇴가 불가능합니다.',
+            });
+        }
+
+        if (study.studyDateTime < getDate()) {
+            return res.status(403).json({
+                result: false,
+                message: '이미 시작된 스터디는 참가/취소가 불가능합니다.'
+            });
+        }
+
+        const existStudyMember = await STUDYMEMBERS.findOne({ studyId, studyMemberId: userId });
+        if (!existStudyMember) {
+            const studyMembers = await STUDYMEMBERS.find({ studyId });
+            if (studyMembers.length >= study.studyLimitCnt) {
+                return res.status(403).json({
                     result: false,
-                    message: '존재하지 않은 스터디 입니다! ',
+                    message: '스터디 제한 인원 수가 찼습니다.',
                 });
-            }
-            // let rightNow = getDate()
-            // console.log("참가하려고 했던 스터디", study)
-            // if (study.studyDateTime < rightNow) {
-            //     return res.status(400).json({
-            //         result: false,
-            //         message: '이미 시작된  혹은 지난 스터디라 참가 불가능합니다.'
-            //     })
-            // }
-
-            //참가할 스터디의 멤버들 찾기
-            people = await STUDYMEMBERS.find({ studyId });
-            //스터디에 참가한 멤버 수 만큼 돈다.
-            let isStudyJoined;
-            for (let i = 0; i < people.length; i++) {
-                //만약 로그인한 유저가 이미 해당 스터디에 있다면 취소로 받아들인다.
-                if (people[i].studyMemberId === Number(userId)) {
-                    if (study.studyMasterId === Number(userId)) {
-                        /*=====================================================================================
-                        #swagger.responses[403] = {
-                            description: '스터디장이 스터디에서 나가려고 할 때 이 응답을 준다.',
-                            schema: { "result": false, 'message':'스터디장은 나갈 수 없습니다.', }
-                        }
-                        =====================================================================================*/
-                        return next(new Error('스터디장은 나갈 수 없습니다.'));
-                    }
-
-                    await STUDYMEMBERS.findOneAndDelete({
-                        studyId: studyId,
-                        studyMemberId: userId,
-                    });
-
-                    //해당 스터디에 참가한 사람들
-                    const people = await STUDYMEMBERS.find({ studyId })
-                    let joinedUser = [];
-                    for (let i = 0; i < people.length; i++) {
-                        joinedUser.push(people[i].studyMemberId);
-                    }
-                    if (!joinedUser.includes(Number(userId))) {
-                        isStudyJoined = false;
-                    }
-
-
-                    /*=====================================================================================
-                   #swagger.responses[201] = {
-                       description: '스터디 취소에 성공했을 때 이 응답을 준다.',
-                       schema: { "result": true, 'message':'스터디 취소 성공', }
-                   }
-                   =====================================================================================*/
-                    return res.status(201).json({
-                        result: true,
-                        isStudyJoined,
-                        message: '스터디 취소 성공!',
-                    });
-                }
-            }
-            if (
-                study.studyLimitCnt === people.length ||
-                study.studyLimitCnt < people.length
-            ) {
-                /*=====================================================================================
-               #swagger.responses[403] = {
-                   description: '정원이 초과했을 때 이 응답을 준다.',
-                   schema: { "result": false, 'message':'정원초과라 해당 스터디에 참가할 수 없습니다.', }
-               }
-               =====================================================================================*/
-                return next(new Error('정원 초과라 해당 스터디에 참가할 수 없습니다'));
-            }
-
-            if (study.studyMasterId === Number(userId)) {
-                master = true;
             }
 
             await STUDYMEMBERS.create({
                 studyMemberId: userId,
                 studyId,
-                isStudyMaster: master,
+                isStudyMaster: false,
                 regDate: getDate(),
             });
 
-            const joinedUser = await STUDYMEMBERS.find({ studyId })
-            for (let i = 0; i < joinedUser.length; i++) {
-                if (joinedUser[i].studyMemberId === Number(userId)) {
-                    isStudyJoined = true
-                }
-            }
-            /*=====================================================================================
-           #swagger.responses[201] = {
-               description: '스터디 참가에 성공했을 때 이 응답을 준다.',
-               schema: { "result": true, 'message':'스터디 참가 성공', }
-           }
-           =====================================================================================*/
-            return res.status(201).json({
-                result: true,
-                isStudyJoined,
-                message: '스터디 참가 성공!',
-            });
+            res.status(201).json({ result: true, message: '스터디 참가 성공', isJoinedStudy: true });
         } else {
-            /*=====================================================================================
-           #swagger.responses[403] = {
-               description: '모임에 가입하지 않은 유저가 스터디에 참가하려고 할 때 이 응답을 줍니다.',
-               schema: { "result": false, 'message':'해당 모임에 먼저 가입하고 스터디에 참가가능', }
-           }
-           =====================================================================================*/
-            return next(new Error('해당 모임에 먼저 가입하고 스터디에 참가가능'));
+            await STUDYMEMBERS.deleteOne({
+                studyMemberId: userId,
+                studyId,
+            });
+            res.status(201).json({ result: true, message: '스터디 취소 성공', isJoinedStudy: false });
         }
-    } catch (error) {
-        /*=====================================================================================
-           #swagger.responses[500] = {
-               description: '모든 예외처리를 빗나간 에러는 이 응답을 줍니다.',
-               schema: { "result": false, 'message':'스터디 참가 실패!', }
-           }
-           =====================================================================================*/
-        return next({ message: '스터디 참가/취소 실패', stack: error, code: 500 });
+
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            result: false,
+            message: '스터디 참가/취소 실패',
+        });
     }
 }
 
