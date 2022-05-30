@@ -61,6 +61,7 @@ async function getStudyLists(req, res, next) {
 
         const data = await STUDY.find({ meetingId });
         let studyList = [];
+        let isStudyEnd;
         // studyStatus a == 스터디 일시 전, b== 스터디 시작 후 24시간 이내 c == 시작부터 24시간 후 
 
         //해당 모임에 존재하는 전체 스터디들의 데이터를 가지고 온다.
@@ -100,6 +101,8 @@ async function getStudyLists(req, res, next) {
                 let rightNow = getDate();
                 // 스터디 시작시간 
                 let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
+
+                isStudyEnd = getDate() > studyDateTime;
 
 
                 //아직 24시간이 지나기 전이라 작성 가능
@@ -191,6 +194,7 @@ async function getStudyLists(req, res, next) {
                     studyNote,
                     studyMasterProfile,
                     regDate,
+                    isStudyEnd,
                     Lat,
                     Long,
                     studyStatus,
@@ -224,6 +228,7 @@ async function getStudyLists(req, res, next) {
                 // 스터디 시작시간 
                 let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
 
+                isStudyEnd = getDate() > studyDateTime;
 
                 //아직 24시간이 지나기 전이라 작성 가능
                 if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
@@ -311,6 +316,7 @@ async function getStudyLists(req, res, next) {
                     studyNote,
                     studyMasterProfile,
                     regDate,
+                    isStudyEnd,
                     studyStatus,
                     together,
                 });

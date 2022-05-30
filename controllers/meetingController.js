@@ -37,7 +37,7 @@ async function createMeeting(req, res, next) {
             meetingImage = req.file.location;
         } else {
             meetingImage =
-                'https://book-ing.s3.ap-northeast-2.amazonaws.com/book-2020460_1920.jpg';
+                'https://cdn.pixabay.com/photo/2016/03/27/19/32/book-1283865_960_720.jpg';
         }
 
         const categoryCode = await CODE.findOne({ codeValue: meetingCategory });
