@@ -763,44 +763,24 @@ async function inoutStudy(req, res, next) {
 
     try {
         const existMeetingMember = await MEETINGMEMBERS.findOne({ meetingMemberId: userId, meetingId });
-        if (!existMeetingMember) {
-            return res.status(403).json({
-                result: false,
-                message: '유저가 모임에 가입되지 않았습니다.',
-            });
-        }
+        if (!existMeetingMember)
+            return next(new Error('유저가 모임에 가입되지 않았습니다.'));
 
         const study = await STUDY.findOne({ studyId, meetingId });
-        if (!study) {
-            return res.status(400).json({
-                result: false,
-                message: '유효하지 않은 스터디입니다',
-            });
-        }
+        if (!study)
+            return next(new Error('유효하지 않은 스터디입니다'));
 
-        if (userId === study.studyMasterId) {
-            return res.status(403).json({
-                result: false,
-                message: '스터디 마스터는 모임 참여, 탈퇴가 불가능합니다.',
-            });
-        }
+        if (userId === study.studyMasterId)
+            return next(new Error('스터디 마스터는 모임 참여, 탈퇴가 불가능합니다.'));
 
-        if (study.studyDateTime < getDate()) {
-            return res.status(403).json({
-                result: false,
-                message: '이미 시작된 스터디는 참가/취소가 불가능합니다.'
-            });
-        }
+        if (study.studyDateTime < getDate())
+            return next(new Error('종료된 스터디'));
 
         const existStudyMember = await STUDYMEMBERS.findOne({ studyId, studyMemberId: userId });
         if (!existStudyMember) {
             const studyMembers = await STUDYMEMBERS.find({ studyId });
-            if (studyMembers.length >= study.studyLimitCnt) {
-                return res.status(403).json({
-                    result: false,
-                    message: '스터디 제한 인원 수가 찼습니다.',
-                });
-            }
+            if (studyMembers.length >= study.studyLimitCnt)
+                return next(new Error('스터디 제한 인원 수가 찼습니다.'));
 
             await STUDYMEMBERS.create({
                 studyMemberId: userId,
@@ -817,13 +797,8 @@ async function inoutStudy(req, res, next) {
             });
             res.status(201).json({ result: true, message: '스터디 취소 성공', isJoinedStudy: false });
         }
-
-    } catch (err) {
-        console.log(err);
-        return res.status(500).json({
-            result: false,
-            message: '스터디 참가/취소 실패',
-        });
+    } catch (error) {
+        return next({ message: '스터디 참가/취소 실패', stack: error, code: 500 });
     }
 }
 
