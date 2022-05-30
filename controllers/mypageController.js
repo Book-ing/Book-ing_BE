@@ -293,6 +293,7 @@ async function getSelectMyStudy(req, res, next) {
     const { userId } = res.locals.user;
 
     const myStudyList = [];
+    let isStudyEnd;
 
     try {
         const arrMyStudy = await STUDY.find({ studyMasterId: Number(userId) })
@@ -327,6 +328,8 @@ async function getSelectMyStudy(req, res, next) {
                 let rightNow = getDate();
                 // 스터디 시작시간 
                 let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
+
+                isStudyEnd = getDate() > studyDateTime;
 
                 if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
                     studyStatus = 'A';
@@ -386,6 +389,7 @@ async function getSelectMyStudy(req, res, next) {
                     studyNote,
                     studyMasterProfile,
                     regDate,
+                    isStudyEnd,
                     Lat,
                     Long,
                     studyStatus,
@@ -416,6 +420,8 @@ async function getSelectMyStudy(req, res, next) {
                 let rightNow = getDate();
                 // 스터디 시작시간 
                 let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
+
+                isStudyEnd = getDate() > studyDateTime;
 
                 if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
                     studyStatus = 'A';
@@ -476,6 +482,7 @@ async function getSelectMyStudy(req, res, next) {
                     studyNote,
                     studyMasterProfile,
                     regDate,
+                    isStudyEnd,
                     studyStatus,
                     together,
                 });
@@ -580,6 +587,7 @@ async function getSelectJoinedStudy(req, res, next) {
 
 
         const myJoinedStudy = [];
+        let isStudyEnd;
         for (let i = 0; i < arrStudyList.length; i++) {
             const together = [];
             const studyMasterProfile = {};
@@ -613,6 +621,7 @@ async function getSelectJoinedStudy(req, res, next) {
             let rightNow = getDate();
             let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
 
+            isStudyEnd = getDate() > studyDateTime;
 
             //아직 24시간이 지나기 전이라 작성 가능
             if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
@@ -689,6 +698,7 @@ async function getSelectJoinedStudy(req, res, next) {
                 studyNote,
                 studyMasterProfile,
                 regDate,
+                isStudyEnd,
                 Lat,
                 Long,
                 studyStatus,
