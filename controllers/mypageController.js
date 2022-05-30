@@ -343,6 +343,15 @@ async function getSelectMyStudy(req, res, next) {
                 const people = await STUDYMEMBER.find({ studyId: arrMyStudy[i].studyId });
                 let studyUserCnt = 0;
 
+                if (res.locals.user) {
+                    const { userId } = res.locals.user;
+
+                    for (let k = 0; k < people.length; k++) {
+                        if (people[k].studyMemberId === Number(userId)) {
+                            isStudyJoined = true;
+                        }
+                    }
+                }
                 //유저가 로그인하지 않아도 내용을 볼 수 있도록
                 //여기가 문제
                 for (let j = 0; j < people.length; j++) {
@@ -391,6 +400,7 @@ async function getSelectMyStudy(req, res, next) {
                     studyNote,
                     studyMasterProfile,
                     regDate,
+                    isStudyJoined,
                     isStudyEnd,
                     Lat,
                     Long,
@@ -441,6 +451,16 @@ async function getSelectMyStudy(req, res, next) {
 
                 //i=0 studyId===34
 
+                if (res.locals.user) {
+                    const { userId } = res.locals.user;
+
+                    for (let k = 0; k < people.length; k++) {
+                        if (people[k].studyMemberId === Number(userId)) {
+                            isStudyJoined = true;
+                        }
+                    }
+                }
+
 
                 //여기가 문제
                 for (let j = 0; j < people.length; j++) {
@@ -484,6 +504,7 @@ async function getSelectMyStudy(req, res, next) {
                     studyBookWriter,
                     studyBookPublisher,
                     studyNote,
+                    isStudyJoined,
                     studyMasterProfile,
                     regDate,
                     isStudyEnd,
@@ -598,7 +619,6 @@ async function getSelectJoinedStudy(req, res, next) {
             const studyMasterProfile = {};
 
             const data = await STUDY.findOne({ studyId: arrStudyList[i] })
-            console.log('내가 참석한 스터디의 모임 아이디', data.meetingId)
             //참석한 스터디 중 첫 번째 
             const studyTypeCode = await CODE.findOne({ codeId: data.studyType });
             const meetingId = data.meetingId
