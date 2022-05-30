@@ -113,6 +113,7 @@ async function getStudyLists(req, res, next) {
                     studyStatus = 'B';
                 }
 
+
                 //스터디 시작 지나면 참가 못하게 하기 
                 // if (studyDateTime < rightNow) {
                 //     possibleJoinStudy = false
@@ -238,11 +239,6 @@ async function getStudyLists(req, res, next) {
                     studyStatus = 'B';
                 }
 
-                //스터디 시작 지나면 참가 못하게 하기 
-                // if (studyDateTime < rightNow) {
-                //     possibleJoinStudy = false
-                // }
-
 
                 //모임에 있는 각!! 스터디 아이디에 참여한 멤버들을 가지고 온다.
                 const people = await STUDYMEMBERS.find({ studyId });
@@ -349,6 +345,7 @@ async function getStudyLists(req, res, next) {
     }
 }
 
+//스터디 생성 
 async function postStudy(req, res, next) {
     const { userId } = res.locals.user;
     const {

@@ -305,6 +305,7 @@ async function getSelectMyStudy(req, res, next) {
                 let isStudyMaster = false;
                 const studyMasterProfile = {};
                 const studyId = arrMyStudy[i].studyId;
+                const meetingId = arrMyStudy[i].meetingId;
                 const studyType = arrMyStudy[i].studyType;
                 const studyTitle = arrMyStudy[i].studyTitle;
                 const studyPrice = arrMyStudy[i].studyPrice;
@@ -372,6 +373,7 @@ async function getSelectMyStudy(req, res, next) {
 
                 myStudyList.push({
                     studyId,
+                    meetingId,
                     studyType: studyTypeCode.codeValue,
                     studyTitle,
                     studyPrice,
@@ -400,6 +402,7 @@ async function getSelectMyStudy(req, res, next) {
                 const together = [];
                 let isStudyMaster = false;
                 const studyMasterProfile = {};
+                const meetingId = arrMyStudy[i].meetingId;
                 const studyId = arrMyStudy[i].studyId;
                 const studyType = arrMyStudy[i].studyType;
                 const studyTitle = arrMyStudy[i].studyTitle;
@@ -468,6 +471,7 @@ async function getSelectMyStudy(req, res, next) {
 
                 myStudyList.push({
                     studyId,
+                    meetingId,
                     studyType: studyTypeCode.codeValue,
                     studyTitle,
                     studyDateTime,
@@ -583,6 +587,7 @@ async function getSelectJoinedStudy(req, res, next) {
             }
         }).map((val, i) => { return val.studyId })
 
+
         //현재 4개
 
 
@@ -592,12 +597,11 @@ async function getSelectJoinedStudy(req, res, next) {
             const together = [];
             const studyMasterProfile = {};
 
-            // console.log(`${i + 1}번째 스터디 아이디${arrStudyList[i]} `)
             const data = await STUDY.findOne({ studyId: arrStudyList[i] })
-            // console.log(`${arrStudyList[i]}스터디`, data)
+            console.log('내가 참석한 스터디의 모임 아이디', data.meetingId)
             //참석한 스터디 중 첫 번째 
             const studyTypeCode = await CODE.findOne({ codeId: data.studyType });
-
+            const meetingId = data.meetingId
             const studyId = data.studyId;
             const studyType = studyTypeCode.codeValue;
             const studyTitle = data.studyTitle;
@@ -655,13 +659,11 @@ async function getSelectJoinedStudy(req, res, next) {
                 let joinedUser = await USER.findOne({
                     userId: people[k].studyMemberId,
                 });
-                // console.log("@@@", joinedUser)
                 const userId = joinedUser.userId;
                 const profileImage = joinedUser.profileImage;
                 const username = joinedUser.username;
                 studyUserCnt = people.length;
                 isStudyMaster = people[k].isStudyMaster;
-                // console.log("스터디 장이냐?1 ", isStudyMaster)
 
                 if (isStudyMaster) {
                     studyMasterProfile.userId = userId;
@@ -680,6 +682,7 @@ async function getSelectJoinedStudy(req, res, next) {
             // console.log("스터디 장이냐?2 ", isStudyMaster)
             myJoinedStudy.push({
                 studyId,
+                meetingId,
                 studyType,
                 studyTitle,
                 studyPrice,
