@@ -490,8 +490,8 @@ async function getSelectMyStudy(req, res, next) {
         }
 
         myStudyList.sort(function (a, b) {
-            a = a.regDate;
-            b = b.regDate;
+            a = a.studyDateTime;
+            b = b.studyDateTime;
             return a > b ? -1 : a < b ? 1 : 0;
         });
 
@@ -705,6 +705,11 @@ async function getSelectJoinedStudy(req, res, next) {
                 together,
             });
         }
+        myJoinedStudy.sort(function (a, b) {
+            a = a.studyDateTime;
+            b = b.studyDateTime;
+            return a > b ? -1 : a < b ? 1 : 0;
+        });
 
         return res.status(200).json({
             result: true,
