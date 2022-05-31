@@ -1149,6 +1149,7 @@ async function searchStudy(req, res, next) {
         const keywordReg = regex(keyword);
         let searchedDataId = [];
         let studyList = [];
+        let isStudyEnd;
         const searchData = await STUDY.where({ meetingId }).find({
             $or: [
                 { studyTitle: { $regex: keywordReg, $options: 'i' } },
@@ -1186,6 +1187,7 @@ async function searchStudy(req, res, next) {
                 let rightNow = getDate();
                 // 스터디 시작시간
                 let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
+                isStudyEnd = getDate() > studyDateTime;
                 const studyTypeCode = await CODE.findOne({ codeId: studyType })
 
                 //아직 24시간이 지나기 전이라 작성 가능
@@ -1262,6 +1264,7 @@ async function searchStudy(req, res, next) {
                     studyBookPublisher,
                     studyNote,
                     studyMasterProfile,
+                    isStudyEnd,
                     regDate,
                     Lat,
                     Long,
@@ -1291,7 +1294,6 @@ async function searchStudy(req, res, next) {
                 // 스터디 시작시간
                 let studyTime = moment(studyDateTime, 'YYYY-MM-DD HH:mm:ss')
 
-
                 //아직 24시간이 지나기 전이라 작성 가능
                 if (moment.duration(studyTime.diff(rightNow)).asHours() > -24) {
                     studyStatus = 'A';
@@ -1319,7 +1321,7 @@ async function searchStudy(req, res, next) {
                 const together = [];
                 let isStudyMaster;
                 const studyMasterProfile = {};
-
+                isStudyEnd = getDate() > studyDateTime;
 
                 for (let j = 0; j < people.length; j++) {
 
@@ -1363,6 +1365,7 @@ async function searchStudy(req, res, next) {
                     studyBookPublisher,
                     studyNote,
                     studyMasterProfile,
+                    isStudyEnd,
                     regDate,
                     studyStatus,
                     together,
