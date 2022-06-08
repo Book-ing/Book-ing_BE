@@ -1,0 +1,190 @@
+config:
+  target:
+  tls:
+    rejectUnauthorized: false
+  payload:
+    -
+      path: "./token.csv"
+      fields:
+        - "token"
+  http:
+    timeout: 5
+  phases:
+    # - duration: 10
+    #   arrivalRate: 10
+    - duration: 1000
+      arrivalRate: 100
+    # - duration: 10
+    #   arrivalRate: 10
+
+scenarios:
+  - name: "get main" # 1.메인페이지 로딩
+    weight: 10
+    flow:
+      - get:
+          url: "/api/main"
+          headers:
+            User-Agent: "Artillery"
+            Authorization: "Bearer {{ token }}"
+  - name: "get meeting" # 2. 모임페이지 정보 로딩
+    weight: 10
+    flow:
+      - get:
+          url: "/api/meeting/3"
+          headers:
+            User-Agent: "Artillery"
+            Authorization: "Bearer {{ token }}"
+  - name: "get meetingUser" # 3.모임페이지 유저 로딩
+    weight: 10
+    flow:
+      - get:
+          url: "/api/meeting/3/users"
+          headers:
+            User-Agent: "Artillery"
+            Authorization: "Bearer {{ token }}"
+  - name: "get studyList" # 4. 모임페이지 스터디 목록 로딩
+    weight: 10
+    flow:
+      - get:
+          url: "/api/meeting/3/study"
+          headers:
+            User-Agent: "Artillery"
+            Authorization: "Bearer {{ token }}"
+  - name: "get study user" # 5. 스터디 유저 로딩
+    weight: 10
+    flow:
+      - get:
+          url: "/api/study/1/user"
+          headers:
+            User-Agent: "Artillery"
+            Authorization: "Bearer {{ token }}"
+  - name: "post study" # 6. 스터디 생성
+    weight: 2
+    flow:
+      - post:
+          url: "/api/study"
+          headers:
+            User-Agent: "Artillery"
+            Authorization: "Bearer {{ token }}"
+          json:
+            meetingId: 3
+            studyType: "offline"
+            studyTitle: "스터디 제목"
+            studyAddr: "경기도 양주시"
+            studyAddrDetail: "스타벅스"
+            studyDateTime: "2022-06-10 20:00"
+            studyLimitCnt: 100
+            studyNotice: "스터디 공지"
+            studyBookTitle: "스터디 책 제목"
+            studyBookInfo: "스터디 책 정보"
+            studyBookWriter: "스터디 책 저자"
+            studyBookPublisher: "스터디 책 출판사"
+            studyPrice: 1000
+  - name: "put study" # 7. 스터디 수정
+    weight: 1
+    flow:
+      - put:
+          url: "/api/study"
+          headers:
+            User-Agent: "Artillery"
+            Authorization: "Bearer {{ token }}"
+          json:
+            studyId: 1
+            meetingId: 3
+            studyType: "offline"
+            studyTitle: "스터디 제목 수정"
+            studyAddr: "경기도 양주시 장흥면"
+            studyAddrDetail: "앤제리너스"
+            studyDateTime: "2022-06-11 15:00"
+            studyNotice: "스터디 공지"
+            studyBookTitle: "스터디 책 제목 수정"
+            studyBookInfo: "스터디 책 정보 수정"
+            studyBookWriter: "스터디 책 저자 수정"
+            studyBookPublisher: "스터디 책 출판사 수정"
+            studyPrice: 5000
+  - name: "post studyNote" # 8. 스터디 노트 작성
+    weight: 10
+    flow:
+      - post:
+          url: "/api/study/note"
+          headers:
+            User-Agent: "Artillery"
+            Authorization: "Bearer {{ token }}"
+          json:
+            studyId: 1
+            studyNote: "스터디 노트 작성 테스트 입니다. 이미지는 못넣어용 ㅠㅠ"
+  - name: "put studyNote" # 9. 스터디 노트 수정
+    weight: 10
+    flow:
+      - put:
+          url: "/api/study/note"
+          headers:
+            User-Agent: "Artillery"
+            Authorization: "Bearer {{ token }}"
+          json:
+            studyId: 1
+            studyNote: "스터디 노트 수정 테스트 입니다. 수정 때도 이미지는 못넣어용 ㅠㅠ"
+  - name: "search study" # 10. 스터디 검색
+    weight: 10
+    flow:
+      - get:
+          url: "/api/study/3/search?keyword=스터디"
+          headers:
+            User-Agent: "Artillery"
+            Authorization: "Bearer {{ token }}"
+  - name: "get search" # 11. 검색페이지 로딩
+    weight: 10
+    flow:
+      - get:
+          url: "/api/search"
+          headers:
+            User-Agent: "Artillery"
+            Authorization: "Bearer {{ token }}"
+######  - name: "search search" # 12. 검색페이지 검색 ######
+#    weight: 10
+#    flow:
+#      - get:
+#          url: "/api/search?location=101&category=202&keyword=책"
+#          headers:
+#            User-Agent: "Artillery"
+######            Authorization: "Bearer {{ token }}" ######
+  - name: "get mypage profile" # 13. 마이페이지 내 정보 로딩
+    weight: 10
+    flow:
+      - get:
+          url: "/api/mypage/1/profile"
+          headers:
+            User-Agent: "Artillery"
+            Authorization: "Bearer {{ token }}"
+  - name: "get mypage myMeeting" # 14. 마이페이지 내가 만든 모임 로딩
+    weight: 10
+    flow:
+      - get:
+          url: "/api/mypage/1/mymeeting"
+          headers:
+            User-Agent: "Artillery"
+            Authorization: "Bearer {{ token }}"
+  - name: "get mypage joinedMeeting" # 15. 마이페이지 내가 가입된 모임 로딩
+    weight: 10
+    flow:
+      - get:
+          url: "/api/mypage/1/joinedmeeting"
+          headers:
+            User-Agent: "Artillery"
+            Authorization: "Bearer {{ token }}"
+  - name: "get mypage myStudy" # 16. 마이페이지 내가 만든 스터디 로딩
+    weight: 10
+    flow:
+      - get:
+          url: "/api/mypage/mystudy"
+          headers:
+            User-Agent: "Artillery"
+            Authorization: "Bearer {{ token }}"
+  - name: "get mypage joinedStudy" # 17. 마이페이지 내가 참여한 스터디 로딩
+    weight: 10
+    flow:
+      - get:
+          url: "/api/mypage/joinedstudy"
+          headers:
+            User-Agent: "Artillery"
+            Authorization: "Bearer {{ token }}"
