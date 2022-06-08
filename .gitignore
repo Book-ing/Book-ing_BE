@@ -120,3 +120,7 @@ dist
 .idea/
 swagger-output.json
 /config/
+
+#loadtest
+loadtest/token.csv
+loadtest/testresult
