@@ -2,19 +2,13 @@ const app = require('./app');
 const http = require('http');
 const https = require('https');
 const USER = require('./schemas/user');
-const STUDY = require('./schemas/studys');
-const STUDYMEMBERS = require('./schemas/studyMembers');
 const MEETINGMEMBER = require('./schemas/meetingMember');
 const CHAT = require('./schemas/chats');
 const lib = require('./lib/util');
 const credentials = require('./config/httpsConfig');
 
-let server = '';
-if (process.env.PORT) {
-    server = https.createServer(credentials, app);
-} else {
-    server = http.createServer(app);
-}
+
+const server = process.env.PORT ? https.createServer(credentials, app) : http.createServer(app);
 const io = require('socket.io')(server, {
     cors: {
         origin: '*',
@@ -28,9 +22,7 @@ let mediaStatus = {}
 const MAXIMUM = 10;
 
 io.on('connection', (socket) => {
-    console.log('socketId : ', socket.id);
     socket.on('disconnect', () => {
-        console.log('disconnect socketId : ', socket.id);
     });
     let myRoom = null;
 
@@ -73,7 +65,6 @@ io.on('connection', (socket) => {
                 }
             }
             io.to('meeting', meetingId).emit('getMessages', Messages); // db에 저장된 메세지를 보내준다.
-            console.log(`${userId} join a ${meetingId} Room`);
         }
     });
 
@@ -86,8 +77,6 @@ io.on('connection', (socket) => {
         myRoomName = studyId
         myNickname = nickname
         myRoom = studyId;
-        console.log('joinRoom', 'studyId :', studyId, 'nickname:', nickname);
-        console.log('비디오 타입 넘어오니?', videoType)
 
         let isRoomExist = false
         let targetRoomObj = null
@@ -135,7 +124,6 @@ io.on('connection', (socket) => {
             roomObjArr.push(targetRoomObj)
         }
 
-        console.log('joinRoom', 'targetRoomObj : ', targetRoomObj);
         // 어떠한 경우든 방에 참여
         targetRoomObj.users.push({
             socketId: socket.id,
@@ -147,13 +135,9 @@ io.on('connection', (socket) => {
             return joinedUsers.indexOf(val) === idx
         })
 
-        console.log("참석한 유저들", notDup)
         targetRoomObj.currentNum++
 
         // 입력한 방에 입장 
-        console.log(
-            `${nickname}이 방 ${studyId}에 입장 (${targetRoomObj.currentNum}/${MAXIMUM})`
-        )
 
         mediaStatus[studyId][socket.id] = {
             screensaver: false,
@@ -164,7 +148,6 @@ io.on('connection', (socket) => {
         //방에 참가하는 거 수락  3. 
         //입장할 때 socket.id 같이 보냄 
         socket.emit('joinStudyRoom', notDup, socket.id, videoType)
-        console.log('보내고 넘어오쟈!!')
         socket.emit('checkCurStatus', mediaStatus[studyId])
     })
 
@@ -174,21 +157,17 @@ io.on('connection', (socket) => {
     })
 
     socket.on('offer', (offer, remoteSocketId, localNickname) => {
-        // console.log('offer 이벤트', 'offer : ', offer, 'remoteSocketId', remoteSocketId, 'localNickname : ', localNickname)
         socket.to(remoteSocketId).emit('offer', offer, socket.id, localNickname)
     })
     // 다른 브라우저에서 보낸 answer 받음 =>5. 
     socket.on('answer', (answer, remoteSocketId) => {
         // 받은 answer  
-        // console.log('answer 이벤트', 'answer : ', answer, 'remoteSocketId', remoteSocketId)
         socket.to(remoteSocketId).emit('answer', answer, socket.id)
     })
 
     //방에 나갔을 때 
     socket.on('disconnecting', async () => {
-        // console.log('disconnecting')
         socket.to(myRoom).emit('leave_room', socket.id)
-        // console.log('disconnecting', 'myRoom : ', myRoom, 'socket.id : ', socket.id);
         for (let i = 0; i < roomObjArr.length; i++) {
             if (roomObjArr[i].studyId === myRoom) {
                 const newUsers = roomObjArr[i].users.filter(
@@ -199,27 +178,11 @@ io.on('connection', (socket) => {
                 break;
             }
         }
-        console.log("룸에 나간 이후", roomObjArr)
     })
-
-
-
-    socket.on('leaveMeetingRoom', (meetingId, userId) => {
-        socket.leave('meeting', meetingId);
-        console.log(`${userId} leave a ${meetingId} Room`);
-    });
 
     socket.on('chat message', async (meetingId, userId, message) => {
         if (!meetingId || !userId) return;
         try {
-            console.log(
-                'meetingId: ',
-                meetingId,
-                ' userId : ',
-                userId,
-                ' message : ',
-                message,
-            );
             const existMember = await MEETINGMEMBER.findOne({
                 meetingId,
                 meetingMemberId: userId,
