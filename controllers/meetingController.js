@@ -32,13 +32,8 @@ async function createMeeting(req, res, next) {
             return next(new Error('이미 생성한 모임이 있습니다.'));
         }
 
-        let meetingImage;
-        if (req.file) {
-            meetingImage = req.file.location;
-        } else {
-            meetingImage =
-                'https://cdn.pixabay.com/photo/2016/03/27/19/32/book-1283865_960_720.jpg';
-        }
+
+        const meetingImage = req.file?.location ?? 'https://cdn.pixabay.com/photo/2016/03/27/19/32/book-1283865_960_720.jpg';
 
         const categoryCode = await CODE.findOne({ codeValue: meetingCategory });
         const locationCode = await CODE.findOne({ codeValue: meetingLocation });

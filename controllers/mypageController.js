@@ -359,7 +359,6 @@ async function getSelectMyStudy(req, res, next) {
                     const joinedUser = await USER.findOne({
                         userId: people[j].studyMemberId,
                     });
-                    // console.log(`${studyId}에 참여한 한 명의 사람의 데이터를 불러오기`, joinedUser)
                     const userId = joinedUser.userId;
                     const profileImage = joinedUser.profileImage;
                     const username = joinedUser.username;
@@ -468,7 +467,6 @@ async function getSelectMyStudy(req, res, next) {
                     const joinedUser = await USER.findOne({
                         userId: people[j].studyMemberId,
                     });
-                    // console.log(`${studyId}에 참여한 한 명의 사람의 데이터를 불러오기`, joinedUser)
                     const userId = joinedUser.userId;
                     const profileImage = joinedUser.profileImage;
                     const username = joinedUser.username;
@@ -656,7 +654,6 @@ async function getSelectJoinedStudy(req, res, next) {
             }
 
             const people = await STUDYMEMBER.find({ studyId: data.studyId });
-            // console.log(`${studyId}에 참석한 사람들`, people)
             let studyUserCnt = 0;
             let isStudyJoined = false;
 
@@ -699,7 +696,6 @@ async function getSelectJoinedStudy(req, res, next) {
                     });
                 }
             }
-            // console.log("스터디 장이냐?2 ", isStudyMaster)
             myJoinedStudy.push({
                 studyId,
                 meetingId,

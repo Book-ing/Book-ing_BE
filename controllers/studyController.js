@@ -983,8 +983,6 @@ async function kickUser(req, res, next) {
         const meetingMemberId = [];
         const meetingMembers = await MEETINGMEMBERS.find({ meetingId });
 
-        // const checkmember = meetingMembers.map((val, i) => { return val.meetingMemberId })
-        // console.log("@@@", checkmember);
         let meetingMaster;
         for (let i = 0; i < meetingMembers.length; i++) {
             meetingMemberId.push(meetingMembers[i].meetingMemberId);

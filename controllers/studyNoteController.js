@@ -39,8 +39,6 @@ async function postNote(req, res, next) {
         // }
 
         //만약 오늘 날짜가 스터디 일시보다 하루가 늦으면 노트 작성 불가
-        // let studyTime=new Date(validStudy.studyDateTime)
-        // console.log('@@@',typeof(studyTime))
         let studyTime = moment(validStudy.studyDateTime, 'YYYY-MM-DD HH:mm:ss')
 
 
@@ -75,7 +73,6 @@ async function postNote(req, res, next) {
             }
             // studyMemberId.push(studyMembers[i].)
         }
-        // console.log('스터디 노트 작성 가능한 자', editMaster);
         if (editMaster.includes(Number(userId))) {
             await STUDY.updateOne({ studyId }, { $set: { studyNote } });
 
@@ -144,7 +141,6 @@ async function updateNote(req, res, next) {
                 editMaster.push(studyMembers[i].studyMemberId);
             }
         }
-        // console.log('WWWw', editMaster);
         if (editMaster.includes(Number(userId))) {
             await STUDY.updateOne({ studyId }, { $set: { studyNote } });
 
